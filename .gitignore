@@ -1,0 +1,102 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+package-lock.json
+yarn.lock
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+
+# Logs
+logs/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDEs
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Build outputs
+dist/
+build/
+*.tsbuildinfo
+
+# TypeScript
+*.js.map
+
+# Coverage
+coverage/
+*.lcov
+.nyc_output/
+
+# Docker
+*.pid
+*.seed
+*.pid.lock
+
+# Temporal files
+tmp/
+temp/
+*.tmp
+
+# Database
+*.sql
+*.db
+*.sqlite
+*.sqlite3
+
+# Uploads (si hay archivos de usuarios)
+uploads/
+storage/
+
+# Compiled binaries
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Test artifacts
+test-results/
+playwright-report/
+
+# Authgear (si contiene secrets)
+authgear/secrets/
+authgear/.env
+
+# Execution service
+execution-service/user_code/
+execution-service/sandbox/
+
+# Frontend build
+frontend/dist/
+frontend/.astro/
+frontend/node_modules/
+
+# API documentation generated
+docs/api/generated/
+
+# Backup files
+*.bak
+*.backup
+
+# Cache
+.cache/
+.parcel-cache/
+.eslintcache
