@@ -1,0 +1,67 @@
+{
+  "compilerOptions": {
+    /* Configuración de lenguaje */
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "commonjs",
+    "moduleResolution": "node",
+
+    /* Interoperabilidad */
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+
+    /* Directorios */
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "baseUrl": "./src",
+
+    /* Path mapping (alias) */
+    "paths": {
+      "@managers/*": ["managers/*"],
+      "@services/*": ["services/*"],
+      "@config/*": ["config/*"],
+      "@types/*": ["types/*"],
+      "@utils/*": ["utils/*"]
+    },
+
+    /* Type checking estricto */
+    "strict": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "noImplicitThis": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+
+    /* Configuración adicional */
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "removeComments": false,
+
+    /* Configuración para Docker/Node */
+    "types": ["node"],
+    "typeRoots": ["./node_modules/@types", "./src/types"]
+  },
+
+  "include": ["src/**/*"],
+
+  "exclude": ["node_modules", "dist", "**/*.spec.ts", "**/*.test.ts"],
+
+  "ts-node": {
+    "require": ["tsconfig-paths/register"],
+    "transpileOnly": true,
+    "files": true,
+    "compilerOptions": {
+      "module": "commonjs"
+    }
+  }
+}

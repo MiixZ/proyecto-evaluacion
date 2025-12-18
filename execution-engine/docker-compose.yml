@@ -1,0 +1,29 @@
+services:
+  execution-engine:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: evaluacion-execution-engine-dev
+    environment:
+      NODE_ENV: development
+      EXECUTION_ENGINE_API_KEY: ${EXECUTION_ENGINE_API_KEY}
+      DOCKER_SOCKET: /var/run/docker.sock
+      SANDBOX_NETWORK: evaluacion-net
+      MAX_CONCURRENT_CONTAINERS: 10
+    ports:
+      - "3001:3001"
+    networks:
+      - evaluacion-net
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./src:/app/src
+      - execution-engine-sandbox:/app/sandbox
+    privileged: true
+
+networks:
+  evaluacion-net:
+    external: true
+
+volumes:
+  execution-engine-sandbox:
+    driver: local

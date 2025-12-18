@@ -2,11 +2,14 @@ FROM node:20-alpine
 
 WORKDIR /app
 
+# Instalar Docker CLI (para usar docker socket)
+RUN apk add --no-cache docker-cli docker-cli-buildx
+
 # Instalar bun
 RUN npm install -g bun
 
 # Copiar archivos de dependencias
-COPY package.json bun.lock* ./
+COPY package*.json ./
 
 # Instalar dependencias
 RUN bun install --frozen-lockfile
@@ -19,7 +22,6 @@ COPY tsconfig.json ./
 RUN bun run build
 
 # Exponer puerto
-EXPOSE 3000
+EXPOSE 3001
 
-# ✅ Ejecutar archivo compilado
-CMD ["bun", "run", "start"]
+CMD ["bun", "dist/index.js"]

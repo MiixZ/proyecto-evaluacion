@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Response } from 'express';
 import cors from 'cors';
 import config from './config/environment.js';
 import {
@@ -6,6 +6,7 @@ import {
   requestLoggerMiddleware,
 } from './middleware/auth.middleware.js';
 import { AuthRequest } from './types/request.types.js';
+import routerSubmissions from '@routes/submission/submission.js';
 
 const app = express();
 
@@ -30,14 +31,14 @@ app.use(requestLoggerMiddleware);
 /**
  * Health check
  */
-app.get('/health', (req, res) => {
+app.get('/health', (res: Response) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
 /**
  * Información de la API
  */
-app.get('/api/v1', (req, res) => {
+app.get('/api/v1', (res: Response) => {
   res.json({
     name: 'Evaluación Automática de Programación API',
     version: '1.0.0',
@@ -58,5 +59,18 @@ app.get('/api/v1/me', authMiddleware, (req: AuthRequest, res) => {
   });
 });
 
+// ==================== RUTAS DE EJEMPLOS ====================
+app.use('/api/submissions', routerSubmissions);
+
 // ==================== RUTAS DE AUTENTICACIÓN (SIN PROTECCIÓN) ====================
 // TODO: Implementar rutas de login, registro, etc.
+// Iniciar servidor
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log(`\n🎯 Backend escuchando en puerto ${PORT}`);
+  console.log(`📍 API Key requerida en header: X-Api-Key`);
+  console.log(
+    `🐳 Network: ${process.env.SANDBOX_NETWORK || 'evaluacion-net'}\n`
+  );
+});

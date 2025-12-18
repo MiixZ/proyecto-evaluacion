@@ -6,35 +6,26 @@ services:
     image: mysql:8.0
     container_name: evaluacion-mysql-dev
     restart: unless-stopped
-
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: ${MYSQL_DATABASE}
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
       MYSQL_INITDB_SKIP_TZINFO: 1
-
     ports:
       - "${MYSQL_PORT}:3306"
-
     volumes:
-      # Datos persistentes
       - mysql_data:/var/lib/mysql
-      # Scripts de inicialización
       - ./database/init:/docker-entrypoint-initdb.d
-      # Configuración
       - ./database/mysql.cnf:/etc/mysql/conf.d/custom.cnf:ro
-
     networks:
       - evaluacion-net
-
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
       timeout: 5s
       retries: 10
       start_period: 40s
-
     command:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci
@@ -43,28 +34,80 @@ services:
       - --max_allowed_packet=256M
 
   # ============================================================
-  # phpMyAdmin (Solo desarrollo)
+  # phpMyAdmin
   # ============================================================
   phpmyadmin:
     image: phpmyadmin:latest
     container_name: evaluacion-phpmyadmin-dev
     restart: unless-stopped
-
     environment:
       PMA_HOST: mysql
       PMA_USER: ${MYSQL_USER}
       PMA_PASSWORD: ${MYSQL_PASSWORD}
       PMA_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-
     ports:
       - "${PHPMYADMIN_PORT}:80"
-
     depends_on:
       mysql:
         condition: service_healthy
-
     networks:
       - evaluacion-net
+
+  # ============================================================
+  # Backend API
+  # ============================================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: evaluacion-backend-dev
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      DB_HOST: mysql
+      DB_USER: ${MYSQL_USER}
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+      DB_NAME: ${MYSQL_DATABASE}
+      EXECUTION_ENGINE_URL: http://execution-engine:3001
+      EXECUTION_ENGINE_API_KEY: ${EXECUTION_ENGINE_API_KEY}
+    ports:
+      - "${BACKEND_PORT}:3000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - evaluacion-net
+    volumes:
+      - ./backend/src:/app/src
+
+  # ============================================================
+  # Execution Engine (capa de ejecución - NUEVA)
+  # ============================================================
+  execution-engine:
+    build:
+      context: ./execution-engine
+      dockerfile: Dockerfile
+    container_name: evaluacion-execution-engine-dev
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      EXECUTION_ENGINE_API_KEY: ${EXECUTION_ENGINE_API_KEY}
+      DOCKER_SOCKET: /var/run/docker.sock
+      SANDBOX_NETWORK: evaluacion-net
+      MAX_CONCURRENT_CONTAINERS: 10
+      CONTAINER_TIMEOUT_SECONDS: 30
+    ports:
+      - "3001:3001"
+    depends_on:
+      - mysql
+    networks:
+      - evaluacion-net
+    volumes:
+      # ⚠️ CRÍTICO
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./execution-engine/src:/app/src
+      - execution-engine-sandbox:/app/sandbox
+    privileged: true
 
 networks:
   evaluacion-net:
@@ -72,4 +115,6 @@ networks:
 
 volumes:
   mysql_data:
+    driver: local
+  execution-engine-sandbox:
     driver: local
