@@ -3,16 +3,16 @@ import { TestCase, TestResult } from "../types/execution.types";
 import * as fs from "fs/promises";
 import * as path from "path";
 import { PassThrough } from "stream";
-import * as os from "os";
 
 export class CodeExecutor {
   private docker = getDockerClient();
 
-  // 🔥 USAR DIRECTORIO TEMPORAL DEL SISTEMA
-  private readonly SANDBOX_BASE_DIR = path.join(
-    os.tmpdir(),
-    "execution-sandbox"
-  );
+  private readonly INTERNAL_DIR = "/app/sandbox_data";
+
+  private readonly SHARED_VOLUME =
+    process.env.SANDBOX_VOLUME_NAME || "evaluacion-shared-vol";
+
+  private readonly SANDBOX_MOUNT_POINT = "/sandbox_drive";
 
   async executeCode(
     sandboxImage: string,
@@ -23,44 +23,39 @@ export class CodeExecutor {
   ): Promise<TestResult> {
     const startTime = Date.now();
 
-    const workDir = path.join(this.SANDBOX_BASE_DIR, executionId);
+    const executionDir = path.join(this.INTERNAL_DIR, executionId);
 
     try {
-      await fs.mkdir(workDir, { recursive: true });
+      await fs.mkdir(executionDir, { recursive: true });
 
       const codeFilename = this.getCodeFilename(language);
-      await fs.writeFile(path.join(workDir, codeFilename), code, "utf-8");
+
+      // 2. Escribir archivos
+      await fs.writeFile(path.join(executionDir, codeFilename), code, "utf-8");
       await fs.writeFile(
-        path.join(workDir, "input.txt"),
+        path.join(executionDir, "input.txt"),
         testCase.input,
         "utf-8"
       );
 
-      console.log(`  📝 Preparado: ${workDir}`);
-
-      // Verificar archivos
-      const files = await fs.readdir(workDir);
-      console.log(`  📄 Archivos creados: ${files.join(", ")}`);
+      console.log(`  📝 Archivos escritos en: ${executionDir}`);
 
       const command = this.getExecutionCommand(language, codeFilename);
 
       const output = await this.runDockerContainer(
         sandboxImage,
         command,
-        workDir,
+        executionId,
         testCase.timeLimit * 1000,
         testCase.memoryLimit
       );
 
       const executionTime = Date.now() - startTime;
-
       const actualOutput = output.trim();
       const expectedOutput = testCase.expectedOutput.trim();
       const passed = actualOutput === expectedOutput;
 
-      console.log(
-        `  ${passed ? "✅" : "❌"} Esperado: "${expectedOutput}" | Obtenido: "${actualOutput}"`
-      );
+      console.log(`  ${passed ? "✅" : "❌"} Test ${testCase.id}`);
 
       return {
         testCaseId: testCase.id,
@@ -72,38 +67,33 @@ export class CodeExecutor {
       };
     } catch (error: any) {
       const executionTime = Date.now() - startTime;
-
       console.error(`  ❌ Error: ${error.message}`);
+
+      let status: "timeout" | "error" = "error";
+      let errorMessage = error.message;
 
       if (
         error.message.includes("timeout") ||
         error.message.includes("killed")
       ) {
-        return {
-          testCaseId: testCase.id,
-          status: "timeout",
-          expectedOutput: testCase.expectedOutput,
-          actualOutput: "",
-          executionTime,
-          memoryUsed: 0,
-          errorMessage: "Tiempo de ejecución excedido",
-        };
+        status = "timeout";
+        errorMessage = "Tiempo de ejecución excedido";
       }
 
       return {
         testCaseId: testCase.id,
-        status: "error",
+        status,
         expectedOutput: testCase.expectedOutput,
         actualOutput: "",
         executionTime,
         memoryUsed: 0,
-        errorMessage: error.message,
+        errorMessage,
       };
     } finally {
       try {
-        await fs.rm(workDir, { recursive: true, force: true });
+        await fs.rm(executionDir, { recursive: true, force: true });
       } catch (e) {
-        // Ignorar
+        console.error("Error limpieza:", e);
       }
     }
   }
@@ -111,7 +101,7 @@ export class CodeExecutor {
   private async runDockerContainer(
     image: string,
     command: string[],
-    workDir: string,
+    executionId: string,
     timeoutMs: number,
     memoryLimitMb: number
   ): Promise<string> {
@@ -122,16 +112,19 @@ export class CodeExecutor {
       outputChunks.push(chunk);
     });
 
-    // 🔥 En Windows, normalizar la ruta para Docker Desktop
-    const normalizedWorkDir = workDir.replace(/\\/g, "/");
+    const sandboxWorkDir = path.posix.join(
+      this.SANDBOX_MOUNT_POINT,
+      executionId
+    );
 
-    console.log(`  🐳 Montando: ${normalizedWorkDir} -> /workspace`);
+    console.log(`  🐳 Sandbox WorkingDir: ${sandboxWorkDir}`);
 
     const createOptions = {
       Entrypoint: [],
-
       HostConfig: {
-        Binds: [`${normalizedWorkDir}:/workspace:rw`],
+        // Montamos el volumen compartido en /sandbox_drive
+        Binds: [`${this.SHARED_VOLUME}:${this.SANDBOX_MOUNT_POINT}:ro`], // ro = read-only por seguridad extra
+
         Memory: memoryLimitMb * 1024 * 1024,
         MemorySwap: memoryLimitMb * 1024 * 1024,
         CpuShares: 1024,
@@ -139,7 +132,7 @@ export class CodeExecutor {
         AutoRemove: true,
         CapDrop: ["ALL"],
       },
-      WorkingDir: "/workspace",
+      WorkingDir: sandboxWorkDir,
       Tty: false,
     };
 
@@ -148,7 +141,6 @@ export class CodeExecutor {
         const fullOutput = Buffer.concat(outputChunks).toString("utf-8");
         return this.cleanDockerOutput(fullOutput);
       }),
-
       new Promise<string>((_, reject) => {
         setTimeout(() => reject(new Error("timeout")), timeoutMs);
       }),
@@ -166,7 +158,6 @@ export class CodeExecutor {
       }
       return line;
     });
-
     return cleaned.join("\n").trim();
   }
 
@@ -181,7 +172,6 @@ export class CodeExecutor {
         `g++ -o solution ${filename} && cat input.txt | ./solution`,
       ],
     };
-
     return commands[language] || commands["python"]!;
   }
 
@@ -192,7 +182,6 @@ export class CodeExecutor {
       javascript: "solution.js",
       cpp: "solution.cpp",
     };
-
     return extensions[language] || "solution.py";
   }
 }
