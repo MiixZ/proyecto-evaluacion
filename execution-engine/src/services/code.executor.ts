@@ -2,7 +2,6 @@ import { getDockerClient } from "../config/docker.config";
 import { TestCase, TestResult } from "../types/execution.types";
 import * as fs from "fs/promises";
 import * as path from "path";
-import { PassThrough } from "stream";
 
 export class CodeExecutor {
   private docker = getDockerClient();
@@ -30,7 +29,6 @@ export class CodeExecutor {
 
       const codeFilename = this.getCodeFilename(language);
 
-      // 2. Escribir archivos
       await fs.writeFile(path.join(executionDir, codeFilename), code, "utf-8");
       await fs.writeFile(
         path.join(executionDir, "input.txt"),
@@ -105,48 +103,97 @@ export class CodeExecutor {
     timeoutMs: number,
     memoryLimitMb: number
   ): Promise<string> {
-    const outputChunks: Buffer[] = [];
-    const outputStream = new PassThrough();
-
-    outputStream.on("data", (chunk: Buffer) => {
-      outputChunks.push(chunk);
-    });
-
+    // Directorio de trabajo dentro del Sandbox (Volumen compartido)
     const sandboxWorkDir = path.posix.join(
       this.SANDBOX_MOUNT_POINT,
       executionId
     );
 
-    console.log(`  🐳 Sandbox WorkingDir: ${sandboxWorkDir}`);
-
+    // 1️⃣ Configuración del contenedor
     const createOptions = {
+      Image: image,
+      Cmd: command,
       Entrypoint: [],
       HostConfig: {
-        // Montamos el volumen compartido en /sandbox_drive
-        Binds: [`${this.SHARED_VOLUME}:${this.SANDBOX_MOUNT_POINT}:ro`], // ro = read-only por seguridad extra
-
+        Binds: [`${this.SHARED_VOLUME}:${this.SANDBOX_MOUNT_POINT}:ro`],
         Memory: memoryLimitMb * 1024 * 1024,
         MemorySwap: memoryLimitMb * 1024 * 1024,
         CpuShares: 1024,
         NetworkMode: "none",
-        AutoRemove: true,
+        // ⚠️ IMPORTANTE: Quitamos AutoRemove: true para evitar condiciones de carrera
+        // (a veces se borra antes de que podamos leer los logs si es muy rápido)
+        AutoRemove: false,
         CapDrop: ["ALL"],
       },
       WorkingDir: sandboxWorkDir,
       Tty: false,
+      AttachStdout: true,
+      AttachStderr: true,
     };
 
-    return Promise.race([
-      this.docker.run(image, command, outputStream, createOptions).then(() => {
-        const fullOutput = Buffer.concat(outputChunks).toString("utf-8");
-        return this.cleanDockerOutput(fullOutput);
-      }),
-      new Promise<string>((_, reject) => {
-        setTimeout(() => reject(new Error("timeout")), timeoutMs);
-      }),
-    ]);
-  }
+    let container: any = null;
 
+    try {
+      // 2️⃣ Crear el contenedor (pero no arrancarlo aún)
+      container = await this.docker.createContainer(createOptions);
+
+      // 3️⃣ Conectarse a los logs (Stream)
+      const stream = await container.attach({
+        stream: true,
+        stdout: true,
+        stderr: true,
+      });
+
+      const outputChunks: Buffer[] = [];
+      stream.on("data", (chunk: Buffer) => outputChunks.push(chunk));
+
+      await container.start();
+
+      await new Promise<void>((resolve, reject) => {
+        let finished = false;
+
+        container
+          .wait()
+          .then(() => {
+            if (!finished) {
+              finished = true;
+              resolve();
+            }
+          })
+          .catch((err: any) => {
+            if (!finished) {
+              finished = true;
+              reject(err);
+            }
+          });
+
+        setTimeout(async () => {
+          if (!finished) {
+            finished = true;
+            console.log(`  ⏱️ Matando contenedor por timeout: ${executionId}`);
+            try {
+              await container.kill();
+            } catch (e) {
+              // Ignorar error si ya murió
+            }
+            reject(new Error("timeout"));
+          }
+        }, timeoutMs);
+      });
+
+      // Procesar salida
+      const fullOutput = Buffer.concat(outputChunks).toString("utf-8");
+      return this.cleanDockerOutput(fullOutput);
+    } finally {
+      if (container) {
+        try {
+          await container.remove({ force: true });
+        } catch (e) {
+          // Ignorar si ya no existe
+        }
+      }
+    }
+  }
   private cleanDockerOutput(rawOutput: string): string {
     const lines = rawOutput.split("\n");
     const cleaned = lines.map((line) => {
