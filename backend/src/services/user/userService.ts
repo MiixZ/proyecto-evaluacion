@@ -6,8 +6,8 @@ import {
   ForbiddenError,
   AppError,
 } from '@utils/errors';
-import { UserDTO, UserRole, UserStatus, User } from '@types/common.types';
-import crypto from 'crypto';
+import { createUUID, UserRole, UserStatus } from '@CustomTypes/common.types';
+import { UserDTO, UserEntity } from '@models/user/user.entity';
 
 /**
  * Servicio de lógica de negocio para usuarios
@@ -35,13 +35,13 @@ export class UserService {
       }
 
       // Crear usuario
-      const user = await userModel.create(
+      const user: UserEntity = await userModel.create(
         {
           email: input.email,
           firstName: input.firstName,
           lastName: input.lastName,
-          role: input.role || 'student',
-          status: 'active',
+          role: input.role || UserRole.STUDENT,
+          status: UserStatus.ACTIVE,
         },
         authId
       );
@@ -60,10 +60,11 @@ export class UserService {
    */
   async getUserById(userId: string): Promise<UserDTO> {
     try {
-      const user = await userModel.getById(userId);
+      const user = await userModel.getById(createUUID(userId));
       if (!user) {
         throw new NotFoundError(`Usuario ${userId} no encontrado`);
       }
+
       return this.entityToDTO(user);
     } catch (error) {
       if (error instanceof AppError) throw error;
@@ -120,22 +121,19 @@ export class UserService {
   ): Promise<UserDTO> {
     try {
       // Verificar que existe
-      const existing = await userModel.getById(userId);
+      const existing = await userModel.getById(createUUID(userId));
       if (!existing) {
         throw new NotFoundError(`Usuario ${userId} no encontrado`);
       }
 
-      // Si cambia email, verificar que no existe otro
       if (updates.email && updates.email !== existing.email) {
         const duplicate = await userModel.getByEmail(updates.email);
         if (duplicate) {
-          throw new ValidationError(
-            `Email ${updates.email} ya está en uso`
-          );
+          throw new ValidationError(`Email ${updates.email} ya está en uso`);
         }
       }
 
-      const updated = await userModel.update(userId, updates);
+      const updated = await userModel.update(createUUID(userId), updates);
       logger.info(`Usuario actualizado: ${userId}`);
 
       return this.entityToDTO(updated);
@@ -161,17 +159,15 @@ export class UserService {
         requestingUser.role !== 'admin' &&
         requestingUser.id !== userId
       ) {
-        throw new ForbiddenError(
-          'Solo administradores pueden cambiar roles'
-        );
+        throw new ForbiddenError('Solo administradores pueden cambiar roles');
       }
 
-      const user = await userModel.getById(userId);
+      const user = await userModel.getById(createUUID(userId));
       if (!user) {
         throw new NotFoundError(`Usuario ${userId} no encontrado`);
       }
 
-      const updated = await userModel.updateRole(userId, newRole);
+      const updated = await userModel.updateRole(createUUID(userId), newRole);
       logger.info(`Rol actualizado para usuario ${userId}: ${newRole}`);
 
       return this.entityToDTO(updated);
@@ -190,12 +186,15 @@ export class UserService {
     newStatus: UserStatus
   ): Promise<UserDTO> {
     try {
-      const user = await userModel.getById(userId);
+      const user = await userModel.getById(createUUID(userId));
       if (!user) {
         throw new NotFoundError(`Usuario ${userId} no encontrado`);
       }
 
-      const updated = await userModel.updateStatus(userId, newStatus);
+      const updated = await userModel.updateStatus(
+        createUUID(userId),
+        newStatus
+      );
       logger.info(`Estado actualizado para usuario ${userId}: ${newStatus}`);
 
       return this.entityToDTO(updated);
@@ -211,7 +210,7 @@ export class UserService {
    */
   async softDeleteUser(userId: string): Promise<void> {
     try {
-      const user = await userModel.getById(userId);
+      const user = await userModel.getById(createUUID(userId));
       if (!user) {
         throw new NotFoundError(`Usuario ${userId} no encontrado`);
       }
@@ -220,7 +219,7 @@ export class UserService {
         throw new ValidationError(`Usuario ${userId} ya fue eliminado`);
       }
 
-      await userModel.softDelete(userId);
+      await userModel.softDelete(createUUID(userId));
       logger.info(`Usuario desactivado (soft delete): ${userId}`);
     } catch (error) {
       if (error instanceof AppError) throw error;
@@ -262,7 +261,7 @@ export class UserService {
       }
 
       return {
-        items: filtered.map((u) => this.entityToDTO(u)),
+        items: filtered.map((u) => u),
         total: result.total,
         page,
         limit,
@@ -284,14 +283,21 @@ export class UserService {
   ): Promise<{
     items: UserDTO[];
     total: number;
+    page: number;
+    limit: number;
     hasMore: boolean;
+    totalPages: number;
   }> {
     try {
       const result = await userModel.getTeachers(page, limit);
+
       return {
-        items: result.items.map((u) => this.entityToDTO(u)),
+        items: result.items.map((u) => u),
         total: result.total,
+        page: result.page,
+        limit: result.limit,
         hasMore: result.hasMore,
+        totalPages: result.totalPages,
       };
     } catch (error) {
       logger.error('Error obteniendo profesores:', error);
@@ -308,14 +314,21 @@ export class UserService {
   ): Promise<{
     items: UserDTO[];
     total: number;
+    page: number;
+    limit: number;
     hasMore: boolean;
+    totalPages: number;
   }> {
     try {
       const result = await userModel.getStudents(page, limit);
+
       return {
-        items: result.items.map((u) => this.entityToDTO(u)),
+        items: result.items,
         total: result.total,
+        page: result.page,
+        limit: result.limit,
         hasMore: result.hasMore,
+        totalPages: result.totalPages,
       };
     } catch (error) {
       logger.error('Error obteniendo estudiantes:', error);
@@ -326,7 +339,7 @@ export class UserService {
   /**
    * Convertir entidad a DTO (excluye datos sensibles)
    */
-  private entityToDTO(user: User): UserDTO {
+  private entityToDTO(user: UserEntity): UserDTO {
     return {
       id: user.id,
       email: user.email,
@@ -335,8 +348,10 @@ export class UserService {
       role: user.role,
       status: user.status,
       createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-      deletedAt: user.deletedAt,
+      phone: user.phone,
+      bio: user.bio,
+      profileImageUrl: user.profileImageUrl,
+      preferredLanguage: user.preferredLanguage,
     };
   }
 }

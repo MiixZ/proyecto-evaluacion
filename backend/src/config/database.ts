@@ -88,6 +88,7 @@ export async function initializeDatabase(): Promise<mysql.Pool> {
   // Si ya existe, retornar
   if (pool && pool._initialized) {
     logger.debug('Pool de base de datos ya inicializado');
+
     return pool;
   }
 

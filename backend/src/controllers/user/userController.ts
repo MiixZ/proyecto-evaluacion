@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { logger } from '@utils/logger';
 import { userService } from '@services/user/userService';
-import { AuthRequest } from '@types/request.types';
+import { AuthRequest } from '@CustomTypes/request.types';
 import {
   AppError,
   ValidationError,
@@ -29,6 +29,7 @@ export class UserController {
           error: 'email, firstName y lastName son requeridos',
           timestamp: new Date().toISOString(),
         });
+
         return;
       }
 

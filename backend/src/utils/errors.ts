@@ -17,17 +17,17 @@ export class ValidationError extends AppError {
   }
 }
 
-export class AuthenticationError extends AppError {
+export class UnauthorizedError extends AppError {
   constructor(message: string = 'No autenticado') {
-    super('AUTHENTICATION_ERROR', 401, message);
-    Object.setPrototypeOf(this, AuthenticationError.prototype);
+    super('UNAUTHORIZED', 401, message);
+    Object.setPrototypeOf(this, UnauthorizedError.prototype);
   }
 }
 
-export class AuthorizationError extends AppError {
+export class ForbiddenError extends AppError {
   constructor(message: string = 'No autorizado') {
-    super('AUTHORIZATION_ERROR', 403, message);
-    Object.setPrototypeOf(this, AuthorizationError.prototype);
+    super('FORBIDDEN', 403, message);
+    Object.setPrototypeOf(this, ForbiddenError.prototype);
   }
 }
 
@@ -51,3 +51,9 @@ export class InternalServerError extends AppError {
     Object.setPrototypeOf(this, InternalServerError.prototype);
   }
 }
+
+/**
+ * Alias para compatibilidad
+ */
+export class AuthenticationError extends UnauthorizedError {}
+export class AuthorizationError extends ForbiddenError {}

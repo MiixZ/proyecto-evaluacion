@@ -1,10 +1,10 @@
 import { Response, NextFunction } from 'express';
 import axios, { AxiosError } from 'axios';
-import { AuthRequest } from '@CustomTypes/request.types.js';
-import { AuthUser, UserRole } from '@CustomTypes/common.types.js';
-import { AppError, AuthenticationError } from '@utils/errors.js';
-import { logger } from '@utils/logger.js';
-import config from '@config/environment.js';
+import { AuthRequest } from '@CustomTypes/request.types';
+import { AuthUser, createUUID, UserRole, UserStatus } from '@CustomTypes/common.types';
+import { AppError, AuthenticationError } from '@utils/errors';
+import { logger } from '@utils/logger';
+import config from '@config/environment';
 
 interface AuthgearUser {
   sub: string;
@@ -119,10 +119,10 @@ async function verifyTokenWithAuthgear(token: string): Promise<AuthUser> {
     const role = authgearUser.custom_attributes?.role || UserRole.STUDENT;
 
     const user: AuthUser = {
-      id: authgearUser.sub,
-      authId: authgearUser.sub,
+      id: createUUID(authgearUser.sub),
       email: authgearUser.email,
       role: role as UserRole,
+      status: UserStatus.ACTIVE,
     };
 
     return user;

@@ -19,6 +19,18 @@ export function createUUID(id: string): UUID {
 }
 
 /**
+ * Usuario autenticado (para req.user)
+ */
+export interface AuthUser {
+  id: UUID;
+  email: string;
+  role: UserRole;
+  status: UserStatus;
+  iat?: number;
+  exp?: number;
+}
+
+/**
  * Enums comunes
  */
 export enum UserRole {
@@ -100,59 +112,6 @@ export interface ApiResponse<T> {
     details?: any;
   };
   timestamp: string;
-}
-
-/**
- * Interfaz para errores de aplicación
- */
-export class AppError extends Error {
-  constructor(
-    public code: string,
-    public statusCode: number = 500,
-    message: string,
-    public details?: any
-  ) {
-    super(message);
-    this.name = 'AppError';
-  }
-}
-
-/**
- * Errores comunes
- */
-export class ValidationError extends AppError {
-  constructor(message: string, details?: any) {
-    super('VALIDATION_ERROR', 400, message, details);
-    this.name = 'ValidationError';
-  }
-}
-
-export class NotFoundError extends AppError {
-  constructor(message: string, details?: any) {
-    super('NOT_FOUND', 404, message, details);
-    this.name = 'NotFoundError';
-  }
-}
-
-export class UnauthorizedError extends AppError {
-  constructor(message: string = 'No autorizado', details?: any) {
-    super('UNAUTHORIZED', 401, message, details);
-    this.name = 'UnauthorizedError';
-  }
-}
-
-export class ForbiddenError extends AppError {
-  constructor(message: string = 'Acceso prohibido', details?: any) {
-    super('FORBIDDEN', 403, message, details);
-    this.name = 'ForbiddenError';
-  }
-}
-
-export class ConflictError extends AppError {
-  constructor(message: string, details?: any) {
-    super('CONFLICT', 409, message, details);
-    this.name = 'ConflictError';
-  }
 }
 
 /**

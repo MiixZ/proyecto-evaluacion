@@ -5,12 +5,11 @@ import {
   UUID,
   UserRole,
   UserStatus,
-  NotFoundError,
-  ValidationError,
   PaginatedResponse,
 } from '@CustomTypes/common.types';
 import { UserEntity, UserDTO } from './user.entity';
 import { CreateUserInput, UpdateUserInput } from '@validators/schemas';
+import { NotFoundError, ValidationError } from '@utils/errors';
 
 /**
  * Modelo User: contiene todas las queries relacionadas con usuarios
@@ -341,41 +340,95 @@ export class UserModel {
   /**
    * Obtiene todos los profesores
    */
-  async getTeachers(): Promise<UserDTO[]> {
+  async getTeachers(
+    page: number = 1,
+    limit: number = 20
+  ): Promise<PaginatedResponse<UserDTO>> {
+    const countQuery = `
+      SELECT COUNT(*) as total 
+      FROM users 
+      WHERE role = 'teacher' AND status = 'active' AND deleted_at IS NULL
+    `;
+    const [countRows] = await this.pool.execute<RowDataPacket[]>(countQuery);
+    const total = (countRows[0] as any).total;
+
+    const offset = (page - 1) * limit;
+
     const query = `
-      SELECT 
-        id, auth_id as authId, email, first_name as firstName,
-        last_name as lastName, role, status, phone, bio,
-        profile_image_url as profileImageUrl, preferred_language as preferredLanguage,
-        created_at as createdAt, updated_at as updatedAt, deleted_at as deletedAt
+    SELECT 
+      id, auth_id as authId, email, first_name as firstName,
+      last_name as lastName, role, status, phone, bio,
+      profile_image_url as profileImageUrl, preferred_language as preferredLanguage,
+      created_at as createdAt, updated_at as updatedAt, deleted_at as deletedAt
       FROM users
       WHERE role = 'teacher' AND status = 'active' AND deleted_at IS NULL
       ORDER BY first_name, last_name
+      LIMIT ? OFFSET ?
     `;
 
-    const [rows] = await this.pool.execute<RowDataPacket[]>(query);
+    const [rows] = await this.pool.execute<RowDataPacket[]>(query, [
+      limit,
+      offset,
+    ]);
 
-    return rows.map((row) => this.mapRowToDTO(row));
+    const items = rows.map((row) => this.mapRowToDTO(row));
+
+    return {
+      items,
+      total,
+      page,
+      limit,
+      hasMore: offset + limit < total,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
   /**
    * Obtiene todos los estudiantes
    */
-  async getStudents(): Promise<UserDTO[]> {
+  async getStudents(
+    page: number = 1,
+    limit: number = 20
+  ): Promise<PaginatedResponse<UserDTO>> {
+    // Total count
+    const countQuery = `
+      SELECT COUNT(*) as total 
+      FROM users 
+      WHERE role = 'student' AND status = 'active' AND deleted_at IS NULL
+    `;
+    const [countRows] = await this.pool.execute<RowDataPacket[]>(countQuery);
+    const total = (countRows[0] as any).total;
+
+    // Paginación
+    const offset = (page - 1) * limit;
+
     const query = `
-      SELECT 
-        id, auth_id as authId, email, first_name as firstName,
-        last_name as lastName, role, status, phone, bio,
-        profile_image_url as profileImageUrl, preferred_language as preferredLanguage,
-        created_at as createdAt, updated_at as updatedAt, deleted_at as deletedAt
+    SELECT 
+      id, auth_id as authId, email, first_name as firstName,
+      last_name as lastName, role, status, phone, bio,
+      profile_image_url as profileImageUrl, preferred_language as preferredLanguage,
+      created_at as createdAt, updated_at as updatedAt, deleted_at as deletedAt
       FROM users
       WHERE role = 'student' AND status = 'active' AND deleted_at IS NULL
       ORDER BY first_name, last_name
+      LIMIT ? OFFSET ?
     `;
 
-    const [rows] = await this.pool.execute<RowDataPacket[]>(query);
+    const [rows] = await this.pool.execute<RowDataPacket[]>(query, [
+      limit,
+      offset,
+    ]);
 
-    return rows.map((row) => this.mapRowToDTO(row));
+    const items = rows.map((row) => this.mapRowToDTO(row));
+
+    return {
+      items,
+      total,
+      page,
+      limit,
+      hasMore: offset + limit < total,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
   /**

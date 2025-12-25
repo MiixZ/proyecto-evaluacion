@@ -22,9 +22,10 @@ const PORT = config.port;
 async function initializeApp(): Promise<void> {
   try {
     await initializeDatabase();
-    logger.info('✓ Base de datos inicializada correctamente');
+    logger.info('Base de datos inicializada correctamente');
   } catch (error) {
-    logger.error('❌ Error inicializando base de datos:', error);
+    logger.error('Error inicializando base de datos:', error);
+
     process.exit(1);
   }
 }
@@ -133,17 +134,17 @@ async function start(): Promise<void> {
     // Iniciar servidor
     app.listen(PORT, () => {
       console.log('\n' + '='.repeat(60));
-      console.log('🎯 Backend escuchando en puerto', PORT);
-      console.log('📍 Ambiente:', config.nodeEnv);
-      console.log('🔗 URL base: http://localhost:' + PORT);
-      console.log('📚 API v1: http://localhost:' + PORT + '/api/v1');
-      console.log('❤️  Health: http://localhost:' + PORT + '/health');
+      console.log('Backend escuchando en puerto', PORT);
+      console.log('Ambiente:', config.nodeEnv);
+      console.log('URL base: http://localhost:' + PORT);
+      console.log('API v1: http://localhost:' + PORT + '/api/v1');
+      console.log('Health: http://localhost:' + PORT + '/health');
       console.log('='.repeat(60) + '\n');
 
       logger.info(`Servidor iniciado correctamente en puerto ${PORT}`);
     });
   } catch (error) {
-    logger.error('❌ Error iniciando servidor:', error);
+    logger.error('Error iniciando servidor:', error);
     process.exit(1);
   }
 }
