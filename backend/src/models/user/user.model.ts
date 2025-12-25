@@ -302,7 +302,7 @@ export class UserModel {
     const countQuery = `SELECT COUNT(*) as total FROM users WHERE ${whereClause}`;
     const [countRows] = await this.pool.execute<RowDataPacket[]>(
       countQuery,
-      values.slice(0, values.length - (filters?.search ? 3 : 0))
+      values
     );
 
     const total = (countRows[0] as any).total;
@@ -349,11 +349,14 @@ export class UserModel {
         profile_image_url as profileImageUrl, preferred_language as preferredLanguage,
         created_at as createdAt, updated_at as updatedAt, deleted_at as deletedAt
       FROM users
-      WHERE role = 'teacher' AND status = 'active' AND deleted_at IS NULL
+      WHERE role = ? AND status = ? AND deleted_at IS NULL
       ORDER BY first_name, last_name
     `;
 
-    const [rows] = await this.pool.execute<RowDataPacket[]>(query);
+    const [rows] = await this.pool.execute<RowDataPacket[]>(query, [
+      UserRole.TEACHER,
+      UserStatus.ACTIVE,
+    ]);
 
     return rows.map((row) => this.mapRowToDTO(row));
   }
@@ -369,11 +372,14 @@ export class UserModel {
         profile_image_url as profileImageUrl, preferred_language as preferredLanguage,
         created_at as createdAt, updated_at as updatedAt, deleted_at as deletedAt
       FROM users
-      WHERE role = 'student' AND status = 'active' AND deleted_at IS NULL
+      WHERE role = ? AND status = ? AND deleted_at IS NULL
       ORDER BY first_name, last_name
     `;
 
-    const [rows] = await this.pool.execute<RowDataPacket[]>(query);
+    const [rows] = await this.pool.execute<RowDataPacket[]>(query, [
+      UserRole.STUDENT,
+      UserStatus.ACTIVE,
+    ]);
 
     return rows.map((row) => this.mapRowToDTO(row));
   }
