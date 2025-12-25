@@ -1,10 +1,15 @@
 import axios, { AxiosError } from 'axios';
 import jwt from 'jsonwebtoken';
-import JwksClient from 'jwks-rsa';
+import JwksClient, { JwksClient as JwksClientType } from 'jwks-rsa';
 import config from '@config/environment';
 import { logger } from '@utils/logger';
 import { AuthenticationError } from '@utils/errors';
-import { AuthUser, UserRole, UserStatus, createUUID } from '@CustomTypes/common.types';
+import {
+  AuthUser,
+  UserRole,
+  UserStatus,
+  createUUID,
+} from '@CustomTypes/common.types';
 import { userService } from '@services/user/userService';
 
 /**
@@ -43,21 +48,24 @@ interface AuthgearUserInfo {
  * Maneja validación de tokens, sincronización de usuarios y webhooks
  */
 export class AuthgearService {
-  private jwksClient: JwksClient.JwksClient;
-  private tokenCache: Map<string, { payload: AuthgearTokenPayload; timestamp: number }> = new Map();
+  private jwksClient: JwksClientType;
+  private tokenCache: Map<
+    string,
+    { payload: AuthgearTokenPayload; timestamp: number }
+  > = new Map();
   private cacheTTL: number;
 
   constructor() {
     this.cacheTTL = config.authgear.tokenCacheTTL || 3600000; // 1 hora por defecto
 
-    this.jwksClient = new JwksClient({
+    this.jwksClient = new JwksClient.JwksClient({
       jwksUri: config.authgear.jwksUri,
       cache: true,
       cacheMaxEntries: 10,
       cacheMaxAge: 10 * 60 * 1000, // 10 minutos
     });
 
-    logger.info('✓ AuthgearService inicializado', {
+    logger.info('AuthgearService inicializado', {
       endpoint: config.authgear.endpoint,
       jwksUri: config.authgear.jwksUri,
     });
@@ -112,7 +120,10 @@ export class AuthgearService {
    * Verifica JWT usando JWKS de Authgear
    * Valida que el token esté firmado correctamente y no haya expirado
    */
-  private async verifyJWT(token: string, decoded: any): Promise<AuthgearTokenPayload> {
+  private async verifyJWT(
+    token: string,
+    decoded: any
+  ): Promise<AuthgearTokenPayload> {
     try {
       // Obtener clave pública desde JWKS
       const key = await this.jwksClient.getSigningKey(decoded.header.kid);
@@ -142,13 +153,16 @@ export class AuthgearService {
    */
   private async getUserInfo(token: string): Promise<AuthgearUserInfo> {
     try {
-      const response = await axios.get(`${config.authgear.endpoint}/oauth/userinfo`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        timeout: 5000,
-      });
+      const response = await axios.get(
+        `${config.authgear.endpoint}/oauth/userinfo`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          timeout: 5000,
+        }
+      );
 
       const userInfo = response.data as AuthgearUserInfo;
 
@@ -167,7 +181,9 @@ export class AuthgearService {
         status: axiosError.response?.status,
         message: axiosError.message,
       });
-      throw new AuthenticationError('No se pudo obtener información del usuario');
+      throw new AuthenticationError(
+        'No se pudo obtener información del usuario'
+      );
     }
   }
 
@@ -203,7 +219,9 @@ export class AuthgearService {
         return {
           id: created.id,
           email: created.email,
-          role: (userInfo.custom_attributes?.role as UserRole) || UserRole.STUDENT,
+          role:
+            (userInfo.custom_attributes?.role as UserRole) || UserRole.STUDENT,
+          status: UserStatus.ACTIVE,
         };
       }
 
@@ -228,6 +246,7 @@ export class AuthgearService {
         id: user.id,
         email: user.email,
         role: (userInfo.custom_attributes?.role as UserRole) || user.role,
+        status: user.status,
       };
     } catch (error) {
       logger.error('Error sincronizando usuario', error);
@@ -272,21 +291,24 @@ export class AuthgearService {
    * Limpia tokens expirados del cache cada hora
    */
   startCacheCleanup(): void {
-    setInterval(() => {
-      const now = Date.now();
-      let cleaned = 0;
+    setInterval(
+      () => {
+        const now = Date.now();
+        let cleaned = 0;
 
-      for (const [token, data] of this.tokenCache.entries()) {
-        if (now - data.timestamp > this.cacheTTL) {
-          this.tokenCache.delete(token);
-          cleaned++;
+        for (const [token, data] of this.tokenCache.entries()) {
+          if (now - data.timestamp > this.cacheTTL) {
+            this.tokenCache.delete(token);
+            cleaned++;
+          }
         }
-      }
 
-      if (cleaned > 0) {
-        logger.debug(`Cache cleanup: ${cleaned} tokens removidos`);
-      }
-    }, 60 * 60 * 1000); // Cada hora
+        if (cleaned > 0) {
+          logger.debug(`Cache cleanup: ${cleaned} tokens removidos`);
+        }
+      },
+      60 * 60 * 1000
+    ); // Cada hora
   }
 
   // ============ PRIVATE HELPERS ============
@@ -304,14 +326,12 @@ export class AuthgearService {
     return {
       id: createUUID(cached.payload.sub),
       email: cached.payload.email,
-      role: UserRole.STUDENT, // Se obtiene del userInfo, no del token
+      role: UserRole.STUDENT,
+      status: UserStatus.ACTIVE,
     };
   }
 
-  private setInCache(
-    token: string,
-    user: AuthUser
-  ): void {
+  private setInCache(token: string, user: AuthUser): void {
     const decoded = jwt.decode(token, { complete: true }) as any;
     if (decoded && decoded.payload) {
       this.tokenCache.set(token, {
