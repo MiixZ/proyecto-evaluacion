@@ -9,6 +9,7 @@ import {
   errorHandlerMiddleware,
 } from './middleware/auth.middleware.js';
 import { AuthRequest } from './types/request.types.js';
+import routerAuth from '@routes/auth/auth.js';
 import routerUsers from '@routes/user/user.js';
 import routerSubmissions from '@routes/submission/submission.js';
 
@@ -68,12 +69,22 @@ app.get('/api/v1', (_req, res: Response) => {
     environment: config.nodeEnv,
     authentication: 'JWT Local',
     endpoints: {
+      auth: '/api/auth',
       users: '/api/v1/users',
       submissions: '/api/v1/submissions',
       exercises: '/api/v1/exercises',
     },
   });
 });
+
+// ==================== RUTAS PÚBLICAS (Sin autenticación) ====================
+
+/**
+ * Autenticación
+ * POST /api/auth/register - Registrar usuario
+ * POST /api/auth/login - Autenticar usuario
+ */
+app.use('/api/auth', routerAuth);
 
 // ==================== RUTAS PROTEGIDAS ====================
 
@@ -89,8 +100,6 @@ app.get('/api/v1/me', authMiddleware, (req: AuthRequest, res) => {
     timestamp: new Date().toISOString(),
   });
 });
-
-// ==================== RUTAS DE LA API (PROTEGIDAS) ====================
 
 // Middleware de autenticación para todas las rutas /api/v1
 app.use('/api/v1/', authMiddleware);
@@ -150,7 +159,8 @@ async function start(): Promise<void> {
       console.log('🔗 URL base: http://localhost:' + PORT);
       console.log('📋 API v1: http://localhost:' + PORT + '/api/v1');
       console.log('💚 Health: http://localhost:' + PORT + '/health');
-      console.log('🔐 Autenticación: JWT Local');
+      console.log('🔐 Autenticación: JWT Local (BCrypt)');
+      console.log('📝 Auth: http://localhost:' + PORT + '/api/auth');
       console.log('='.repeat(60) + '\n');
 
       logger.info(`Servidor iniciado correctamente en puerto ${PORT}`, {
