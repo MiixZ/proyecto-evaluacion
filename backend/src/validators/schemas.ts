@@ -86,6 +86,7 @@ const languageCodeSchema = z
 
 export const createUserSchema = z.object({
   email: emailSchema,
+  password: passwordSchema,
   firstName: z
     .string()
     .min(1, 'Nombre es requerido')
@@ -96,7 +97,7 @@ export const createUserSchema = z.object({
     .min(1, 'Apellido es requerido')
     .max(100, 'Apellido máximo 100 caracteres')
     .describe('Apellidos'),
-  role: z.nativeEnum(UserRole).describe('Rol del usuario'),
+  role: z.nativeEnum(UserRole).default(UserRole.STUDENT).describe('Rol del usuario'),
   phone: phoneSchema,
   bio: z
     .string()
@@ -113,11 +114,11 @@ export const createUserSchema = z.object({
 
 export type CreateUserInput = z.infer<typeof createUserSchema>;
 
-export const updateUserSchema = createUserSchema.partial();
+export const updateUserSchema = createUserSchema.partial().omit({ password: true });
 
 export type UpdateUserInput = z.infer<typeof updateUserSchema>;
 
-export const userResponseSchema = createUserSchema.extend({
+export const userResponseSchema = createUserSchema.omit({ password: true }).extend({
   id: uuidSchema,
   authId: z.string().describe('ID de Authgear'),
   status: z.nativeEnum(UserStatus),
