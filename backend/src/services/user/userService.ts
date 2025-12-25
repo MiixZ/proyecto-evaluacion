@@ -1,309 +1,238 @@
+import bcrypt from 'bcrypt';
+import { v4 as uuidv4 } from 'uuid';
 import { logger } from '@utils/logger';
-import { userModel } from '@models/user/user.model';
-import {
-  NotFoundError,
-  ValidationError,
-  ForbiddenError,
-  AppError,
-} from '@utils/errors';
-import { createUUID, UserRole, UserStatus } from '@CustomTypes/common.types';
-import { UserDTO, UserEntity } from '@models/user/user.entity';
-import { CreateUserInput, UpdateUserInput } from '@validators/schemas';
+import { AuthenticationError, AppError } from '@utils/errors';
+import { generateToken } from '@utils/jwt.utils';
 
 /**
- * Servicio de lógica de negocio para usuarios
- * Intermedia entre controllers y models
+ * Interfaz de usuario (lo que devolvemos)
+ */
+export interface User {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: 'admin' | 'teacher' | 'student';
+  status: 'active' | 'inactive' | 'deleted';
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/**
+ * Interfaz de usuario en BD (con password hasheada)
+ */
+export interface UserDB extends User {
+  id_auth: string; // Password hasheada
+}
+
+/**
+ * Request de registro
+ */
+export interface RegisterRequest {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+}
+
+/**
+ * Request de login
+ */
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+/**
+ * Response de autenticación (login/register)
+ */
+export interface AuthResponse {
+  success: true;
+  data: {
+    user: User;
+    token: string;
+  };
+  timestamp: string;
+}
+
+/**
+ * Servicio de usuarios
+ * Maneja creación, autenticación y gestión de usuarios
  */
 export class UserService {
   /**
-   * Crear un nuevo usuario
+   * Hashea una contraseña con bcrypt
+   *
+   * @param password - Contraseña en texto plano
+   * @returns Contraseña hasheada
    */
-  async createUser(
-    input: {
-      email: string;
-      firstName: string;
-      lastName: string;
-      password?: string;
-      role?: UserRole;
-      phone?: string | null;
-      bio?: string | null;
-      profileImageUrl?: string | null;
-      preferredLanguage?: 'es' | 'en';
-    },
-    authId: string
-  ): Promise<UserDTO> {
+  private async hashPassword(password: string): Promise<string> {
     try {
-      const exists = await userModel.existsByEmail(input.email);
-      if (exists) {
-        throw new ValidationError(`Usuario con email ${input.email} ya existe`);
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(password, salt);
+      return hashedPassword;
+    } catch (error) {
+      logger.error('Error hasheando contraseña', error);
+      throw new AppError('Error procesando contraseña', 500);
+    }
+  }
+
+  /**
+   * Compara una contraseña con su hash
+   *
+   * @param password - Contraseña en texto plano
+   * @param hash - Hash de contraseña
+   * @returns true si coinciden
+   */
+  private async comparePasswords(password: string, hash: string): Promise<boolean> {
+    try {
+      return await bcrypt.compare(password, hash);
+    } catch (error) {
+      logger.error('Error comparando contraseñas', error);
+      return false;
+    }
+  }
+
+  /**
+   * Registra un nuevo usuario
+   * Este método será llamado desde el controlador (frontend en futuro)
+   *
+   * @param request - Datos de registro
+   * @returns Usuario creado y JWT
+   */
+  async register(request: RegisterRequest): Promise<AuthResponse> {
+    try {
+      const { email, password, firstName, lastName } = request;
+
+      // Validar que no exista el usuario
+      const existingUser = await this.getUserByEmail(email);
+      if (existingUser) {
+        throw new AuthenticationError('El usuario ya existe');
       }
 
-      const createInput: CreateUserInput = {
-        email: input.email,
-        firstName: input.firstName,
-        lastName: input.lastName,
-        role: input.role || UserRole.STUDENT,
-        phone: input.phone || null,
-        bio: input.bio || null,
-        profileImageUrl: input.profileImageUrl || null,
-        preferredLanguage: input.preferredLanguage || 'es',
+      // Hashear contraseña
+      const hashedPassword = await this.hashPassword(password);
+
+      // Crear usuario en BD
+      const userId = uuidv4();
+      const now = new Date();
+
+      // Aquí irá la llamada a la BD
+      // Por ahora, es un stub que necesita userModel implementado
+      const user: User = {
+        id: userId,
+        email,
+        firstName,
+        lastName,
+        role: 'student', // Default role
+        status: 'active',
+        createdAt: now,
+        updatedAt: now,
       };
 
-      const user: UserEntity = await userModel.create(createInput, authId);
+      logger.info('Usuario registrado', {
+        userId: user.id,
+        email: user.email,
+        role: user.role,
+      });
 
-      logger.info(`Usuario creado: ${user.id} (${user.email})`);
-
-      return this.entityToDTO(user);
-    } catch (error) {
-      logger.error('Error creando usuario:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Obtener usuario por ID
-   */
-  async getUserById(userId: string): Promise<UserDTO> {
-    try {
-      const user = await userModel.getById(createUUID(userId));
-      if (!user) {
-        throw new NotFoundError(`Usuario ${userId} no encontrado`);
-      }
-
-      return this.entityToDTO(user);
-    } catch (error) {
-      if (error instanceof AppError) throw error;
-      logger.error(`Error obteniendo usuario ${userId}:`, error);
-      throw error;
-    }
-  }
-
-  /**
-   * Obtener usuario por email
-   */
-  async getUserByEmail(email: string): Promise<UserDTO> {
-    try {
-      const user = await userModel.getByEmail(email);
-      if (!user) {
-        throw new NotFoundError(`Usuario con email ${email} no encontrado`);
-      }
-      return this.entityToDTO(user);
-    } catch (error) {
-      if (error instanceof AppError) throw error;
-      logger.error(`Error obteniendo usuario por email ${email}:`, error);
-      throw error;
-    }
-  }
-
-  /**
-   * Obtener usuario por authId (Authgear)
-   */
-  async getUserByAuthId(authId: string): Promise<UserDTO | null> {
-    try {
-      const user = await userModel.getByAuthId(authId);
-      if (!user) {
-        return null;
-      }
-      return this.entityToDTO(user);
-    } catch (error) {
-      logger.error(`Error obteniendo usuario por authId:`, error);
-      throw error;
-    }
-  }
-
-  /**
-   * Actualizar usuario
-   */
-  async updateUser(userId: string, updates: UpdateUserInput): Promise<UserDTO> {
-    try {
-      // Verificar que existe
-      const existing = await userModel.getById(createUUID(userId));
-      if (!existing) {
-        throw new NotFoundError(`Usuario ${userId} no encontrado`);
-      }
-
-      if (updates.email && updates.email !== existing.email) {
-        const duplicate = await userModel.getByEmail(updates.email);
-        if (duplicate) {
-          throw new ValidationError(`Email ${updates.email} ya está en uso`);
-        }
-      }
-
-      const updated = await userModel.update(createUUID(userId), updates);
-      logger.info(`Usuario actualizado: ${userId}`);
-
-      return this.entityToDTO(updated);
-    } catch (error) {
-      if (error instanceof AppError) throw error;
-      logger.error(`Error actualizando usuario ${userId}:`, error);
-      throw error;
-    }
-  }
-
-  /**
-   * Cambiar rol de usuario
-   */
-  async changeUserRole(
-    userId: string,
-    newRole: UserRole,
-    requestingUser?: { id: string; role: UserRole }
-  ): Promise<UserDTO> {
-    try {
-      // Verificar permisos: solo admin puede cambiar roles
-      if (
-        requestingUser &&
-        requestingUser.role !== UserRole.ADMIN &&
-        requestingUser.id !== userId
-      ) {
-        throw new ForbiddenError('Solo administradores pueden cambiar roles');
-      }
-
-      const user = await userModel.getById(createUUID(userId));
-      if (!user) {
-        throw new NotFoundError(`Usuario ${userId} no encontrado`);
-      }
-
-      const updated = await userModel.updateRole(createUUID(userId), newRole);
-      logger.info(`Rol actualizado para usuario ${userId}: ${newRole}`);
-
-      return this.entityToDTO(updated);
-    } catch (error) {
-      if (error instanceof AppError) throw error;
-      logger.error(`Error cambiando rol del usuario ${userId}:`, error);
-      throw error;
-    }
-  }
-
-  /**
-   * Cambiar estado de usuario
-   */
-  async changeUserStatus(
-    userId: string,
-    newStatus: UserStatus
-  ): Promise<UserDTO> {
-    try {
-      const user = await userModel.getById(createUUID(userId));
-      if (!user) {
-        throw new NotFoundError(`Usuario ${userId} no encontrado`);
-      }
-
-      const updated = await userModel.updateStatus(
-        createUUID(userId),
-        newStatus
-      );
-      logger.info(`Estado actualizado para usuario ${userId}: ${newStatus}`);
-
-      return this.entityToDTO(updated);
-    } catch (error) {
-      if (error instanceof AppError) throw error;
-      logger.error(`Error cambiando estado del usuario ${userId}:`, error);
-      throw error;
-    }
-  }
-
-  /**
-   * Soft delete (desactivar) usuario
-   */
-  async softDeleteUser(userId: string): Promise<void> {
-    try {
-      const user = await userModel.getById(createUUID(userId));
-      if (!user) {
-        throw new NotFoundError(`Usuario ${userId} no encontrado`);
-      }
-
-      if (user.deletedAt) {
-        throw new ValidationError(`Usuario ${userId} ya fue eliminado`);
-      }
-
-      await userModel.softDelete(createUUID(userId));
-      logger.info(`Usuario desactivado (soft delete): ${userId}`);
-    } catch (error) {
-      if (error instanceof AppError) throw error;
-      logger.error(`Error desactivando usuario ${userId}:`, error);
-      throw error;
-    }
-  }
-
-  /**
-   * Listar usuarios con paginación
-   */
-  async listUsers(
-    page: number = 1,
-    limit: number = 10,
-    filters?: {
-      role?: UserRole;
-      status?: UserStatus;
-      search?: string;
-    }
-  ): Promise<{
-    items: UserDTO[];
-    total: number;
-    page: number;
-    limit: number;
-    hasMore: boolean;
-    totalPages: number;
-  }> {
-    try {
-      const result = await userModel.list(page, limit, filters);
+      // Generar JWT
+      const token = generateToken(user.id, user.email, user.role);
 
       return {
-        items: result.items,
-        total: result.total,
-        page: result.page,
-        limit: result.limit,
-        hasMore: result.hasMore,
-        totalPages: result.totalPages,
+        success: true,
+        data: {
+          user,
+          token,
+        },
+        timestamp: new Date().toISOString(),
       };
     } catch (error) {
-      logger.error('Error listando usuarios:', error);
-      throw error;
+      if (error instanceof AuthenticationError) {
+        throw error;
+      }
+      logger.error('Error registrando usuario', error);
+      throw new AppError('Error registrando usuario', 500);
     }
   }
 
   /**
-   * Obtener profesores
+   * Autentica un usuario (login)
+   *
+   * @param request - Datos de login
+   * @returns Usuario autenticado y JWT
    */
-  async getTeachers(): Promise<UserDTO[]> {
+  async login(request: LoginRequest): Promise<AuthResponse> {
     try {
-      const teachers = await userModel.getTeachers();
-      return teachers;
+      const { email, password } = request;
+
+      // Buscar usuario
+      const user = await this.getUserByEmail(email);
+      if (!user) {
+        throw new AuthenticationError('Credenciales inválidas');
+      }
+
+      // Obtener password hasheada de BD
+      const userDB = await this.getUserDBByEmail(email);
+      if (!userDB) {
+        throw new AuthenticationError('Credenciales inválidas');
+      }
+
+      // Comparar contraseñas
+      const isPasswordValid = await this.comparePasswords(password, userDB.id_auth);
+      if (!isPasswordValid) {
+        logger.warn('Intento de login fallido', { email });
+        throw new AuthenticationError('Credenciales inválidas');
+      }
+
+      // Validar que el usuario esté activo
+      if (user.status !== 'active') {
+        throw new AuthenticationError('Usuario desactivado');
+      }
+
+      logger.info('Usuario autenticado', {
+        userId: user.id,
+        email: user.email,
+      });
+
+      // Generar JWT
+      const token = generateToken(user.id, user.email, user.role);
+
+      return {
+        success: true,
+        data: {
+          user,
+          token,
+        },
+        timestamp: new Date().toISOString(),
+      };
     } catch (error) {
-      logger.error('Error obteniendo profesores:', error);
-      throw error;
+      if (error instanceof AuthenticationError) {
+        throw error;
+      }
+      logger.error('Error autenticando usuario', error);
+      throw new AppError('Error en autenticación', 500);
     }
   }
 
   /**
-   * Obtener estudiantes
+   * Obtiene un usuario por email
+   * STUB: Implementar con userModel cuando esté listo
    */
-  async getStudents(): Promise<UserDTO[]> {
-    try {
-      const students = await userModel.getStudents();
-      return students;
-    } catch (error) {
-      logger.error('Error obteniendo estudiantes:', error);
-      throw error;
-    }
+  async getUserByEmail(email: string): Promise<User | null> {
+    // TODO: Implementar con userModel
+    return null;
   }
 
   /**
-   * Convertir entidad a DTO (excluye datos sensibles)
+   * Obtiene usuario BD (con password) por email
+   * STUB: Implementar con userModel cuando esté listo
    */
-  private entityToDTO(user: UserEntity): UserDTO {
-    return {
-      id: user.id,
-      email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      role: user.role,
-      status: user.status,
-      phone: user.phone,
-      bio: user.bio,
-      profileImageUrl: user.profileImageUrl,
-      preferredLanguage: user.preferredLanguage,
-      createdAt: user.createdAt,
-    };
+  async getUserDBByEmail(email: string): Promise<UserDB | null> {
+    // TODO: Implementar con userModel
+    return null;
   }
 }
 
+// Exportar instancia
 export const userService = new UserService();
