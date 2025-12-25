@@ -1,12 +1,13 @@
 import { Request, Response } from 'express';
 import { logger } from '@utils/logger';
 import { userService } from '@services/user/userService';
+import { userModel } from '@models/user/user.model';
 import { AuthRequest } from '@CustomTypes/request.types';
 import {
   AppError,
   ValidationError,
   NotFoundError,
-  ForbiddenError,
+  AuthenticationError,
 } from '@utils/errors';
 
 /**
@@ -15,62 +16,100 @@ import {
  */
 export class UserController {
   /**
-   * POST /api/v1/users
-   * Crear un nuevo usuario
+   * POST /api/v1/auth/register
+   * Registrar un nuevo usuario y obtener JWT
    */
-  async createUser(req: Request, res: Response): Promise<void> {
+  async register(req: Request, res: Response): Promise<void> {
     try {
-      const {
-        email,
-        firstName,
-        lastName,
-        role,
-        phone,
-        bio,
-        profileImageUrl,
-        preferredLanguage,
-      } = req.body;
+      const { email, password, firstName, lastName, role, phone, bio, profileImageUrl } = req.body;
 
       // Validación básica
-      if (!email || !firstName || !lastName) {
+      if (!email || !password || !firstName || !lastName) {
         res.status(400).json({
           success: false,
-          error: 'email, firstName y lastName son requeridos',
+          error: 'email, password, firstName y lastName son requeridos',
           timestamp: new Date().toISOString(),
         });
-
         return;
       }
 
-      // Crear usuario
-      const authId = `auth_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      const user = await userService.createUser(
-        {
-          email,
-          firstName,
-          lastName,
-          role,
-          phone,
-          bio,
-          profileImageUrl,
-          preferredLanguage,
-        },
-        authId
-      );
+      // Llamar al servicio de registro
+      const response = await userService.register({
+        email,
+        password,
+        firstName,
+        lastName,
+        role: role || 'student',
+        phone: phone || null,
+        bio: bio || null,
+        profileImageUrl: profileImageUrl || null,
+      });
 
-      logger.info(`Usuario creado vía API: ${user.id}`);
+      logger.info(`Usuario registrado: ${response.data.user.email}`);
 
-      res.status(201).json({
+      res.status(201).json(response);
+    } catch (error) {
+      this.handleError(error, res);
+    }
+  }
+
+  /**
+   * POST /api/v1/auth/login
+   * Autenticar usuario y obtener JWT
+   */
+  async login(req: Request, res: Response): Promise<void> {
+    try {
+      const { email, password } = req.body;
+
+      // Validación básica
+      if (!email || !password) {
+        res.status(400).json({
+          success: false,
+          error: 'email y password son requeridos',
+          timestamp: new Date().toISOString(),
+        });
+        return;
+      }
+
+      // Llamar al servicio de login
+      const response = await userService.login({
+        email,
+        password,
+      });
+
+      logger.info(`Usuario autenticado: ${response.data.user.email}`);
+
+      res.status(200).json(response);
+    } catch (error) {
+      this.handleError(error, res);
+    }
+  }
+
+  /**
+   * GET /api/v1/users/me
+   * Obtener perfil del usuario autenticado
+   */
+  async getProfile(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const userId = req.user?.id;
+
+      if (!userId) {
+        res.status(401).json({
+          success: false,
+          error: 'Usuario no autenticado',
+          timestamp: new Date().toISOString(),
+        });
+        return;
+      }
+
+      const user = await userService.getUserById(userId);
+
+      res.status(200).json({
         success: true,
         data: user,
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
-      logger.error('Error completo:', {
-        message: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined,
-        error: error,
-      });
       this.handleError(error, res);
     }
   }
@@ -107,7 +146,7 @@ export class UserController {
       const status = req.query.status as string | undefined;
       const search = req.query.search as string | undefined;
 
-      const result = await userService.listUsers(page, limit, {
+      const result = await userModel.list(page, limit, {
         role: role as any,
         status: status as any,
         search,
@@ -127,12 +166,22 @@ export class UserController {
    * PATCH /api/v1/users/:id
    * Actualizar usuario
    */
-  async updateUser(req: Request, res: Response): Promise<void> {
+  async updateUser(req: AuthRequest, res: Response): Promise<void> {
     try {
       const { id } = req.params;
       const updates = req.body;
 
-      const user = await userService.updateUser(id, updates);
+      // Verificar que el usuario esté autenticado y sea el propietario o admin
+      if (req.user?.id !== id && req.user?.role !== 'admin') {
+        res.status(403).json({
+          success: false,
+          error: 'No tienes permisos para actualizar este usuario',
+          timestamp: new Date().toISOString(),
+        });
+        return;
+      }
+
+      const user = await userModel.update(id, updates);
 
       logger.info(`Usuario actualizado: ${id}`);
 
@@ -155,6 +204,16 @@ export class UserController {
       const { id } = req.params;
       const { role } = req.body;
 
+      // Validar que sea admin
+      if (req.user?.role !== 'admin') {
+        res.status(403).json({
+          success: false,
+          error: 'Solo administradores pueden cambiar roles',
+          timestamp: new Date().toISOString(),
+        });
+        return;
+      }
+
       if (!role) {
         res.status(400).json({
           success: false,
@@ -164,7 +223,7 @@ export class UserController {
         return;
       }
 
-      const user = await userService.changeUserRole(id, role, req.user);
+      const user = await userModel.updateRole(id, role);
 
       logger.info(`Rol cambiado para usuario ${id}: ${role}`);
 
@@ -180,12 +239,22 @@ export class UserController {
 
   /**
    * PATCH /api/v1/users/:id/status
-   * Cambiar estado de usuario
+   * Cambiar estado de usuario (solo admin)
    */
-  async changeStatus(req: Request, res: Response): Promise<void> {
+  async changeStatus(req: AuthRequest, res: Response): Promise<void> {
     try {
       const { id } = req.params;
       const { status } = req.body;
+
+      // Validar que sea admin
+      if (req.user?.role !== 'admin') {
+        res.status(403).json({
+          success: false,
+          error: 'Solo administradores pueden cambiar estados',
+          timestamp: new Date().toISOString(),
+        });
+        return;
+      }
 
       if (!status) {
         res.status(400).json({
@@ -196,7 +265,7 @@ export class UserController {
         return;
       }
 
-      const user = await userService.changeUserStatus(id, status);
+      const user = await userModel.updateStatus(id, status);
 
       logger.info(`Estado cambiado para usuario ${id}: ${status}`);
 
@@ -214,11 +283,21 @@ export class UserController {
    * DELETE /api/v1/users/:id
    * Soft delete (desactivar) usuario
    */
-  async deleteUser(req: Request, res: Response): Promise<void> {
+  async deleteUser(req: AuthRequest, res: Response): Promise<void> {
     try {
       const { id } = req.params;
 
-      await userService.softDeleteUser(id);
+      // Validar que sea admin o el propietario
+      if (req.user?.id !== id && req.user?.role !== 'admin') {
+        res.status(403).json({
+          success: false,
+          error: 'No tienes permisos para eliminar este usuario',
+          timestamp: new Date().toISOString(),
+        });
+        return;
+      }
+
+      await userModel.softDelete(id);
 
       logger.info(`Usuario desactivado: ${id}`);
 
@@ -234,7 +313,7 @@ export class UserController {
    */
   async getTeachers(req: Request, res: Response): Promise<void> {
     try {
-      const teachers = await userService.getTeachers();
+      const teachers = await userModel.getTeachers();
 
       res.status(200).json({
         success: true,
@@ -252,7 +331,7 @@ export class UserController {
    */
   async getStudents(req: Request, res: Response): Promise<void> {
     try {
-      const students = await userService.getStudents();
+      const students = await userModel.getStudents();
 
       res.status(200).json({
         success: true,
@@ -268,7 +347,13 @@ export class UserController {
    * Manejador centralizado de errores
    */
   private handleError(error: unknown, res: Response): void {
-    if (error instanceof ValidationError) {
+    if (error instanceof AuthenticationError) {
+      res.status(401).json({
+        success: false,
+        error: error.message,
+        timestamp: new Date().toISOString(),
+      });
+    } else if (error instanceof ValidationError) {
       res.status(400).json({
         success: false,
         error: error.message,
@@ -280,14 +365,8 @@ export class UserController {
         error: error.message,
         timestamp: new Date().toISOString(),
       });
-    } else if (error instanceof ForbiddenError) {
-      res.status(403).json({
-        success: false,
-        error: error.message,
-        timestamp: new Date().toISOString(),
-      });
     } else if (error instanceof AppError) {
-      res.status(400).json({
+      res.status(error.statusCode || 400).json({
         success: false,
         error: error.message,
         timestamp: new Date().toISOString(),
