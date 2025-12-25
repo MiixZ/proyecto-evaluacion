@@ -137,9 +137,9 @@ export class UserService {
           firstName,
           lastName,
           role: role as UserRole,
-          phone: phone || undefined,
-          bio: bio || undefined,
-          profileImageUrl: profileImageUrl || undefined,
+          phone: phone || null,
+          bio: bio || null,
+          profileImageUrl: profileImageUrl || null,
           preferredLanguage: 'es',
         },
         passwordHash  // authId = password hash
