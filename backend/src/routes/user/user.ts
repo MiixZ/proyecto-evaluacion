@@ -17,7 +17,9 @@ router.post('/', (req, res) => userController.createUser(req, res));
  * Query params: page=1, limit=10, role=student, status=active
  * Acceso: Autenticado
  */
-router.get('/', authMiddleware, (req, res) => userController.listUsers(req, res));
+router.get('/', authMiddleware, (req, res) =>
+  userController.listUsers(req, res)
+);
 
 /**
  * GET /api/v1/users/teachers
@@ -40,7 +42,9 @@ router.get('/students', (req, res) => userController.getStudents(req, res));
  * Obtener usuario por ID
  * Acceso: Autenticado
  */
-router.get('/:id', authMiddleware, (req, res) => userController.getUserById(req, res));
+router.get('/:id', authMiddleware, (req, res) =>
+  userController.getUserById(req, res)
+);
 
 /**
  * PATCH /api/v1/users/:id
@@ -48,7 +52,9 @@ router.get('/:id', authMiddleware, (req, res) => userController.getUserById(req,
  * Body: { firstName?, lastName?, email?, status? }
  * Acceso: Autenticado (su propio usuario o admin)
  */
-router.patch('/:id', authMiddleware, (req, res) => userController.updateUser(req, res));
+router.patch('/:id', authMiddleware, (req, res) =>
+  userController.updateUser(req, res)
+);
 
 /**
  * PATCH /api/v1/users/:id/role
@@ -56,7 +62,9 @@ router.patch('/:id', authMiddleware, (req, res) => userController.updateUser(req
  * Body: { role: 'admin' | 'teacher' | 'student' }
  * Acceso: Admin only
  */
-router.patch('/:id/role', authMiddleware, (req, res) => userController.changeRole(req, res));
+router.patch('/:id/role', authMiddleware, (req, res) =>
+  userController.changeRole(req, res)
+);
 
 /**
  * PATCH /api/v1/users/:id/status
@@ -64,13 +72,17 @@ router.patch('/:id/role', authMiddleware, (req, res) => userController.changeRol
  * Body: { status: 'active' | 'inactive' | 'suspended' }
  * Acceso: Admin only
  */
-router.patch('/:id/status', authMiddleware, (req, res) => userController.changeStatus(req, res));
+router.patch('/:id/status', authMiddleware, (req, res) =>
+  userController.changeStatus(req, res)
+);
 
 /**
  * DELETE /api/v1/users/:id
  * Soft delete (desactivar) usuario
  * Acceso: Autenticado (su propio usuario o admin)
  */
-router.delete('/:id', authMiddleware, (req, res) => userController.deleteUser(req, res));
+router.delete('/:id', authMiddleware, (req, res) =>
+  userController.deleteUser(req, res)
+);
 
 export default router;

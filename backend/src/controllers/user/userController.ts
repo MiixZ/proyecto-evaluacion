@@ -20,7 +20,16 @@ export class UserController {
    */
   async createUser(req: Request, res: Response): Promise<void> {
     try {
-      const { email, firstName, lastName, role, phone, bio, profileImageUrl, preferredLanguage } = req.body;
+      const {
+        email,
+        firstName,
+        lastName,
+        role,
+        phone,
+        bio,
+        profileImageUrl,
+        preferredLanguage,
+      } = req.body;
 
       // Validación básica
       if (!email || !firstName || !lastName) {
@@ -34,18 +43,17 @@ export class UserController {
       }
 
       // Crear usuario
-      // En producción, authId vendría de Authgear
       const authId = `auth_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const user = await userService.createUser(
-        { 
-          email, 
-          firstName, 
-          lastName, 
+        {
+          email,
+          firstName,
+          lastName,
           role,
           phone,
           bio,
           profileImageUrl,
-          preferredLanguage
+          preferredLanguage,
         },
         authId
       );
@@ -58,6 +66,11 @@ export class UserController {
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
+      logger.error('Error completo:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        error: error,
+      });
       this.handleError(error, res);
     }
   }

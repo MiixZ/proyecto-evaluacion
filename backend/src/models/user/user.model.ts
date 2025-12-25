@@ -10,6 +10,7 @@ import {
 import { UserEntity, UserDTO } from './user.entity';
 import { CreateUserInput, UpdateUserInput } from '@validators/schemas';
 import { NotFoundError, ValidationError } from '@utils/errors';
+import { randomUUID } from 'crypto';
 
 /**
  * Modelo User: contiene todas las queries relacionadas con usuarios
@@ -33,17 +34,19 @@ export class UserModel {
    */
   async create(input: CreateUserInput, authId: string): Promise<UserEntity> {
     const pool = this.getPool();
+    const newId = randomUUID();
     const query = `
       INSERT INTO users (
         id, auth_id, email, first_name, last_name, 
         role, status, phone, bio, profile_image_url, preferred_language,
         created_at, updated_at
       ) VALUES (
-        UUID(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW()
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW()
       )
     `;
 
     const values = [
+      newId,
       authId,
       input.email,
       input.firstName,
@@ -57,13 +60,11 @@ export class UserModel {
     ];
 
     try {
-      const result = await pool.execute(query, values);
-      const insertedId = (result[0] as any).insertId;
+      await pool.execute(query, values);
 
-      logger.info(`Usuario creado: ${input.email} (ID: ${insertedId})`);
+      logger.info(`Usuario creado: ${input.email} (ID: ${newId})`);
 
-      // Retornar el usuario creado
-      return this.getById(insertedId as UUID);
+      return this.getById(newId as UUID);
     } catch (error: any) {
       if (error.code === 'ER_DUP_ENTRY') {
         throw new ValidationError('El email ya existe en el sistema', {
@@ -127,6 +128,21 @@ export class UserModel {
     return this.mapRowToEntity(rows[0]);
   }
 
+  async existsByEmail(email: string): Promise<boolean> {
+    const query = `
+      SELECT COUNT(*) as count
+      FROM users
+      WHERE email = ? AND deleted_at IS NULL
+      LIMIT 1
+    `;
+
+    const [rows] = await this.getPool().execute<RowDataPacket[]>(query, [
+      email.toLowerCase(),
+    ]);
+
+    return (rows[0] as any).count > 0;
+  }
+
   /**
    * Obtiene un usuario por auth_id (desde Authgear)
    */
@@ -142,7 +158,9 @@ export class UserModel {
       LIMIT 1
     `;
 
-    const [rows] = await this.getPool().execute<RowDataPacket[]>(query, [authId]);
+    const [rows] = await this.getPool().execute<RowDataPacket[]>(query, [
+      authId,
+    ]);
 
     if (rows.length === 0) {
       return null;
@@ -440,13 +458,4 @@ export class UserModel {
 /**
  * Instancia singleton del modelo
  */
-let userModelInstance: UserModel | null = null;
-
-export const userModel = new Proxy({} as UserModel, {
-  get(_target, prop) {
-    if (!userModelInstance) {
-      userModelInstance = new UserModel();
-    }
-    return (userModelInstance as any)[prop];
-  },
-});
+export const userModel = new UserModel();

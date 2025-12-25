@@ -33,13 +33,11 @@ export class UserService {
     authId: string
   ): Promise<UserDTO> {
     try {
-      // Validar que email no exista
-      const existingUser = await userModel.getByEmail(input.email);
-      if (existingUser) {
+      const exists = await userModel.existsByEmail(input.email);
+      if (exists) {
         throw new ValidationError(`Usuario con email ${input.email} ya existe`);
       }
 
-      // Preparar input para el modelo (sin status, se setea automáticamente)
       const createInput: CreateUserInput = {
         email: input.email,
         firstName: input.firstName,
@@ -51,7 +49,6 @@ export class UserService {
         preferredLanguage: input.preferredLanguage || 'es',
       };
 
-      // Crear usuario (status se setea a ACTIVE automáticamente en el modelo)
       const user: UserEntity = await userModel.create(createInput, authId);
 
       logger.info(`Usuario creado: ${user.id} (${user.email})`);
@@ -117,10 +114,7 @@ export class UserService {
   /**
    * Actualizar usuario
    */
-  async updateUser(
-    userId: string,
-    updates: UpdateUserInput
-  ): Promise<UserDTO> {
+  async updateUser(userId: string, updates: UpdateUserInput): Promise<UserDTO> {
     try {
       // Verificar que existe
       const existing = await userModel.getById(createUUID(userId));
