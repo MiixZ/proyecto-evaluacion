@@ -17,11 +17,13 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@authgear/core": "^1.4.0",
     "axios": "^1.6.2",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "jsonwebtoken": "^9.0.2",
+    "jwks-rsa": "^2.1.5",
     "mysql2": "^3.6.5",
     "tsc-alias": "^1.8.16",
     "uuid": "^9.0.1",
@@ -29,8 +31,9 @@
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
-    "@types/node": "^20.10.6",
     "@types/jsonwebtoken": "^9.0.5",
+    "@types/jwks-rsa": "^1.2.6",
+    "@types/node": "^20.10.6",
     "@types/cors": "^2.8.17",
     "@types/uuid": "^9.0.7",
     "@types/jest": "^29.5.11",
