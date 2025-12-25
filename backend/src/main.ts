@@ -11,7 +11,6 @@ import {
 import { AuthRequest } from './types/request.types.js';
 import routerUsers from '@routes/user/user.js';
 import routerSubmissions from '@routes/submission/submission.js';
-import { createAuthgearWebhookRouter } from '@routes/webhooks/authgear.webhook.js';
 
 const app = express();
 const PORT = config.port;
@@ -67,11 +66,11 @@ app.get('/api/v1', (_req, res: Response) => {
     name: 'Evaluación Automática de Programación API',
     version: '1.0.0',
     environment: config.nodeEnv,
+    authentication: 'JWT Local',
     endpoints: {
       users: '/api/v1/users',
       submissions: '/api/v1/submissions',
       exercises: '/api/v1/exercises',
-      webhooks: '/webhooks',
     },
   });
 });
@@ -81,36 +80,12 @@ app.get('/api/v1', (_req, res: Response) => {
 /**
  * Ejemplo de ruta protegida
  * GET /api/v1/me
- * Requiere: Bearer token de Authgear
+ * Requiere: Bearer token de JWT
  */
 app.get('/api/v1/me', authMiddleware, (req: AuthRequest, res) => {
   res.json({
     success: true,
     data: req.user,
-    timestamp: new Date().toISOString(),
-  });
-});
-
-// ==================== RUTAS DE WEBHOOKS (SIN PROTECCIÓN) ====================
-
-/**
- * Webhooks de Authgear
- * POST /webhooks/authgear - Recibir eventos de usuario
- * GET  /webhooks/authgear/health - Health check
- *
- * Nota: No requiere autenticación JWT, pero valida firma HMAC-SHA256
- */
-const webhookRouter = createAuthgearWebhookRouter();
-app.use('/webhooks/authgear', webhookRouter);
-
-/**
- * Health check de webhooks
- * GET /webhooks/health
- */
-app.get('/webhooks/health', (req: express.Request, res: Response) => {
-  res.json({
-    status: 'ok',
-    service: 'webhooks',
     timestamp: new Date().toISOString(),
   });
 });
@@ -173,15 +148,14 @@ async function start(): Promise<void> {
       console.log('🎯 Backend escuchando en puerto', PORT);
       console.log('🌍 Ambiente:', config.nodeEnv);
       console.log('🔗 URL base: http://localhost:' + PORT);
-      console.log('📍 API v1: http://localhost:' + PORT + '/api/v1');
+      console.log('📋 API v1: http://localhost:' + PORT + '/api/v1');
       console.log('💚 Health: http://localhost:' + PORT + '/health');
-      console.log('🔐 Autenticación: Authgear (JWKS + Sincronización)');
-      console.log('📨 Webhooks: http://localhost:' + PORT + '/webhooks/authgear');
+      console.log('🔐 Autenticación: JWT Local');
       console.log('='.repeat(60) + '\n');
 
       logger.info(`Servidor iniciado correctamente en puerto ${PORT}`, {
-        authgear: config.authgear.endpoint,
-        jwksUri: config.authgear.jwksUri,
+        environment: config.nodeEnv,
+        authentication: 'JWT Local',
       });
     });
   } catch (error) {
