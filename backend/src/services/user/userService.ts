@@ -4,7 +4,8 @@ import { AuthenticationError, AppError, NotFoundError } from '@utils/errors';
 import { generateToken } from '@utils/jwt.utils';
 import { userModel } from '@models/user/user.model';
 import { UserDTO } from '@models/user/user.entity';
-import { CreateUserInput, validate, createUserSchema } from '@validators/schemas';
+import { validate, createUserSchema } from '@validators/schemas';
+import { UserRole, UserStatus } from '@CustomTypes/common.types';
 
 /**
  * Interfaz de usuario (lo que devolvemos)
@@ -102,8 +103,8 @@ export class UserService {
       // Hashear contraseña
       const passwordHash = await this.hashPassword(password);
 
-      // Preparar input validado
-      const createUserInput: CreateUserInput = validate(createUserSchema, {
+      // Validar datos con Zod
+      validate(createUserSchema, {
         email,
         password,
         firstName,
@@ -115,16 +116,17 @@ export class UserService {
       // userModel.create() espera: (input, authId, passwordHash)
       const userEntity = await userModel.create(
         {
-          email: createUserInput.email,
-          firstName: createUserInput.firstName,
-          lastName: createUserInput.lastName,
-          role: createUserInput.role,
-          phone: createUserInput.phone,
-          bio: createUserInput.bio,
-          profileImageUrl: createUserInput.profileImageUrl,
-          preferredLanguage: createUserInput.preferredLanguage,
+          email,
+          password,
+          firstName,
+          lastName,
+          role: role as UserRole,
+          phone: undefined,
+          bio: undefined,
+          profileImageUrl: undefined,
+          preferredLanguage: 'es',
         },
-        `local_${createUserInput.email}`, // authId para JWT local
+        `local_${email}`, // authId para autenticación local
         passwordHash
       );
 
@@ -201,7 +203,7 @@ export class UserService {
       }
 
       // Validar que el usuario esté activo
-      if (userEntity.status !== 'active') {
+      if (userEntity.status !== UserStatus.ACTIVE) {
         throw new AuthenticationError('Usuario desactivado o pendiente de activación');
       }
 
