@@ -21,11 +21,11 @@ export class CodeExecutor {
     executionId: string
   ): Promise<TestResult> {
     const startTime = Date.now();
-
     const executionDir = path.join(this.INTERNAL_DIR, executionId);
 
     try {
       await fs.mkdir(executionDir, { recursive: true });
+      await fs.chmod(executionDir, 0o777);
 
       const codeFilename = this.getCodeFilename(language);
 
@@ -36,7 +36,10 @@ export class CodeExecutor {
         "utf-8"
       );
 
-      console.log(`  📝 Archivos escritos en: ${executionDir}`);
+      await fs.chmod(path.join(executionDir, codeFilename), 0o777);
+      await fs.chmod(path.join(executionDir, "input.txt"), 0o777);
+
+      console.log(`Archivos escritos en: ${executionDir}`);
 
       const command = this.getExecutionCommand(language, codeFilename);
 
@@ -103,25 +106,22 @@ export class CodeExecutor {
     timeoutMs: number,
     memoryLimitMb: number
   ): Promise<string> {
-    // Directorio de trabajo dentro del Sandbox (Volumen compartido)
     const sandboxWorkDir = path.posix.join(
       this.SANDBOX_MOUNT_POINT,
       executionId
     );
 
-    // 1️⃣ Configuración del contenedor
+    // Configuración del contenedor
     const createOptions = {
       Image: image,
       Cmd: command,
       Entrypoint: [],
       HostConfig: {
-        Binds: [`${this.SHARED_VOLUME}:${this.SANDBOX_MOUNT_POINT}:ro`],
+        Binds: [`${this.SHARED_VOLUME}:${this.SANDBOX_MOUNT_POINT}:rw`],
         Memory: memoryLimitMb * 1024 * 1024,
         MemorySwap: memoryLimitMb * 1024 * 1024,
         CpuShares: 1024,
         NetworkMode: "none",
-        // ⚠️ IMPORTANTE: Quitamos AutoRemove: true para evitar condiciones de carrera
-        // (a veces se borra antes de que podamos leer los logs si es muy rápido)
         AutoRemove: false,
         CapDrop: ["ALL"],
       },
@@ -134,10 +134,8 @@ export class CodeExecutor {
     let container: any = null;
 
     try {
-      // 2️⃣ Crear el contenedor (pero no arrancarlo aún)
       container = await this.docker.createContainer(createOptions);
 
-      // 3️⃣ Conectarse a los logs (Stream)
       const stream = await container.attach({
         stream: true,
         stdout: true,
@@ -174,7 +172,7 @@ export class CodeExecutor {
             try {
               await container.kill();
             } catch (e) {
-              // Ignorar error si ya murió
+              // Ignorar error
             }
             reject(new Error("timeout"));
           }
@@ -189,22 +187,31 @@ export class CodeExecutor {
         try {
           await container.remove({ force: true });
         } catch (e) {
-          // Ignorar si ya no existe
+          // Ignorar error
         }
       }
     }
   }
   private cleanDockerOutput(rawOutput: string): string {
     const lines = rawOutput.split("\n");
-    const cleaned = lines.map((line) => {
-      if (line.length > 8) {
-        const firstByte = line.charCodeAt(0);
-        if (firstByte === 1 || firstByte === 2) {
-          return line.substring(8);
+    const cleaned = lines
+      .map((line) => {
+        if (line.length > 8) {
+          const firstByte = line.charCodeAt(0);
+          if (firstByte === 1 || firstByte === 2) {
+            return line.substring(8);
+          }
         }
-      }
-      return line;
-    });
+
+        return line;
+      })
+      .filter((line) => {
+        const text = line.trim();
+        if (!text) return false;
+        if (text.startsWith("Picked up JAVA_TOOL_OPTIONS:")) return false;
+        return true;
+      });
+
     return cleaned.join("\n").trim();
   }
 
@@ -219,6 +226,7 @@ export class CodeExecutor {
         `g++ -o solution ${filename} && cat input.txt | ./solution`,
       ],
     };
+
     return commands[language] || commands["python"]!;
   }
 
@@ -229,6 +237,7 @@ export class CodeExecutor {
       javascript: "solution.js",
       cpp: "solution.cpp",
     };
+
     return extensions[language] || "solution.py";
   }
 }

@@ -18,7 +18,7 @@ export class ExecutionManager {
    */
   async executeExercise(request: ExecutionRequest): Promise<ExecutionResult> {
     console.log(
-      `\n🚀 Iniciando ejecución: ${request.id} (Ejercicio: ${request.exerciseId})`
+      `\nIniciando ejecución: ${request.id} (Ejercicio: ${request.exerciseId})`
     );
 
     const startTime = Date.now();
@@ -28,12 +28,12 @@ export class ExecutionManager {
     try {
       const sandboxImage = this.getSandboxImage(request.language);
 
-      console.log(`📦 Usando imagen: ${sandboxImage}`);
+      console.log(`Usando imagen: ${sandboxImage}`);
 
       let passedTests = 0;
 
       for (const testCase of request.testCases) {
-        console.log(`📝 Ejecutando test case: ${testCase.id}`);
+        console.log(`Ejecutando test case: ${testCase.id}`);
 
         const testResult = await this.codeExecutor.executeCode(
           sandboxImage,
@@ -47,31 +47,31 @@ export class ExecutionManager {
 
         if (testResult.status === "passed") {
           passedTests++;
-          console.log(`  ✅ Test ${testCase.id}: PASSED`);
+          console.log(`Test ${testCase.id}: PASSED`);
         } else if (testResult.status === "timeout") {
           verdict = Verdict.TIME_LIMIT_EXCEEDED;
-          console.log(`  ⏱️  Test ${testCase.id}: TIMEOUT`);
+          console.log(`Test ${testCase.id}: TIMEOUT`);
         } else if (testResult.status === "error") {
           verdict = Verdict.RUNTIME_ERROR;
           console.log(
-            `  ❌ Test ${testCase.id}: ERROR - ${testResult.errorMessage}`
+            `Test ${testCase.id}: ERROR - ${testResult.errorMessage}`
           );
         } else if (testResult.status === "failed") {
           if (verdict === Verdict.ACCEPTED) {
             verdict = Verdict.WRONG_ANSWER;
           }
-          console.log(`  ❌ Test ${testCase.id}: WRONG ANSWER`);
-          console.log(`     Esperado: "${testResult.expectedOutput}"`);
-          console.log(`     Obtenido: "${testResult.actualOutput}"`);
+          console.log(`Test ${testCase.id}: WRONG ANSWER`);
+          console.log(`Esperado: "${testResult.expectedOutput}"`);
+          console.log(`Obtenido: "${testResult.actualOutput}"`);
         }
       }
 
       const score = Math.round((passedTests / request.testCases.length) * 100);
 
       console.log(
-        `✅ Ejecución completada: ${passedTests}/${request.testCases.length} tests passed`
+        `Ejecución completada: ${passedTests}/${request.testCases.length} tests passed`
       );
-      console.log(`🎯 Veredicto: ${verdict} (${score} puntos)`);
+      console.log(`Veredicto: ${verdict} (${score} puntos)`);
 
       return {
         submissionId: request.submissionId,
@@ -82,7 +82,7 @@ export class ExecutionManager {
         memoryUsed: 0,
       };
     } catch (error: Error | any) {
-      console.error(`❌ Error en ejecución: ${error.message}`);
+      console.error(`Error en ejecución: ${error.message}`);
 
       return {
         submissionId: request.submissionId,
