@@ -1,41 +1,236 @@
+/**
+ * UUID v4 (36 caracteres)
+ */
+export type UUID = string & { readonly __brand: 'UUID' };
+
+/**
+ * Constructor de UUID (en realidad es string, pero con validación)
+ */
+export function createUUID(id: string): UUID {
+  if (
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      id
+    )
+  ) {
+    throw new Error(`ID inválido: ${id}`);
+  }
+
+  return id as UUID;
+}
+
+/**
+ * Enums comunes
+ */
 export enum UserRole {
-  STUDENT = 'student',
-  TEACHER = 'teacher',
   ADMIN = 'admin',
+  TEACHER = 'teacher',
+  STUDENT = 'student',
+}
+
+export enum UserStatus {
+  ACTIVE = 'active',
+  INACTIVE = 'inactive',
+  SUSPENDED = 'suspended',
+}
+
+export enum DifficultyLevel {
+  BEGINNER = 'beginner',
+  INTERMEDIATE = 'intermediate',
+  ADVANCED = 'advanced',
 }
 
 export enum SubmissionVerdict {
-  ACCEPTED = 'ACCEPTED',
-  COMPILATION_ERROR = 'COMPILATION_ERROR',
-  RUNTIME_ERROR = 'RUNTIME_ERROR',
-  WRONG_ANSWER = 'WRONG_ANSWER',
-  TIME_LIMIT_EXCEEDED = 'TIME_LIMIT_EXCEEDED',
-  MEMORY_LIMIT_EXCEEDED = 'MEMORY_LIMIT_EXCEEDED',
-  SYSTEM_ERROR = 'SYSTEM_ERROR',
+  ACCEPTED = 'accepted',
+  WRONG_ANSWER = 'wrong_answer',
+  RUNTIME_ERROR = 'runtime_error',
+  TIME_LIMIT = 'time_limit',
+  COMPILATION_ERROR = 'compilation_error',
+  MEMORY_LIMIT = 'memory_limit',
+  PENDING = 'pending',
 }
 
+export enum SubmissionStatus {
+  PENDING = 'pending',
+  RUNNING = 'running',
+  COMPLETED = 'completed',
+  FAILED = 'failed',
+}
+
+export enum TestCaseStatus {
+  PASSED = 'passed',
+  FAILED = 'failed',
+  ERROR = 'error',
+}
+
+export enum EfficiencyOrder {
+  BEST = 'best',
+  GOOD = 'good',
+  ACCEPTABLE = 'acceptable',
+  ANY = 'any',
+}
+
+export enum PlagiarismType {
+  INTERNAL = 'internal',
+  EXTERNAL = 'external',
+  AI_GENERATED = 'ai_generated',
+}
+
+export enum CourseStatus {
+  PLANNING = 'planning',
+  ACTIVE = 'active',
+  CLOSED = 'closed',
+  ARCHIVED = 'archived',
+}
+
+export enum ExercisePublishStatus {
+  DRAFT = 'draft',
+  PUBLISHED = 'published',
+  ARCHIVED = 'archived',
+}
+
+/**
+ * Interfaz base para respuestas API
+ */
 export interface ApiResponse<T> {
   success: boolean;
   data?: T;
   error?: {
     code: string;
     message: string;
-    details?: Record<string, unknown>;
+    details?: any;
   };
   timestamp: string;
+}
+
+/**
+ * Interfaz para errores de aplicación
+ */
+export class AppError extends Error {
+  constructor(
+    public code: string,
+    public statusCode: number = 500,
+    message: string,
+    public details?: any
+  ) {
+    super(message);
+    this.name = 'AppError';
+  }
+}
+
+/**
+ * Errores comunes
+ */
+export class ValidationError extends AppError {
+  constructor(message: string, details?: any) {
+    super('VALIDATION_ERROR', 400, message, details);
+    this.name = 'ValidationError';
+  }
+}
+
+export class NotFoundError extends AppError {
+  constructor(message: string, details?: any) {
+    super('NOT_FOUND', 404, message, details);
+    this.name = 'NotFoundError';
+  }
+}
+
+export class UnauthorizedError extends AppError {
+  constructor(message: string = 'No autorizado', details?: any) {
+    super('UNAUTHORIZED', 401, message, details);
+    this.name = 'UnauthorizedError';
+  }
+}
+
+export class ForbiddenError extends AppError {
+  constructor(message: string = 'Acceso prohibido', details?: any) {
+    super('FORBIDDEN', 403, message, details);
+    this.name = 'ForbiddenError';
+  }
+}
+
+export class ConflictError extends AppError {
+  constructor(message: string, details?: any) {
+    super('CONFLICT', 409, message, details);
+    this.name = 'ConflictError';
+  }
+}
+
+/**
+ * Interfaz para paginación
+ */
+export interface PaginationParams {
+  page: number;
+  limit: number;
+  offset: number;
 }
 
 export interface PaginatedResponse<T> {
   items: T[];
   total: number;
   page: number;
-  pageSize: number;
+  limit: number;
+  hasMore: boolean;
   totalPages: number;
 }
 
-export interface AuthUser {
-  id: string;
-  role: UserRole;
-  authId: string;
-  email: string;
+/**
+ * Interfaz para timestamps
+ */
+export interface Timestamps {
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt?: Date | null;
+}
+
+/**
+ * Interfaz para auditoría
+ */
+export interface AuditInfo {
+  createdBy?: UUID;
+  updatedBy?: UUID;
+  deletedBy?: UUID;
+}
+
+/**
+ * QueryOptions para getAll/list
+ */
+export interface QueryOptions {
+  where?: Record<string, any>;
+  orderBy?: {
+    field: string;
+    direction: 'ASC' | 'DESC';
+  }[];
+  limit?: number;
+  offset?: number;
+  includeDeleted?: boolean;
+}
+
+/**
+ * Helper para crear respuestas exitosas
+ */
+export function successResponse<T>(data: T): ApiResponse<T> {
+  return {
+    success: true,
+    data,
+    timestamp: new Date().toISOString(),
+  };
+}
+
+/**
+ * Helper para crear respuestas de error
+ */
+export function errorResponse(
+  code: string,
+  message: string,
+  details?: any
+): ApiResponse<null> {
+  return {
+    success: false,
+    error: {
+      code,
+      message,
+      details,
+    },
+    timestamp: new Date().toISOString(),
+  };
 }
