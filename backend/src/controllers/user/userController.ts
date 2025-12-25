@@ -9,6 +9,7 @@ import {
   NotFoundError,
   AuthenticationError,
 } from '@utils/errors';
+import { UUID } from '@CustomTypes/common.types';
 
 /**
  * Controller para manejo de usuarios
@@ -21,7 +22,16 @@ export class UserController {
    */
   async register(req: Request, res: Response): Promise<void> {
     try {
-      const { email, password, firstName, lastName, role, phone, bio, profileImageUrl } = req.body;
+      const {
+        email,
+        password,
+        firstName,
+        lastName,
+        role,
+        phone,
+        bio,
+        profileImageUrl,
+      } = req.body;
 
       // Validación básica
       if (!email || !password || !firstName || !lastName) {
@@ -181,7 +191,7 @@ export class UserController {
         return;
       }
 
-      const user = await userModel.update(id, updates);
+      const user = await userModel.update(id as UUID, updates);
 
       logger.info(`Usuario actualizado: ${id}`);
 
@@ -223,7 +233,7 @@ export class UserController {
         return;
       }
 
-      const user = await userModel.updateRole(id, role);
+      const user = await userModel.updateRole(id as UUID, role);
 
       logger.info(`Rol cambiado para usuario ${id}: ${role}`);
 
@@ -265,7 +275,7 @@ export class UserController {
         return;
       }
 
-      const user = await userModel.updateStatus(id, status);
+      const user = await userModel.updateStatus(id as UUID, status);
 
       logger.info(`Estado cambiado para usuario ${id}: ${status}`);
 
@@ -297,7 +307,7 @@ export class UserController {
         return;
       }
 
-      await userModel.softDelete(id);
+      await userModel.softDelete(id as UUID);
 
       logger.info(`Usuario desactivado: ${id}`);
 
