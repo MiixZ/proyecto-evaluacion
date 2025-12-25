@@ -113,7 +113,8 @@ export class UserService {
       });
 
       // Crear usuario en BD
-      // userModel.create() espera: (input, authId, passwordHash)
+      // userModel.create() espera: (input, authId)
+      // authId = hash de la contraseña
       const userEntity = await userModel.create(
         {
           email,
@@ -126,8 +127,7 @@ export class UserService {
           profileImageUrl: undefined,
           preferredLanguage: 'es',
         },
-        `local_${email}`, // authId para autenticación local
-        passwordHash
+        passwordHash  // authId = password hash
       );
 
       // Convertir a DTO
@@ -193,9 +193,10 @@ export class UserService {
       }
 
       // Comparar contraseñas
+      // authId contiene el hash de la contraseña
       const isPasswordValid = await this.comparePasswords(
         password,
-        userEntity.passwordHash
+        userEntity.authId
       );
       if (!isPasswordValid) {
         logger.warn('Intento de login fallido', { email });
