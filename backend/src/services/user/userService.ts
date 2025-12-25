@@ -1,28 +1,16 @@
 import bcrypt from 'bcrypt';
-import { v4 as uuidv4 } from 'uuid';
 import { logger } from '@utils/logger';
-import { AuthenticationError, AppError } from '@utils/errors';
+import { AuthenticationError, AppError, NotFoundError } from '@utils/errors';
 import { generateToken } from '@utils/jwt.utils';
+import { userModel } from '@models/user/user.model';
+import { UserDTO } from '@models/user/user.entity';
+import { CreateUserInput, validate, createUserSchema } from '@validators/schemas';
 
 /**
  * Interfaz de usuario (lo que devolvemos)
  */
-export interface User {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  role: 'admin' | 'teacher' | 'student';
-  status: 'active' | 'inactive' | 'deleted';
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-/**
- * Interfaz de usuario en BD (con password hasheada)
- */
-export interface UserDB extends User {
-  id_auth: string; // Password hasheada
+export interface User extends UserDTO {
+  // Heredar de UserDTO que tiene: id, email, firstName, lastName, role, status, createdAt
 }
 
 /**
@@ -33,6 +21,7 @@ export interface RegisterRequest {
   password: string;
   firstName: string;
   lastName: string;
+  role?: 'admin' | 'teacher' | 'student';
 }
 
 /**
@@ -95,39 +84,63 @@ export class UserService {
 
   /**
    * Registra un nuevo usuario
-   * Este método será llamado desde el controlador (frontend en futuro)
+   * Este método será llamado desde el controlador
    *
    * @param request - Datos de registro
    * @returns Usuario creado y JWT
    */
   async register(request: RegisterRequest): Promise<AuthResponse> {
     try {
-      const { email, password, firstName, lastName } = request;
+      const { email, password, firstName, lastName, role = 'student' } = request;
 
       // Validar que no exista el usuario
-      const existingUser = await this.getUserByEmail(email);
-      if (existingUser) {
-        throw new AuthenticationError('El usuario ya existe');
+      const exists = await userModel.existsByEmail(email);
+      if (exists) {
+        throw new AuthenticationError('El email ya está registrado');
       }
 
       // Hashear contraseña
-      const hashedPassword = await this.hashPassword(password);
+      const passwordHash = await this.hashPassword(password);
 
-      // Crear usuario en BD
-      const userId = uuidv4();
-      const now = new Date();
-
-      // Aquí irá la llamada a la BD
-      // Por ahora, es un stub que necesita userModel implementado
-      const user: User = {
-        id: userId,
+      // Preparar input validado
+      const createUserInput: CreateUserInput = validate(createUserSchema, {
         email,
+        password,
         firstName,
         lastName,
-        role: 'student', // Default role
-        status: 'active',
-        createdAt: now,
-        updatedAt: now,
+        role,
+      });
+
+      // Crear usuario en BD
+      // userModel.create() espera: (input, authId, passwordHash)
+      const userEntity = await userModel.create(
+        {
+          email: createUserInput.email,
+          firstName: createUserInput.firstName,
+          lastName: createUserInput.lastName,
+          role: createUserInput.role,
+          phone: createUserInput.phone,
+          bio: createUserInput.bio,
+          profileImageUrl: createUserInput.profileImageUrl,
+          preferredLanguage: createUserInput.preferredLanguage,
+        },
+        `local_${createUserInput.email}`, // authId para JWT local
+        passwordHash
+      );
+
+      // Convertir a DTO
+      const user: User = {
+        id: userEntity.id,
+        email: userEntity.email,
+        firstName: userEntity.firstName,
+        lastName: userEntity.lastName,
+        role: userEntity.role,
+        status: userEntity.status,
+        phone: userEntity.phone,
+        bio: userEntity.bio,
+        profileImageUrl: userEntity.profileImageUrl,
+        preferredLanguage: userEntity.preferredLanguage,
+        createdAt: userEntity.createdAt,
       };
 
       logger.info('Usuario registrado', {
@@ -166,29 +179,46 @@ export class UserService {
     try {
       const { email, password } = request;
 
-      // Buscar usuario
-      const user = await this.getUserByEmail(email);
-      if (!user) {
-        throw new AuthenticationError('Credenciales inválidas');
-      }
-
-      // Obtener password hasheada de BD
-      const userDB = await this.getUserDBByEmail(email);
-      if (!userDB) {
-        throw new AuthenticationError('Credenciales inválidas');
+      // Buscar usuario en BD
+      let userEntity;
+      try {
+        userEntity = await userModel.getByEmail(email);
+      } catch (error) {
+        if (error instanceof NotFoundError) {
+          throw new AuthenticationError('Credenciales inválidas');
+        }
+        throw error;
       }
 
       // Comparar contraseñas
-      const isPasswordValid = await this.comparePasswords(password, userDB.id_auth);
+      const isPasswordValid = await this.comparePasswords(
+        password,
+        userEntity.passwordHash
+      );
       if (!isPasswordValid) {
         logger.warn('Intento de login fallido', { email });
         throw new AuthenticationError('Credenciales inválidas');
       }
 
       // Validar que el usuario esté activo
-      if (user.status !== 'active') {
-        throw new AuthenticationError('Usuario desactivado');
+      if (userEntity.status !== 'active') {
+        throw new AuthenticationError('Usuario desactivado o pendiente de activación');
       }
+
+      // Convertir a DTO
+      const user: User = {
+        id: userEntity.id,
+        email: userEntity.email,
+        firstName: userEntity.firstName,
+        lastName: userEntity.lastName,
+        role: userEntity.role,
+        status: userEntity.status,
+        phone: userEntity.phone,
+        bio: userEntity.bio,
+        profileImageUrl: userEntity.profileImageUrl,
+        preferredLanguage: userEntity.preferredLanguage,
+        createdAt: userEntity.createdAt,
+      };
 
       logger.info('Usuario autenticado', {
         userId: user.id,
@@ -217,20 +247,55 @@ export class UserService {
 
   /**
    * Obtiene un usuario por email
-   * STUB: Implementar con userModel cuando esté listo
+   *
+   * @param email - Email del usuario
+   * @returns Usuario o null si no existe
    */
   async getUserByEmail(email: string): Promise<User | null> {
-    // TODO: Implementar con userModel
-    return null;
+    try {
+      const userEntity = await userModel.getByEmail(email);
+      return {
+        id: userEntity.id,
+        email: userEntity.email,
+        firstName: userEntity.firstName,
+        lastName: userEntity.lastName,
+        role: userEntity.role,
+        status: userEntity.status,
+        phone: userEntity.phone,
+        bio: userEntity.bio,
+        profileImageUrl: userEntity.profileImageUrl,
+        preferredLanguage: userEntity.preferredLanguage,
+        createdAt: userEntity.createdAt,
+      };
+    } catch (error) {
+      if (error instanceof NotFoundError) {
+        return null;
+      }
+      throw error;
+    }
   }
 
   /**
-   * Obtiene usuario BD (con password) por email
-   * STUB: Implementar con userModel cuando esté listo
+   * Obtiene un usuario por ID
+   *
+   * @param id - ID del usuario
+   * @returns Usuario
    */
-  async getUserDBByEmail(email: string): Promise<UserDB | null> {
-    // TODO: Implementar con userModel
-    return null;
+  async getUserById(id: string): Promise<User> {
+    const userEntity = await userModel.getById(id);
+    return {
+      id: userEntity.id,
+      email: userEntity.email,
+      firstName: userEntity.firstName,
+      lastName: userEntity.lastName,
+      role: userEntity.role,
+      status: userEntity.status,
+      phone: userEntity.phone,
+      bio: userEntity.bio,
+      profileImageUrl: userEntity.profileImageUrl,
+      preferredLanguage: userEntity.preferredLanguage,
+      createdAt: userEntity.createdAt,
+    };
   }
 }
 
