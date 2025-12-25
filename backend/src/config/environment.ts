@@ -18,17 +18,9 @@ const envSchema = z.object({
   DB_PASSWORD: z.string().default(''),
   DB_NAME: z.string().min(1),
 
-  // JWT
+  // JWT (Local)
   JWT_SECRET: z.string().min(32, 'JWT_SECRET debe tener mínimo 32 caracteres'),
   JWT_EXPIRY: z.string().default('7d'),
-
-  // Authgear Configuration
-  AUTHGEAR_ENDPOINT: z.string().url(),
-  AUTHGEAR_CLIENT_ID: z.string().min(1),
-  AUTHGEAR_CLIENT_SECRET: z.string().min(1),
-  AUTHGEAR_API_KEY: z.string().min(1),
-  AUTHGEAR_WEBHOOK_SECRET: z.string().min(32).optional(),
-  TOKEN_CACHE_TTL: z.coerce.number().int().positive().default(3600000), // 1 hora
 
   // CORS
   CORS_ORIGIN: z
@@ -65,20 +57,7 @@ const envSchema = z.object({
 export type EnvConfig = z.infer<typeof envSchema>;
 
 /**
- * Interfaz de configuración de Authgear
- */
-export interface AuthgearConfig {
-  endpoint: string;
-  clientId: string;
-  clientSecret: string;
-  apiKey: string;
-  webhookSecret: string;
-  jwksUri: string;
-  tokenCacheTTL: number;
-}
-
-/**
- * Interfaz de configuración de aplicación (versión mejorada)
+ * Interfaz de configuración de aplicación
  */
 export interface AppConfig {
   port: number;
@@ -102,7 +81,6 @@ export interface AppConfig {
     secret: string;
     expiresIn: string;
   };
-  authgear: AuthgearConfig;
   cors: {
     origin: string | string[];
   };
@@ -149,16 +127,6 @@ function validateProductionConfig(config: AppConfig): void {
       );
     }
 
-    if (!config.authgear.endpoint) {
-      errors.push('  - AUTHGEAR_ENDPOINT es requerido en producción');
-    }
-
-    if (!config.authgear.webhookSecret || config.authgear.webhookSecret.length < 32) {
-      errors.push(
-        '  - AUTHGEAR_WEBHOOK_SECRET debe tener mínimo 32 caracteres en producción'
-      );
-    }
-
     if (config.cors.origin === 'http://localhost:3001') {
       errors.push('  - CORS_ORIGIN debe ser configurado para producción');
     }
@@ -200,15 +168,6 @@ function loadConfig(): AppConfig {
       secret: env.JWT_SECRET,
       expiresIn: env.JWT_EXPIRY,
     },
-    authgear: {
-      endpoint: env.AUTHGEAR_ENDPOINT,
-      clientId: env.AUTHGEAR_CLIENT_ID,
-      clientSecret: env.AUTHGEAR_CLIENT_SECRET,
-      apiKey: env.AUTHGEAR_API_KEY,
-      webhookSecret: env.AUTHGEAR_WEBHOOK_SECRET || 'cambiar_webhook_secret_32_caracteres_minimo',
-      jwksUri: `${env.AUTHGEAR_ENDPOINT}/.well-known/openid-configuration/keys`,
-      tokenCacheTTL: env.TOKEN_CACHE_TTL,
-    },
     cors: {
       origin: env.CORS_ORIGIN,
     },
@@ -239,15 +198,6 @@ if (config.isDevelopment) {
     jwt: {
       secret: '***',
       expiresIn: config.jwt.expiresIn,
-    },
-    authgear: {
-      endpoint: config.authgear.endpoint,
-      clientId: config.authgear.clientId,
-      clientSecret: '***',
-      apiKey: '***',
-      webhookSecret: '***',
-      jwksUri: config.authgear.jwksUri,
-      tokenCacheTTL: config.authgear.tokenCacheTTL,
     },
   });
 }
