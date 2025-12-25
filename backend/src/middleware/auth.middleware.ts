@@ -1,23 +1,18 @@
 import { Response, NextFunction } from 'express';
-import axios, { AxiosError } from 'axios';
 import { AuthRequest } from '@CustomTypes/request.types';
-import { AuthUser, createUUID, UserRole, UserStatus } from '@CustomTypes/common.types';
-import { AppError, AuthenticationError } from '@utils/errors';
+import { AuthenticationError } from '@utils/errors';
 import { logger } from '@utils/logger';
-import config from '@config/environment';
-
-interface AuthgearUser {
-  sub: string;
-  email: string;
-  email_verified: boolean;
-  custom_attributes?: {
-    role?: UserRole;
-  };
-}
+import { authgearService } from '@services/auth/authgearService';
 
 /**
- * Middleware para verificar y decodificar el token JWT
- * Espera un token en el header: Authorization: Bearer <token>
+ * Middleware mejorado para verificar y validar tokens JWT de Authgear
+ * Valida contra JWKS y sincroniza usuario con BD local
+ *
+ * Uso:
+ *   app.use('/api/v1', authMiddleware);
+ *
+ * Espera:
+ *   Authorization: Bearer <token>
  */
 export async function authMiddleware(
   req: AuthRequest,
@@ -31,25 +26,43 @@ export async function authMiddleware(
       throw new AuthenticationError('Token no proporcionado');
     }
 
-    const token = authHeader.slice(7);
+    const token = authHeader.slice(7).trim();
+
+    if (!token) {
+      throw new AuthenticationError('Token vacío');
+    }
+
+    // Verificar token contra Authgear + sincronizar usuario
+    const user = await authgearService.verifyToken(token);
+
+    // Asignar usuario y token al request
+    req.user = user;
     req.token = token;
 
-    const user = await verifyTokenWithAuthgear(token);
-    req.user = user;
+    logger.debug('Usuario autenticado', {
+      userId: user.id,
+      email: user.email,
+      role: user.role,
+    });
 
     next();
   } catch (error) {
     if (error instanceof AuthenticationError) {
-      res.status(error.statusCode).json({
+      logger.warn('Error de autenticación', {
+        message: error.message,
+        path: req.path,
+        method: req.method,
+      });
+      res.status(401).json({
         success: false,
         error: {
-          code: error.code,
+          code: 'AUTHENTICATION_ERROR',
           message: error.message,
         },
         timestamp: new Date().toISOString(),
       });
     } else {
-      logger.error('Error en authMiddleware', error);
+      logger.error('Error inesperado en authMiddleware', error);
       res.status(401).json({
         success: false,
         error: {
@@ -62,7 +75,14 @@ export async function authMiddleware(
   }
 }
 
-export function roleCheckMiddleware(allowedRoles: UserRole[]) {
+/**
+ * Middleware para validar roles de usuario
+ * Sólo permite acceso a usuarios con roles especificados
+ *
+ * Uso:
+ *   router.get('/admin-only', roleCheckMiddleware(['admin']), handler);
+ */
+export function roleCheckMiddleware(allowedRoles: string[]) {
   return (req: AuthRequest, res: Response, next: NextFunction): void => {
     try {
       if (!req.user) {
@@ -71,17 +91,23 @@ export function roleCheckMiddleware(allowedRoles: UserRole[]) {
 
       if (!allowedRoles.includes(req.user.role)) {
         throw new AuthenticationError(
-          `Rol requerido: ${allowedRoles.join(', ')}, pero tienes: ${req.user.role}`
+          `Acceso denegado. Roles requeridos: ${allowedRoles.join(', ')}`
         );
       }
+
+      logger.debug('Rol verificado', {
+        userId: req.user.id,
+        userRole: req.user.role,
+        allowedRoles,
+      });
 
       next();
     } catch (error) {
       if (error instanceof AuthenticationError) {
-        res.status(error.statusCode).json({
+        res.status(403).json({
           success: false,
           error: {
-            code: error.code,
+            code: 'AUTHORIZATION_ERROR',
             message: error.message,
           },
           timestamp: new Date().toISOString(),
@@ -100,42 +126,13 @@ export function roleCheckMiddleware(allowedRoles: UserRole[]) {
   };
 }
 
-async function verifyTokenWithAuthgear(token: string): Promise<AuthUser> {
-  try {
-    // En este punto, simplemente decodificaremos el token y lo verificaremos básicamente
-    // Idealmente, se debería usar la API de Authgear para verificación completa
-    const response = await axios.post(
-      `${config.authgear.endpoint}/oauth/userinfo`,
-      {},
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
-
-    const authgearUser: AuthgearUser = response.data;
-
-    const role = authgearUser.custom_attributes?.role || UserRole.STUDENT;
-
-    const user: AuthUser = {
-      id: createUUID(authgearUser.sub),
-      email: authgearUser.email,
-      role: role as UserRole,
-      status: UserStatus.ACTIVE,
-    };
-
-    return user;
-  } catch (error) {
-    const axiosError = error as AxiosError;
-    logger.error('Error verificando token con Authgear', {
-      status: axiosError.response?.status,
-      data: axiosError.response?.data,
-    });
-    throw new AuthenticationError('Token inválido o expirado');
-  }
-}
-
+/**
+ * Middleware para capturar y loguear errores
+ * Debe ser el último middleware registrado
+ *
+ * Uso:
+ *   app.use(errorHandlerMiddleware);
+ */
 export function errorHandlerMiddleware(
   error: Error,
   _req: AuthRequest,
@@ -144,13 +141,13 @@ export function errorHandlerMiddleware(
 ): void {
   logger.error('Error no capturado', error);
 
-  const appError = error as AppError;
+  const appError = error as any;
 
   if (appError.statusCode) {
     res.status(appError.statusCode).json({
       success: false,
       error: {
-        code: appError.code,
+        code: appError.code || 'INTERNAL_ERROR',
         message: appError.message,
         details: appError.details,
       },
@@ -168,6 +165,13 @@ export function errorHandlerMiddleware(
   }
 }
 
+/**
+ * Middleware para loguear requests HTTP
+ * Registra método, ruta, status y duración
+ *
+ * Uso:
+ *   app.use(requestLoggerMiddleware);
+ */
 export function requestLoggerMiddleware(
   req: AuthRequest,
   res: Response,
@@ -185,4 +189,46 @@ export function requestLoggerMiddleware(
   });
 
   next();
+}
+
+/**
+ * Middleware opcional para validar API Key
+ * Útel si usas API keys adicionales además de JWT
+ *
+ * Uso:
+ *   app.use(apiKeyMiddleware);
+ */
+export function apiKeyMiddleware(
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): void {
+  // Por ahora, saltamos este middleware
+  // Puede implementarse si se desea validación adicional con API keys
+  next();
+}
+
+/**
+ * Middleware para limpiar cache de token al logout
+ * Se usa en rutas de logout
+ *
+ * Uso:
+ *   router.post('/logout', logoutMiddleware, handler);
+ */
+export function logoutMiddleware(
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): void {
+  try {
+    if (req.token) {
+      // Invalida token del cache de Authgear
+      authgearService.invalidateTokenCache(req.token);
+      logger.info('Token invalidado en cache', { userId: req.user?.id });
+    }
+    next();
+  } catch (error) {
+    logger.error('Error en logoutMiddleware', error);
+    next();
+  }
 }
