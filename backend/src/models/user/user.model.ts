@@ -15,10 +15,15 @@ import { NotFoundError, ValidationError } from '@utils/errors';
  * Modelo User: contiene todas las queries relacionadas con usuarios
  */
 export class UserModel {
-  private pool: Pool;
+  private pool: Pool | null = null;
 
-  constructor() {
-    this.pool = getPool();
+  constructor() {}
+
+  private getPool(): Pool {
+    if (!this.pool) {
+      this.pool = getPool();
+    }
+    return this.pool;
   }
 
   /**
@@ -27,6 +32,7 @@ export class UserModel {
    * @throws Error si hay problemas en BD
    */
   async create(input: CreateUserInput, authId: string): Promise<UserEntity> {
+    const pool = this.getPool();
     const query = `
       INSERT INTO users (
         id, auth_id, email, first_name, last_name, 
@@ -51,7 +57,7 @@ export class UserModel {
     ];
 
     try {
-      const result = await this.pool.execute(query, values);
+      const result = await pool.execute(query, values);
       const insertedId = (result[0] as any).insertId;
 
       logger.info(`Usuario creado: ${input.email} (ID: ${insertedId})`);
@@ -85,7 +91,7 @@ export class UserModel {
       LIMIT 1
     `;
 
-    const [rows] = await this.pool.execute<RowDataPacket[]>(query, [id]);
+    const [rows] = await this.getPool().execute<RowDataPacket[]>(query, [id]);
 
     if (rows.length === 0) {
       throw new NotFoundError(`Usuario no encontrado: ${id}`);
@@ -110,7 +116,7 @@ export class UserModel {
       LIMIT 1
     `;
 
-    const [rows] = await this.pool.execute<RowDataPacket[]>(query, [
+    const [rows] = await this.getPool().execute<RowDataPacket[]>(query, [
       email.toLowerCase(),
     ]);
 
@@ -136,7 +142,7 @@ export class UserModel {
       LIMIT 1
     `;
 
-    const [rows] = await this.pool.execute<RowDataPacket[]>(query, [authId]);
+    const [rows] = await this.getPool().execute<RowDataPacket[]>(query, [authId]);
 
     if (rows.length === 0) {
       return null;
@@ -193,7 +199,7 @@ export class UserModel {
       WHERE id = ? AND deleted_at IS NULL
     `;
 
-    const result = await this.pool.execute(query, values);
+    const result = await this.getPool().execute(query, values);
 
     if ((result[0] as any).affectedRows === 0) {
       throw new NotFoundError(`Usuario no encontrado: ${id}`);
@@ -214,7 +220,7 @@ export class UserModel {
       WHERE id = ? AND deleted_at IS NULL
     `;
 
-    const result = await this.pool.execute(query, [id]);
+    const result = await this.getPool().execute(query, [id]);
 
     if ((result[0] as any).affectedRows === 0) {
       throw new NotFoundError(`Usuario no encontrado: ${id}`);
@@ -233,7 +239,7 @@ export class UserModel {
       WHERE id = ? AND deleted_at IS NULL
     `;
 
-    const result = await this.pool.execute(query, [newRole, id]);
+    const result = await this.getPool().execute(query, [newRole, id]);
 
     if ((result[0] as any).affectedRows === 0) {
       throw new NotFoundError(`Usuario no encontrado: ${id}`);
@@ -254,7 +260,7 @@ export class UserModel {
       WHERE id = ?
     `;
 
-    const result = await this.pool.execute(query, [newStatus, id]);
+    const result = await this.getPool().execute(query, [newStatus, id]);
 
     if ((result[0] as any).affectedRows === 0) {
       throw new NotFoundError(`Usuario no encontrado: ${id}`);
@@ -299,9 +305,9 @@ export class UserModel {
 
     // Total count
     const countQuery = `SELECT COUNT(*) as total FROM users WHERE ${whereClause}`;
-    const [countRows] = await this.pool.execute<RowDataPacket[]>(
+    const [countRows] = await this.getPool().execute<RowDataPacket[]>(
       countQuery,
-      values.slice(0, values.length - (filters?.search ? 3 : 0))
+      values
     );
 
     const total = (countRows[0] as any).total;
@@ -323,7 +329,7 @@ export class UserModel {
 
     values.push(limit, offset);
 
-    const [rows] = await this.pool.execute<RowDataPacket[]>(query, values);
+    const [rows] = await this.getPool().execute<RowDataPacket[]>(query, values);
 
     const items = rows.map((row) => this.mapRowToDTO(row));
 
@@ -340,95 +346,47 @@ export class UserModel {
   /**
    * Obtiene todos los profesores
    */
-  async getTeachers(
-    page: number = 1,
-    limit: number = 20
-  ): Promise<PaginatedResponse<UserDTO>> {
-    const countQuery = `
-      SELECT COUNT(*) as total 
-      FROM users 
-      WHERE role = 'teacher' AND status = 'active' AND deleted_at IS NULL
-    `;
-    const [countRows] = await this.pool.execute<RowDataPacket[]>(countQuery);
-    const total = (countRows[0] as any).total;
-
-    const offset = (page - 1) * limit;
-
+  async getTeachers(): Promise<UserDTO[]> {
     const query = `
-    SELECT 
-      id, auth_id as authId, email, first_name as firstName,
-      last_name as lastName, role, status, phone, bio,
-      profile_image_url as profileImageUrl, preferred_language as preferredLanguage,
-      created_at as createdAt, updated_at as updatedAt, deleted_at as deletedAt
+      SELECT 
+        id, auth_id as authId, email, first_name as firstName,
+        last_name as lastName, role, status, phone, bio,
+        profile_image_url as profileImageUrl, preferred_language as preferredLanguage,
+        created_at as createdAt, updated_at as updatedAt, deleted_at as deletedAt
       FROM users
-      WHERE role = 'teacher' AND status = 'active' AND deleted_at IS NULL
+      WHERE role = ? AND status = ? AND deleted_at IS NULL
       ORDER BY first_name, last_name
-      LIMIT ? OFFSET ?
     `;
 
-    const [rows] = await this.pool.execute<RowDataPacket[]>(query, [
-      limit,
-      offset,
+    const [rows] = await this.getPool().execute<RowDataPacket[]>(query, [
+      UserRole.TEACHER,
+      UserStatus.ACTIVE,
     ]);
 
-    const items = rows.map((row) => this.mapRowToDTO(row));
-
-    return {
-      items,
-      total,
-      page,
-      limit,
-      hasMore: offset + limit < total,
-      totalPages: Math.ceil(total / limit),
-    };
+    return rows.map((row) => this.mapRowToDTO(row));
   }
 
   /**
    * Obtiene todos los estudiantes
    */
-  async getStudents(
-    page: number = 1,
-    limit: number = 20
-  ): Promise<PaginatedResponse<UserDTO>> {
-    // Total count
-    const countQuery = `
-      SELECT COUNT(*) as total 
-      FROM users 
-      WHERE role = 'student' AND status = 'active' AND deleted_at IS NULL
-    `;
-    const [countRows] = await this.pool.execute<RowDataPacket[]>(countQuery);
-    const total = (countRows[0] as any).total;
-
-    // Paginación
-    const offset = (page - 1) * limit;
-
+  async getStudents(): Promise<UserDTO[]> {
     const query = `
-    SELECT 
-      id, auth_id as authId, email, first_name as firstName,
-      last_name as lastName, role, status, phone, bio,
-      profile_image_url as profileImageUrl, preferred_language as preferredLanguage,
-      created_at as createdAt, updated_at as updatedAt, deleted_at as deletedAt
+      SELECT 
+        id, auth_id as authId, email, first_name as firstName,
+        last_name as lastName, role, status, phone, bio,
+        profile_image_url as profileImageUrl, preferred_language as preferredLanguage,
+        created_at as createdAt, updated_at as updatedAt, deleted_at as deletedAt
       FROM users
-      WHERE role = 'student' AND status = 'active' AND deleted_at IS NULL
+      WHERE role = ? AND status = ? AND deleted_at IS NULL
       ORDER BY first_name, last_name
-      LIMIT ? OFFSET ?
     `;
 
-    const [rows] = await this.pool.execute<RowDataPacket[]>(query, [
-      limit,
-      offset,
+    const [rows] = await this.getPool().execute<RowDataPacket[]>(query, [
+      UserRole.STUDENT,
+      UserStatus.ACTIVE,
     ]);
 
-    const items = rows.map((row) => this.mapRowToDTO(row));
-
-    return {
-      items,
-      total,
-      page,
-      limit,
-      hasMore: offset + limit < total,
-      totalPages: Math.ceil(total / limit),
-    };
+    return rows.map((row) => this.mapRowToDTO(row));
   }
 
   /**
@@ -482,4 +440,13 @@ export class UserModel {
 /**
  * Instancia singleton del modelo
  */
-export const userModel = new UserModel();
+let userModelInstance: UserModel | null = null;
+
+export const userModel = new Proxy({} as UserModel, {
+  get(_target, prop) {
+    if (!userModelInstance) {
+      userModelInstance = new UserModel();
+    }
+    return (userModelInstance as any)[prop];
+  },
+});

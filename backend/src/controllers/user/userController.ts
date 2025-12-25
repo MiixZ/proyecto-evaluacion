@@ -20,7 +20,7 @@ export class UserController {
    */
   async createUser(req: Request, res: Response): Promise<void> {
     try {
-      const { email, firstName, lastName, role } = req.body;
+      const { email, firstName, lastName, role, phone, bio, profileImageUrl, preferredLanguage } = req.body;
 
       // Validación básica
       if (!email || !firstName || !lastName) {
@@ -37,7 +37,16 @@ export class UserController {
       // En producción, authId vendría de Authgear
       const authId = `auth_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const user = await userService.createUser(
-        { email, firstName, lastName, role },
+        { 
+          email, 
+          firstName, 
+          lastName, 
+          role,
+          phone,
+          bio,
+          profileImageUrl,
+          preferredLanguage
+        },
         authId
       );
 
@@ -83,10 +92,12 @@ export class UserController {
       const limit = parseInt(req.query.limit as string) || 10;
       const role = req.query.role as string | undefined;
       const status = req.query.status as string | undefined;
+      const search = req.query.search as string | undefined;
 
       const result = await userService.listUsers(page, limit, {
         role: role as any,
         status: status as any,
+        search,
       });
 
       res.status(200).json({
@@ -106,14 +117,9 @@ export class UserController {
   async updateUser(req: Request, res: Response): Promise<void> {
     try {
       const { id } = req.params;
-      const { firstName, lastName, email, status } = req.body;
+      const updates = req.body;
 
-      const user = await userService.updateUser(id, {
-        firstName,
-        lastName,
-        email,
-        status,
-      });
+      const user = await userService.updateUser(id, updates);
 
       logger.info(`Usuario actualizado: ${id}`);
 
@@ -215,14 +221,11 @@ export class UserController {
    */
   async getTeachers(req: Request, res: Response): Promise<void> {
     try {
-      const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 10;
-
-      const result = await userService.getTeachers(page, limit);
+      const teachers = await userService.getTeachers();
 
       res.status(200).json({
         success: true,
-        data: result,
+        data: teachers,
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
@@ -236,14 +239,11 @@ export class UserController {
    */
   async getStudents(req: Request, res: Response): Promise<void> {
     try {
-      const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 10;
-
-      const result = await userService.getStudents(page, limit);
+      const students = await userService.getStudents();
 
       res.status(200).json({
         success: true,
-        data: result,
+        data: students,
         timestamp: new Date().toISOString(),
       });
     } catch (error) {

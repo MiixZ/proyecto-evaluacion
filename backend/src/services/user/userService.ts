@@ -8,6 +8,7 @@ import {
 } from '@utils/errors';
 import { createUUID, UserRole, UserStatus } from '@CustomTypes/common.types';
 import { UserDTO, UserEntity } from '@models/user/user.entity';
+import { CreateUserInput, UpdateUserInput } from '@validators/schemas';
 
 /**
  * Servicio de lógica de negocio para usuarios
@@ -24,6 +25,10 @@ export class UserService {
       lastName: string;
       password?: string;
       role?: UserRole;
+      phone?: string | null;
+      bio?: string | null;
+      profileImageUrl?: string | null;
+      preferredLanguage?: 'es' | 'en';
     },
     authId: string
   ): Promise<UserDTO> {
@@ -34,17 +39,20 @@ export class UserService {
         throw new ValidationError(`Usuario con email ${input.email} ya existe`);
       }
 
-      // Crear usuario
-      const user: UserEntity = await userModel.create(
-        {
-          email: input.email,
-          firstName: input.firstName,
-          lastName: input.lastName,
-          role: input.role || UserRole.STUDENT,
-          status: UserStatus.ACTIVE,
-        },
-        authId
-      );
+      // Preparar input para el modelo (sin status, se setea automáticamente)
+      const createInput: CreateUserInput = {
+        email: input.email,
+        firstName: input.firstName,
+        lastName: input.lastName,
+        role: input.role || UserRole.STUDENT,
+        phone: input.phone || null,
+        bio: input.bio || null,
+        profileImageUrl: input.profileImageUrl || null,
+        preferredLanguage: input.preferredLanguage || 'es',
+      };
+
+      // Crear usuario (status se setea a ACTIVE automáticamente en el modelo)
+      const user: UserEntity = await userModel.create(createInput, authId);
 
       logger.info(`Usuario creado: ${user.id} (${user.email})`);
 
@@ -93,15 +101,14 @@ export class UserService {
   /**
    * Obtener usuario por authId (Authgear)
    */
-  async getUserByAuthId(authId: string): Promise<UserDTO> {
+  async getUserByAuthId(authId: string): Promise<UserDTO | null> {
     try {
       const user = await userModel.getByAuthId(authId);
       if (!user) {
-        throw new NotFoundError(`Usuario con authId ${authId} no encontrado`);
+        return null;
       }
       return this.entityToDTO(user);
     } catch (error) {
-      if (error instanceof AppError) throw error;
       logger.error(`Error obteniendo usuario por authId:`, error);
       throw error;
     }
@@ -112,12 +119,7 @@ export class UserService {
    */
   async updateUser(
     userId: string,
-    updates: {
-      firstName?: string;
-      lastName?: string;
-      email?: string;
-      status?: UserStatus;
-    }
+    updates: UpdateUserInput
   ): Promise<UserDTO> {
     try {
       // Verificar que existe
@@ -156,7 +158,7 @@ export class UserService {
       // Verificar permisos: solo admin puede cambiar roles
       if (
         requestingUser &&
-        requestingUser.role !== 'admin' &&
+        requestingUser.role !== UserRole.ADMIN &&
         requestingUser.id !== userId
       ) {
         throw new ForbiddenError('Solo administradores pueden cambiar roles');
@@ -237,6 +239,7 @@ export class UserService {
     filters?: {
       role?: UserRole;
       status?: UserStatus;
+      search?: string;
     }
   ): Promise<{
     items: UserDTO[];
@@ -247,26 +250,15 @@ export class UserService {
     totalPages: number;
   }> {
     try {
-      const result = await userModel.list(page, limit);
-
-      // Aplicar filtros si se proporcionan
-      let filtered = result.items;
-      if (filters) {
-        if (filters.role) {
-          filtered = filtered.filter((u) => u.role === filters.role);
-        }
-        if (filters.status) {
-          filtered = filtered.filter((u) => u.status === filters.status);
-        }
-      }
+      const result = await userModel.list(page, limit, filters);
 
       return {
-        items: filtered.map((u) => u),
+        items: result.items,
         total: result.total,
-        page,
-        limit,
+        page: result.page,
+        limit: result.limit,
         hasMore: result.hasMore,
-        totalPages: Math.ceil(result.total / limit),
+        totalPages: result.totalPages,
       };
     } catch (error) {
       logger.error('Error listando usuarios:', error);
@@ -277,28 +269,10 @@ export class UserService {
   /**
    * Obtener profesores
    */
-  async getTeachers(
-    page: number = 1,
-    limit: number = 10
-  ): Promise<{
-    items: UserDTO[];
-    total: number;
-    page: number;
-    limit: number;
-    hasMore: boolean;
-    totalPages: number;
-  }> {
+  async getTeachers(): Promise<UserDTO[]> {
     try {
-      const result = await userModel.getTeachers(page, limit);
-
-      return {
-        items: result.items.map((u) => u),
-        total: result.total,
-        page: result.page,
-        limit: result.limit,
-        hasMore: result.hasMore,
-        totalPages: result.totalPages,
-      };
+      const teachers = await userModel.getTeachers();
+      return teachers;
     } catch (error) {
       logger.error('Error obteniendo profesores:', error);
       throw error;
@@ -308,28 +282,10 @@ export class UserService {
   /**
    * Obtener estudiantes
    */
-  async getStudents(
-    page: number = 1,
-    limit: number = 10
-  ): Promise<{
-    items: UserDTO[];
-    total: number;
-    page: number;
-    limit: number;
-    hasMore: boolean;
-    totalPages: number;
-  }> {
+  async getStudents(): Promise<UserDTO[]> {
     try {
-      const result = await userModel.getStudents(page, limit);
-
-      return {
-        items: result.items,
-        total: result.total,
-        page: result.page,
-        limit: result.limit,
-        hasMore: result.hasMore,
-        totalPages: result.totalPages,
-      };
+      const students = await userModel.getStudents();
+      return students;
     } catch (error) {
       logger.error('Error obteniendo estudiantes:', error);
       throw error;
@@ -347,11 +303,11 @@ export class UserService {
       lastName: user.lastName,
       role: user.role,
       status: user.status,
-      createdAt: user.createdAt,
       phone: user.phone,
       bio: user.bio,
       profileImageUrl: user.profileImageUrl,
       preferredLanguage: user.preferredLanguage,
+      createdAt: user.createdAt,
     };
   }
 }
