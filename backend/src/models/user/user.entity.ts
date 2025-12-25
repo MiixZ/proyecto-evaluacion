@@ -9,6 +9,7 @@ export interface UserEntity extends Timestamps {
   id: UUID;
   authId: string;
   email: string;
+  passwordHash: string;  // Hash bcrypt de la contraseña
   firstName: string;
   lastName: string;
   role: UserRole;
