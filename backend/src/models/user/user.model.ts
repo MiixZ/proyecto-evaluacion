@@ -32,16 +32,16 @@ export class UserModel {
    * @throws ValidationError si el email ya existe
    * @throws Error si hay problemas en BD
    */
-  async create(input: CreateUserInput, authId: string): Promise<UserEntity> {
+  async create(input: CreateUserInput, authId: string, passwordHash: string): Promise<UserEntity> {
     const pool = this.getPool();
     const newId = randomUUID();
     const query = `
       INSERT INTO users (
-        id, auth_id, email, first_name, last_name, 
+        id, auth_id, email, password_hash, first_name, last_name, 
         role, status, phone, bio, profile_image_url, preferred_language,
         created_at, updated_at
       ) VALUES (
-        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW()
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW()
       )
     `;
 
@@ -49,6 +49,7 @@ export class UserModel {
       newId,
       authId,
       input.email,
+      passwordHash,
       input.firstName,
       input.lastName,
       input.role,
@@ -83,7 +84,7 @@ export class UserModel {
   async getById(id: UUID): Promise<UserEntity> {
     const query = `
       SELECT 
-        id, auth_id as authId, email, first_name as firstName,
+        id, auth_id as authId, email, password_hash as passwordHash, first_name as firstName,
         last_name as lastName, role, status, phone, bio,
         profile_image_url as profileImageUrl, preferred_language as preferredLanguage,
         created_at as createdAt, updated_at as updatedAt, deleted_at as deletedAt
@@ -108,7 +109,7 @@ export class UserModel {
   async getByEmail(email: string): Promise<UserEntity> {
     const query = `
       SELECT 
-        id, auth_id as authId, email, first_name as firstName,
+        id, auth_id as authId, email, password_hash as passwordHash, first_name as firstName,
         last_name as lastName, role, status, phone, bio,
         profile_image_url as profileImageUrl, preferred_language as preferredLanguage,
         created_at as createdAt, updated_at as updatedAt, deleted_at as deletedAt
@@ -149,7 +150,7 @@ export class UserModel {
   async getByAuthId(authId: string): Promise<UserEntity | null> {
     const query = `
       SELECT 
-        id, auth_id as authId, email, first_name as firstName,
+        id, auth_id as authId, email, password_hash as passwordHash, first_name as firstName,
         last_name as lastName, role, status, phone, bio,
         profile_image_url as profileImageUrl, preferred_language as preferredLanguage,
         created_at as createdAt, updated_at as updatedAt, deleted_at as deletedAt
@@ -421,6 +422,7 @@ export class UserModel {
       id: row.id,
       authId: row.authId,
       email: row.email,
+      passwordHash: row.passwordHash,
       firstName: row.firstName,
       lastName: row.lastName,
       role: row.role as UserRole,
