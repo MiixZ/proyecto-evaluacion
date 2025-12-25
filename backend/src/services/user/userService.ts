@@ -6,8 +6,9 @@ import {
   ForbiddenError,
   AppError,
 } from '@utils/errors';
-import { UserDTO, UserRole, UserStatus, User } from '@types/common.types';
-import crypto from 'crypto';
+import { createUUID, UserRole, UserStatus } from '@CustomTypes/common.types';
+import { UserDTO, UserEntity } from '@models/user/user.entity';
+import { CreateUserInput, UpdateUserInput } from '@validators/schemas';
 
 /**
  * Servicio de lógica de negocio para usuarios
@@ -24,6 +25,10 @@ export class UserService {
       lastName: string;
       password?: string;
       role?: UserRole;
+      phone?: string | null;
+      bio?: string | null;
+      profileImageUrl?: string | null;
+      preferredLanguage?: 'es' | 'en';
     },
     authId: string
   ): Promise<UserDTO> {
@@ -34,17 +39,20 @@ export class UserService {
         throw new ValidationError(`Usuario con email ${input.email} ya existe`);
       }
 
-      // Crear usuario
-      const user = await userModel.create(
-        {
-          email: input.email,
-          firstName: input.firstName,
-          lastName: input.lastName,
-          role: input.role || 'student',
-          status: 'active',
-        },
-        authId
-      );
+      // Preparar input para el modelo (sin status, se setea automáticamente)
+      const createInput: CreateUserInput = {
+        email: input.email,
+        firstName: input.firstName,
+        lastName: input.lastName,
+        role: input.role || UserRole.STUDENT,
+        phone: input.phone || null,
+        bio: input.bio || null,
+        profileImageUrl: input.profileImageUrl || null,
+        preferredLanguage: input.preferredLanguage || 'es',
+      };
+
+      // Crear usuario (status se setea a ACTIVE automáticamente en el modelo)
+      const user: UserEntity = await userModel.create(createInput, authId);
 
       logger.info(`Usuario creado: ${user.id} (${user.email})`);
 
@@ -60,10 +68,11 @@ export class UserService {
    */
   async getUserById(userId: string): Promise<UserDTO> {
     try {
-      const user = await userModel.getById(userId);
+      const user = await userModel.getById(createUUID(userId));
       if (!user) {
         throw new NotFoundError(`Usuario ${userId} no encontrado`);
       }
+
       return this.entityToDTO(user);
     } catch (error) {
       if (error instanceof AppError) throw error;
@@ -92,15 +101,14 @@ export class UserService {
   /**
    * Obtener usuario por authId (Authgear)
    */
-  async getUserByAuthId(authId: string): Promise<UserDTO> {
+  async getUserByAuthId(authId: string): Promise<UserDTO | null> {
     try {
       const user = await userModel.getByAuthId(authId);
       if (!user) {
-        throw new NotFoundError(`Usuario con authId ${authId} no encontrado`);
+        return null;
       }
       return this.entityToDTO(user);
     } catch (error) {
-      if (error instanceof AppError) throw error;
       logger.error(`Error obteniendo usuario por authId:`, error);
       throw error;
     }
@@ -111,16 +119,11 @@ export class UserService {
    */
   async updateUser(
     userId: string,
-    updates: {
-      firstName?: string;
-      lastName?: string;
-      email?: string;
-      status?: UserStatus;
-    }
+    updates: UpdateUserInput
   ): Promise<UserDTO> {
     try {
       // Verificar que existe
-      const existing = await userModel.getById(userId);
+      const existing = await userModel.getById(createUUID(userId));
       if (!existing) {
         throw new NotFoundError(`Usuario ${userId} no encontrado`);
       }
@@ -135,7 +138,7 @@ export class UserService {
         }
       }
 
-      const updated = await userModel.update(userId, updates);
+      const updated = await userModel.update(createUUID(userId), updates);
       logger.info(`Usuario actualizado: ${userId}`);
 
       return this.entityToDTO(updated);
@@ -158,7 +161,7 @@ export class UserService {
       // Verificar permisos: solo admin puede cambiar roles
       if (
         requestingUser &&
-        requestingUser.role !== 'admin' &&
+        requestingUser.role !== UserRole.ADMIN &&
         requestingUser.id !== userId
       ) {
         throw new ForbiddenError(
@@ -166,12 +169,12 @@ export class UserService {
         );
       }
 
-      const user = await userModel.getById(userId);
+      const user = await userModel.getById(createUUID(userId));
       if (!user) {
         throw new NotFoundError(`Usuario ${userId} no encontrado`);
       }
 
-      const updated = await userModel.updateRole(userId, newRole);
+      const updated = await userModel.updateRole(createUUID(userId), newRole);
       logger.info(`Rol actualizado para usuario ${userId}: ${newRole}`);
 
       return this.entityToDTO(updated);
@@ -190,12 +193,15 @@ export class UserService {
     newStatus: UserStatus
   ): Promise<UserDTO> {
     try {
-      const user = await userModel.getById(userId);
+      const user = await userModel.getById(createUUID(userId));
       if (!user) {
         throw new NotFoundError(`Usuario ${userId} no encontrado`);
       }
 
-      const updated = await userModel.updateStatus(userId, newStatus);
+      const updated = await userModel.updateStatus(
+        createUUID(userId),
+        newStatus
+      );
       logger.info(`Estado actualizado para usuario ${userId}: ${newStatus}`);
 
       return this.entityToDTO(updated);
@@ -211,7 +217,7 @@ export class UserService {
    */
   async softDeleteUser(userId: string): Promise<void> {
     try {
-      const user = await userModel.getById(userId);
+      const user = await userModel.getById(createUUID(userId));
       if (!user) {
         throw new NotFoundError(`Usuario ${userId} no encontrado`);
       }
@@ -220,7 +226,7 @@ export class UserService {
         throw new ValidationError(`Usuario ${userId} ya fue eliminado`);
       }
 
-      await userModel.softDelete(userId);
+      await userModel.softDelete(createUUID(userId));
       logger.info(`Usuario desactivado (soft delete): ${userId}`);
     } catch (error) {
       if (error instanceof AppError) throw error;
@@ -238,6 +244,7 @@ export class UserService {
     filters?: {
       role?: UserRole;
       status?: UserStatus;
+      search?: string;
     }
   ): Promise<{
     items: UserDTO[];
@@ -248,26 +255,15 @@ export class UserService {
     totalPages: number;
   }> {
     try {
-      const result = await userModel.list(page, limit);
-
-      // Aplicar filtros si se proporcionan
-      let filtered = result.items;
-      if (filters) {
-        if (filters.role) {
-          filtered = filtered.filter((u) => u.role === filters.role);
-        }
-        if (filters.status) {
-          filtered = filtered.filter((u) => u.status === filters.status);
-        }
-      }
+      const result = await userModel.list(page, limit, filters);
 
       return {
-        items: filtered.map((u) => this.entityToDTO(u)),
+        items: result.items,
         total: result.total,
-        page,
-        limit,
+        page: result.page,
+        limit: result.limit,
         hasMore: result.hasMore,
-        totalPages: Math.ceil(result.total / limit),
+        totalPages: result.totalPages,
       };
     } catch (error) {
       logger.error('Error listando usuarios:', error);
@@ -278,21 +274,10 @@ export class UserService {
   /**
    * Obtener profesores
    */
-  async getTeachers(
-    page: number = 1,
-    limit: number = 10
-  ): Promise<{
-    items: UserDTO[];
-    total: number;
-    hasMore: boolean;
-  }> {
+  async getTeachers(): Promise<UserDTO[]> {
     try {
-      const result = await userModel.getTeachers(page, limit);
-      return {
-        items: result.items.map((u) => this.entityToDTO(u)),
-        total: result.total,
-        hasMore: result.hasMore,
-      };
+      const teachers = await userModel.getTeachers();
+      return teachers;
     } catch (error) {
       logger.error('Error obteniendo profesores:', error);
       throw error;
@@ -302,21 +287,10 @@ export class UserService {
   /**
    * Obtener estudiantes
    */
-  async getStudents(
-    page: number = 1,
-    limit: number = 10
-  ): Promise<{
-    items: UserDTO[];
-    total: number;
-    hasMore: boolean;
-  }> {
+  async getStudents(): Promise<UserDTO[]> {
     try {
-      const result = await userModel.getStudents(page, limit);
-      return {
-        items: result.items.map((u) => this.entityToDTO(u)),
-        total: result.total,
-        hasMore: result.hasMore,
-      };
+      const students = await userModel.getStudents();
+      return students;
     } catch (error) {
       logger.error('Error obteniendo estudiantes:', error);
       throw error;
@@ -326,7 +300,7 @@ export class UserService {
   /**
    * Convertir entidad a DTO (excluye datos sensibles)
    */
-  private entityToDTO(user: User): UserDTO {
+  private entityToDTO(user: UserEntity): UserDTO {
     return {
       id: user.id,
       email: user.email,
@@ -334,9 +308,11 @@ export class UserService {
       lastName: user.lastName,
       role: user.role,
       status: user.status,
+      phone: user.phone,
+      bio: user.bio,
+      profileImageUrl: user.profileImageUrl,
+      preferredLanguage: user.preferredLanguage,
       createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-      deletedAt: user.deletedAt,
     };
   }
 }
