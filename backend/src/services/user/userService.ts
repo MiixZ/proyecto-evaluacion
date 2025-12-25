@@ -23,6 +23,9 @@ export interface RegisterRequest {
   firstName: string;
   lastName: string;
   role?: 'admin' | 'teacher' | 'student';
+  phone?: string | null;
+  bio?: string | null;
+  profileImageUrl?: string | null;
 }
 
 /**
@@ -92,7 +95,16 @@ export class UserService {
    */
   async register(request: RegisterRequest): Promise<AuthResponse> {
     try {
-      const { email, password, firstName, lastName, role = 'student' } = request;
+      const { 
+        email, 
+        password, 
+        firstName, 
+        lastName, 
+        role = 'student',
+        phone,
+        bio,
+        profileImageUrl
+      } = request;
 
       // Validar que no exista el usuario
       const exists = await userModel.existsByEmail(email);
@@ -110,6 +122,9 @@ export class UserService {
         firstName,
         lastName,
         role,
+        phone,
+        bio,
+        profileImageUrl,
       });
 
       // Crear usuario en BD
@@ -122,9 +137,9 @@ export class UserService {
           firstName,
           lastName,
           role: role as UserRole,
-          phone: undefined,
-          bio: undefined,
-          profileImageUrl: undefined,
+          phone: phone || undefined,
+          bio: bio || undefined,
+          profileImageUrl: profileImageUrl || undefined,
           preferredLanguage: 'es',
         },
         passwordHash  // authId = password hash
