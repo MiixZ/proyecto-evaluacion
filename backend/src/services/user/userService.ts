@@ -5,7 +5,7 @@ import { generateToken } from '@utils/jwt.utils';
 import { userModel } from '@models/user/user.model';
 import { UserDTO } from '@models/user/user.entity';
 import { validate, createUserSchema } from '@validators/schemas';
-import { UserRole, UserStatus } from '@CustomTypes/common.types';
+import { UserRole, UserStatus, UUID } from '@CustomTypes/common.types';
 
 /**
  * Interfaz de usuario (lo que devolvemos)
@@ -66,7 +66,7 @@ export class UserService {
       return hashedPassword;
     } catch (error) {
       logger.error('Error hasheando contraseña', error);
-      throw new AppError('Error procesando contraseña', 500);
+      throw new AppError('HASH_ERROR', 500, 'Error procesando contraseña');
     }
   }
 
@@ -77,12 +77,15 @@ export class UserService {
    * @param hash - Hash de contraseña
    * @returns true si coinciden
    */
-  private async comparePasswords(password: string, hash: string): Promise<boolean> {
+  private async comparePasswords(
+    password: string,
+    hash: string
+  ): Promise<boolean> {
     try {
       return await bcrypt.compare(password, hash);
     } catch (error) {
       logger.error('Error comparando contraseñas', error);
-      return false;
+      throw new AppError('COMPARE_ERROR', 500, 'Error comparando contraseñas');
     }
   }
 
@@ -95,15 +98,15 @@ export class UserService {
    */
   async register(request: RegisterRequest): Promise<AuthResponse> {
     try {
-      const { 
-        email, 
-        password, 
-        firstName, 
-        lastName, 
+      const {
+        email,
+        password,
+        firstName,
+        lastName,
         role = 'student',
         phone,
         bio,
-        profileImageUrl
+        profileImageUrl,
       } = request;
 
       // Validar que no exista el usuario
@@ -142,7 +145,7 @@ export class UserService {
           profileImageUrl: profileImageUrl || null,
           preferredLanguage: 'es',
         },
-        passwordHash  // authId = password hash
+        passwordHash // authId = password hash
       );
 
       // Convertir a DTO
@@ -182,7 +185,7 @@ export class UserService {
         throw error;
       }
       logger.error('Error registrando usuario', error);
-      throw new AppError('Error registrando usuario', 500);
+      throw new AppError('REGISTER_ERROR', 500, 'Error registrando usuario');
     }
   }
 
@@ -220,7 +223,9 @@ export class UserService {
 
       // Validar que el usuario esté activo
       if (userEntity.status !== UserStatus.ACTIVE) {
-        throw new AuthenticationError('Usuario desactivado o pendiente de activación');
+        throw new AuthenticationError(
+          'Usuario desactivado o pendiente de activación'
+        );
       }
 
       // Convertir a DTO
@@ -259,7 +264,7 @@ export class UserService {
         throw error;
       }
       logger.error('Error autenticando usuario', error);
-      throw new AppError('Error en autenticación', 500);
+      throw new AppError('AUTH_ERROR', 500, 'Error en autenticación');
     }
   }
 
@@ -300,7 +305,7 @@ export class UserService {
    * @returns Usuario
    */
   async getUserById(id: string): Promise<User> {
-    const userEntity = await userModel.getById(id);
+    const userEntity = await userModel.getById(id as UUID);
     return {
       id: userEntity.id,
       email: userEntity.email,

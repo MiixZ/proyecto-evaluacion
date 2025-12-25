@@ -7,7 +7,7 @@ import { UserRole, UserStatus, Timestamps } from '@CustomTypes/common.types';
  */
 export interface UserEntity extends Timestamps {
   id: UUID;
-  authId: string;  // Hash de la contraseña (almacenado en campo auth_id de BD)
+  authId: string;
   email: string;
   firstName: string;
   lastName: string;

@@ -1,6 +1,10 @@
 import { Router, Request, Response } from 'express';
 import { logger } from '@utils/logger';
-import { userService, LoginRequest, RegisterRequest } from '@services/user/userService';
+import {
+  userService,
+  LoginRequest,
+  RegisterRequest,
+} from '@services/user/userService';
 import { AppError, AuthenticationError } from '@utils/errors';
 
 const router = Router();
@@ -29,7 +33,15 @@ const router = Router();
  */
 router.post('/register', async (req: Request, res: Response) => {
   try {
-    const { email, password, firstName, lastName } = req.body;
+    const {
+      email,
+      password,
+      firstName,
+      lastName,
+      phone,
+      bio,
+      profileImageUrl,
+    } = req.body;
 
     // Validar datos
     if (!email || !password || !firstName || !lastName) {
@@ -37,7 +49,8 @@ router.post('/register', async (req: Request, res: Response) => {
         success: false,
         error: {
           code: 'VALIDATION_ERROR',
-          message: 'Faltan campos requeridos: email, password, firstName, lastName',
+          message:
+            'Faltan campos requeridos: email, password, firstName, lastName',
         },
         timestamp: new Date().toISOString(),
       });
@@ -69,7 +82,15 @@ router.post('/register', async (req: Request, res: Response) => {
     }
 
     // Registrar usuario
-    const request: RegisterRequest = { email, password, firstName, lastName };
+    const request: RegisterRequest = {
+      email,
+      password,
+      firstName,
+      lastName,
+      phone,
+      bio,
+      profileImageUrl,
+    };
     const result = await userService.register(request);
 
     logger.info('Usuario registrado exitosamente', { email });
@@ -77,7 +98,9 @@ router.post('/register', async (req: Request, res: Response) => {
     return res.status(201).json(result);
   } catch (error) {
     if (error instanceof AuthenticationError) {
-      logger.warn('Error de autenticación en registro', { message: error.message });
+      logger.warn('Error de autenticación en registro', {
+        message: error.message,
+      });
       return res.status(409).json({
         success: false,
         error: {
@@ -157,7 +180,9 @@ router.post('/login', async (req: Request, res: Response) => {
     return res.status(200).json(result);
   } catch (error) {
     if (error instanceof AuthenticationError) {
-      logger.warn('Error de autenticación en login', { message: error.message });
+      logger.warn('Error de autenticación en login', {
+        message: error.message,
+      });
       return res.status(401).json({
         success: false,
         error: {
