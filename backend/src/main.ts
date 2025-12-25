@@ -6,10 +6,12 @@ import { logger } from './utils/logger.js';
 import {
   authMiddleware,
   requestLoggerMiddleware,
+  errorHandlerMiddleware,
 } from './middleware/auth.middleware.js';
 import { AuthRequest } from './types/request.types.js';
 import routerUsers from '@routes/user/user.js';
 import routerSubmissions from '@routes/submission/submission.js';
+import { createAuthgearWebhookRouter } from '@routes/webhooks/authgear.webhook.js';
 
 const app = express();
 const PORT = config.port;
@@ -69,6 +71,7 @@ app.get('/api/v1', (_req, res: Response) => {
       users: '/api/v1/users',
       submissions: '/api/v1/submissions',
       exercises: '/api/v1/exercises',
+      webhooks: '/webhooks',
     },
   });
 });
@@ -78,6 +81,7 @@ app.get('/api/v1', (_req, res: Response) => {
 /**
  * Ejemplo de ruta protegida
  * GET /api/v1/me
+ * Requiere: Bearer token de Authgear
  */
 app.get('/api/v1/me', authMiddleware, (req: AuthRequest, res) => {
   res.json({
@@ -87,7 +91,34 @@ app.get('/api/v1/me', authMiddleware, (req: AuthRequest, res) => {
   });
 });
 
-// ==================== RUTAS DE LA API ====================
+// ==================== RUTAS DE WEBHOOKS (SIN PROTECCIÓN) ====================
+
+/**
+ * Webhooks de Authgear
+ * POST /webhooks/authgear - Recibir eventos de usuario
+ * GET  /webhooks/authgear/health - Health check
+ *
+ * Nota: No requiere autenticación JWT, pero valida firma HMAC-SHA256
+ */
+const webhookRouter = createAuthgearWebhookRouter();
+app.use('/webhooks/authgear', webhookRouter);
+
+/**
+ * Health check de webhooks
+ * GET /webhooks/health
+ */
+app.get('/webhooks/health', (req: express.Request, res: Response) => {
+  res.json({
+    status: 'ok',
+    service: 'webhooks',
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// ==================== RUTAS DE LA API (PROTEGIDAS) ====================
+
+// Middleware de autenticación para todas las rutas /api/v1
+app.use('/api/v1/', authMiddleware);
 
 /**
  * Usuarios
@@ -121,6 +152,11 @@ app.use((_req, res) => {
   });
 });
 
+// ==================== MIDDLEWARE DE ERROR GLOBAL ====================
+
+// Debe ser el último middleware registrado
+app.use(errorHandlerMiddleware);
+
 // ==================== INICIO DEL SERVIDOR ====================
 
 /**
@@ -134,14 +170,19 @@ async function start(): Promise<void> {
     // Iniciar servidor
     app.listen(PORT, () => {
       console.log('\n' + '='.repeat(60));
-      console.log('Backend escuchando en puerto', PORT);
-      console.log('Ambiente:', config.nodeEnv);
-      console.log('URL base: http://localhost:' + PORT);
-      console.log('API v1: http://localhost:' + PORT + '/api/v1');
-      console.log('Health: http://localhost:' + PORT + '/health');
+      console.log('🎯 Backend escuchando en puerto', PORT);
+      console.log('🌍 Ambiente:', config.nodeEnv);
+      console.log('🔗 URL base: http://localhost:' + PORT);
+      console.log('📍 API v1: http://localhost:' + PORT + '/api/v1');
+      console.log('💚 Health: http://localhost:' + PORT + '/health');
+      console.log('🔐 Autenticación: Authgear (JWKS + Sincronización)');
+      console.log('📨 Webhooks: http://localhost:' + PORT + '/webhooks/authgear');
       console.log('='.repeat(60) + '\n');
 
-      logger.info(`Servidor iniciado correctamente en puerto ${PORT}`);
+      logger.info(`Servidor iniciado correctamente en puerto ${PORT}`, {
+        authgear: config.authgear.endpoint,
+        jwksUri: config.authgear.jwksUri,
+      });
     });
   } catch (error) {
     logger.error('Error iniciando servidor:', error);
