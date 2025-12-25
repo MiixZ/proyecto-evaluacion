@@ -53,9 +53,9 @@ export class UserModel {
       input.lastName,
       input.role,
       UserStatus.ACTIVE,
-      input.phone || null,
-      input.bio || null,
-      input.profileImageUrl || null,
+      input.phone ?? null,
+      input.bio ?? null,
+      input.profileImageUrl ?? null,
       input.preferredLanguage || 'es',
     ];
 
