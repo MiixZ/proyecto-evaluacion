@@ -3,66 +3,19 @@ import { logger } from '@utils/logger';
 import { userService } from '@services/user/userService';
 import { userModel } from '@models/user/user.model';
 import { AuthRequest } from '@CustomTypes/request.types';
+import { UUID } from '@CustomTypes/common.types';
 import {
   AppError,
   ValidationError,
   NotFoundError,
   AuthenticationError,
 } from '@utils/errors';
-import { UUID } from '@CustomTypes/common.types';
 
 /**
  * Controller para manejo de usuarios
  * Intermedia entre rutas y servicios
  */
 export class UserController {
-  /**
-   * POST /api/v1/auth/register
-   * Registrar un nuevo usuario y obtener JWT
-   */
-  async register(req: Request, res: Response): Promise<void> {
-    try {
-      const {
-        email,
-        password,
-        firstName,
-        lastName,
-        role,
-        phone,
-        bio,
-        profileImageUrl,
-      } = req.body;
-
-      // Validación básica
-      if (!email || !password || !firstName || !lastName) {
-        res.status(400).json({
-          success: false,
-          error: 'email, password, firstName y lastName son requeridos',
-          timestamp: new Date().toISOString(),
-        });
-        return;
-      }
-
-      // Llamar al servicio de registro
-      const response = await userService.register({
-        email,
-        password,
-        firstName,
-        lastName,
-        role: role || 'student',
-        phone: phone || null,
-        bio: bio || null,
-        profileImageUrl: profileImageUrl || null,
-      });
-
-      logger.info(`Usuario registrado: ${response.data.user.email}`);
-
-      res.status(201).json(response);
-    } catch (error) {
-      this.handleError(error, res);
-    }
-  }
-
   /**
    * POST /api/v1/auth/login
    * Autenticar usuario y obtener JWT
