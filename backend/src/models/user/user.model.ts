@@ -330,7 +330,7 @@ export class UserModel {
 
     const total = (countRows[0] as any).total;
 
-    // Paginación
+    // Paginación - LIMIT y OFFSET NO pueden ser parámetros en mysql2
     const offset = (page - 1) * limit;
 
     const query = `
@@ -342,14 +342,12 @@ export class UserModel {
       FROM users
       WHERE ${whereClause}
       ORDER BY created_at DESC
-      LIMIT ? OFFSET ?
+      LIMIT ${limit} OFFSET ${offset}
     `;
-
-    const paginationValues = [...filterValues, limit, offset];
 
     const [rows] = await this.getPool().execute<RowDataPacket[]>(
       query,
-      paginationValues
+      filterValues
     );
 
     const items = rows.map((row) => this.mapRowToDTO(row));
