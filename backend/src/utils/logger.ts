@@ -19,6 +19,7 @@ class Logger {
       [LogLevel.WARN]: 2,
       [LogLevel.ERROR]: 3,
     };
+
     return levels[logLevel] >= levels[this.level];
   }
 

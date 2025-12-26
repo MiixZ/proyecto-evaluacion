@@ -97,7 +97,10 @@ export const createUserSchema = z.object({
     .min(1, 'Apellido es requerido')
     .max(100, 'Apellido máximo 100 caracteres')
     .describe('Apellidos'),
-  role: z.nativeEnum(UserRole).default(UserRole.STUDENT).describe('Rol del usuario'),
+  role: z
+    .nativeEnum(UserRole)
+    .default(UserRole.STUDENT)
+    .describe('Rol del usuario'),
   phone: phoneSchema,
   bio: z
     .string()
@@ -114,18 +117,22 @@ export const createUserSchema = z.object({
 
 export type CreateUserInput = z.infer<typeof createUserSchema>;
 
-export const updateUserSchema = createUserSchema.partial().omit({ password: true });
+export const updateUserSchema = createUserSchema
+  .partial()
+  .omit({ password: true });
 
 export type UpdateUserInput = z.infer<typeof updateUserSchema>;
 
-export const userResponseSchema = createUserSchema.omit({ password: true }).extend({
-  id: uuidSchema,
-  authId: z.string().describe('ID de Authgear'),
-  status: z.nativeEnum(UserStatus),
-  createdAt: z.coerce.date(),
-  updatedAt: z.coerce.date(),
-  deletedAt: z.coerce.date().optional().nullable(),
-});
+export const userResponseSchema = createUserSchema
+  .omit({ password: true })
+  .extend({
+    id: uuidSchema,
+    authId: z.string().describe('ID de Authgear'),
+    status: z.nativeEnum(UserStatus),
+    createdAt: z.coerce.date(),
+    updatedAt: z.coerce.date(),
+    deletedAt: z.coerce.date().optional().nullable(),
+  });
 
 export type UserResponse = z.infer<typeof userResponseSchema>;
 

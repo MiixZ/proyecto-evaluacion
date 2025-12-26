@@ -4,14 +4,12 @@ import { AuthenticationError, AppError, NotFoundError } from '@utils/errors';
 import { generateToken } from '@utils/jwt.utils';
 import { userModel } from '@models/user/user.model';
 import { UserDTO } from '@models/user/user.entity';
-import { UserRole, UserStatus, UUID } from '@CustomTypes/common.types';
+import { UserStatus, UUID } from '@CustomTypes/common.types';
 
 /**
- * Interfaz de usuario (lo que devolvemos)
+ * Interfaz de usuario
  */
-export interface User extends UserDTO {
-  // Heredar de UserDTO que tiene: id, email, firstName, lastName, role, status, createdAt
-}
+export interface User extends UserDTO {}
 
 /**
  * Request de login
@@ -19,6 +17,21 @@ export interface User extends UserDTO {
 export interface LoginRequest {
   email: string;
   password: string;
+}
+
+/**
+ * Request para crear un usuario
+ */
+export interface CreateUserRequest {
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: string;
+  password: string;
+  phone?: string | null;
+  bio?: string | null;
+  profileImageUrl?: string | null;
+  preferredLanguage?: 'es' | 'en';
 }
 
 /**
@@ -67,9 +80,8 @@ export class UserService {
   async login(request: LoginRequest): Promise<AuthResponse> {
     try {
       const { email, password } = request;
-
-      // Buscar usuario en BD
       let userEntity;
+
       try {
         userEntity = await userModel.getByEmail(email);
       } catch (error) {
@@ -80,7 +92,6 @@ export class UserService {
       }
 
       // Comparar contraseñas
-      // authId contiene el hash de la contraseña
       const isPasswordValid = await this.comparePasswords(
         password,
         userEntity.authId
@@ -90,7 +101,6 @@ export class UserService {
         throw new AuthenticationError('Credenciales inválidas');
       }
 
-      // Validar que el usuario esté activo
       if (userEntity.status !== UserStatus.ACTIVE) {
         throw new AuthenticationError(
           'Usuario desactivado o pendiente de activación'
@@ -117,7 +127,6 @@ export class UserService {
         email: user.email,
       });
 
-      // Generar JWT con expiración de 3 horas
       const token = generateToken(user.id, user.email, user.role);
 
       return {
@@ -187,6 +196,37 @@ export class UserService {
       profileImageUrl: userEntity.profileImageUrl,
       preferredLanguage: userEntity.preferredLanguage,
       createdAt: userEntity.createdAt,
+    };
+  }
+
+  async createUser(userData: CreateUserRequest): Promise<User> {
+    const newUserEntity = await userModel.create(
+      {
+        email: userData.email,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        role: userData.role as any,
+        password: userData.password,
+        phone: userData.phone,
+        bio: userData.bio,
+        profileImageUrl: userData.profileImageUrl,
+        preferredLanguage: userData.preferredLanguage || 'es',
+      },
+      userData.password
+    );
+
+    return {
+      id: newUserEntity.id,
+      email: newUserEntity.email,
+      firstName: newUserEntity.firstName,
+      lastName: newUserEntity.lastName,
+      role: newUserEntity.role,
+      status: newUserEntity.status,
+      phone: newUserEntity.phone,
+      bio: newUserEntity.bio,
+      profileImageUrl: newUserEntity.profileImageUrl,
+      preferredLanguage: newUserEntity.preferredLanguage,
+      createdAt: newUserEntity.createdAt,
     };
   }
 }

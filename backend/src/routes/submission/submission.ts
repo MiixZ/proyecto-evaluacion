@@ -1,4 +1,3 @@
-// ./backend/src/routes/submissions.ts
 import { Router } from 'express';
 import { ExecutionEngineClient } from '@services/shared/executionEngineClient';
 import { v4 as uuidv4 } from 'uuid';

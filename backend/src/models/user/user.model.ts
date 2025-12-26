@@ -1,4 +1,5 @@
 import { RowDataPacket, Pool } from 'mysql2/promise';
+import bcrypt from 'bcrypt';
 import { getPool } from '@config/database';
 import { logger } from '@utils/logger';
 import {
@@ -24,6 +25,7 @@ export class UserModel {
     if (!this.pool) {
       this.pool = getPool();
     }
+
     return this.pool;
   }
 
@@ -32,22 +34,28 @@ export class UserModel {
    * @throws ValidationError si el email ya existe
    * @throws Error si hay problemas en BD
    */
-  async create(input: CreateUserInput, authId: string): Promise<UserEntity> {
+  async create(
+    input: CreateUserInput,
+    plaintextPassword: string
+  ): Promise<UserEntity> {
     const pool = this.getPool();
     const newId = randomUUID();
+
+    const hashedPassword = await bcrypt.hash(plaintextPassword, 12);
+
     const query = `
-      INSERT INTO users (
-        id, auth_id, email, first_name, last_name, 
-        role, status, phone, bio, profile_image_url, preferred_language,
-        created_at, updated_at
-      ) VALUES (
-        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW()
-      )
-    `;
+    INSERT INTO users (
+      id, auth_id, email, first_name, last_name, 
+      role, status, phone, bio, profile_image_url, preferred_language,
+      created_at, updated_at
+    ) VALUES (
+      ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW()
+    )
+  `;
 
     const values = [
       newId,
-      authId,
+      hashedPassword,
       input.email,
       input.firstName,
       input.lastName,
@@ -61,9 +69,7 @@ export class UserModel {
 
     try {
       await pool.execute(query, values);
-
       logger.info(`Usuario creado: ${input.email} (ID: ${newId})`);
-
       return this.getById(newId as UUID);
     } catch (error: any) {
       if (error.code === 'ER_DUP_ENTRY') {

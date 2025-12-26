@@ -16,6 +16,71 @@ import {
  * Intermedia entre rutas y servicios
  */
 export class UserController {
+  /*
+   * POST /api/v1/auth/createUser
+   * Crear un nuevo usuario
+   */
+  async createUser(req: AuthRequest, res: Response): Promise<void> {
+    if (req.user?.role !== 'admin') {
+      res.status(403).json({
+        success: false,
+        error: 'Solo administradores pueden crear usuarios',
+        timestamp: new Date().toISOString(),
+      });
+
+      return;
+    }
+
+    try {
+      const {
+        email,
+        firstName,
+        lastName,
+        role,
+        password,
+        phone,
+        bio,
+        profileImageUrl,
+        preferredLanguage,
+      } = req.body;
+
+      if (!email || !firstName || !lastName || !role || !password) {
+        res.status(400).json({
+          success: false,
+          error: 'Faltan campos requeridos',
+          timestamp: new Date().toISOString(),
+        });
+
+        return;
+      }
+
+      const newUser = await userModel.create(
+        {
+          email,
+          firstName,
+          lastName,
+          role,
+          password,
+          phone,
+          bio,
+          profileImageUrl,
+          preferredLanguage,
+        },
+        password
+      );
+
+      logger.info(`Nuevo usuario creado: ${newUser.id} - ${newUser.email}`);
+
+      res.status(201).json({
+        success: true,
+        data: newUser,
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      this.handleError(error, res);
+    }
+  }
+
   /**
    * POST /api/v1/auth/login
    * Autenticar usuario y obtener JWT
@@ -257,6 +322,7 @@ export class UserController {
           error: 'No tienes permisos para eliminar este usuario',
           timestamp: new Date().toISOString(),
         });
+
         return;
       }
 
@@ -274,7 +340,7 @@ export class UserController {
    * GET /api/v1/users/teachers
    * Listar profesores
    */
-  async getTeachers(req: Request, res: Response): Promise<void> {
+  async getTeachers(_req: Request, res: Response): Promise<void> {
     try {
       const teachers = await userModel.getTeachers();
 
@@ -292,7 +358,7 @@ export class UserController {
    * GET /api/v1/users/students
    * Listar estudiantes
    */
-  async getStudents(req: Request, res: Response): Promise<void> {
+  async getStudents(_req: Request, res: Response): Promise<void> {
     try {
       const students = await userModel.getStudents();
 

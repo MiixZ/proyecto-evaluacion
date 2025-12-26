@@ -1,11 +1,10 @@
 import { RowDataPacket } from 'mysql2/promise';
 import { getPool } from '@config/database';
 import { logger } from '@utils/logger';
-import { UUID, NotFoundError, PaginatedResponse } from '@CustomTypes/common.types';
+import { UUID, PaginatedResponse } from '@CustomTypes/common.types';
 import { ExerciseEntity, ExerciseDTO } from './exercise.entity';
-import {
-  CreateExerciseInput,
-} from '@validators/schemas';
+import { CreateExerciseInput } from '@validators/schemas';
+import { NotFoundError } from '@utils/errors';
 
 export class ExerciseModel {
   /**
@@ -91,7 +90,6 @@ export class ExerciseModel {
     limit: number = 20
   ): Promise<PaginatedResponse<ExerciseDTO>> {
     const pool = getPool();
-
     const offset = (page - 1) * limit;
 
     // Total

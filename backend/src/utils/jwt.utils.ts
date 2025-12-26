@@ -7,11 +7,11 @@ import { AuthenticationError } from '@utils/errors';
  * Payload de un JWT de la aplicación
  */
 export interface JWTPayload {
-  sub: string;           // User ID
+  sub: string; // User ID
   email: string;
   role: string;
-  iat: number;           // Issued at
-  exp: number;           // Expires at
+  iat: number; // Issued at
+  exp: number; // Expires at
 }
 
 /**
@@ -37,9 +37,10 @@ export function generateToken(
     const token = jwt.sign(payload, config.jwt.secret, {
       expiresIn: config.jwt.expiresIn,
       algorithm: 'HS256',
-    });
+    } as jwt.SignOptions);
 
     logger.debug('Token generado', { userId, email, role });
+
     return token;
   } catch (error) {
     logger.error('Error generando token', error);
@@ -107,6 +108,7 @@ export function isTokenExpired(token: string): boolean {
   }
 
   const now = Date.now() / 1000; // Convertir a segundos
+
   return decoded.exp < now;
 }
 
@@ -189,7 +191,9 @@ export function getTokenExpirationInfo(token: string) {
     isExpired,
     expiresAt,
     timeToExpire: isExpired ? 0 : Math.ceil(timeToExpire),
-    message: isExpired ? 'Token expirado' : `Expira en ${Math.ceil(timeToExpire)}s`,
+    message: isExpired
+      ? 'Token expirado'
+      : `Expira en ${Math.ceil(timeToExpire)}s`,
   };
 }
 
@@ -199,7 +203,9 @@ export function getTokenExpirationInfo(token: string) {
  * @param authHeader - Valor del header Authorization
  * @returns Token limpio o null
  */
-export function extractBearerToken(authHeader: string | undefined): string | null {
+export function extractBearerToken(
+  authHeader: string | undefined
+): string | null {
   if (!authHeader) {
     return null;
   }

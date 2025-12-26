@@ -3,6 +3,7 @@ import { AuthRequest } from '@CustomTypes/request.types';
 import { AuthenticationError } from '@utils/errors';
 import { logger } from '@utils/logger';
 import { verifyToken, extractBearerToken } from '@utils/jwt.utils';
+import { UserRole, UserStatus, UUID } from '@CustomTypes/common.types';
 
 /**
  * Middleware para verificar y validar tokens JWT locales
@@ -31,19 +32,19 @@ export async function authMiddleware(
     // Verificar y decodificar token
     const decoded = verifyToken(token);
 
-    // Asignar usuario al request
     req.user = {
-      id: decoded.sub,
+      id: decoded.sub as UUID,
       email: decoded.email,
-      role: decoded.role,
+      role: decoded.role as UserRole,
+      status: UserStatus.ACTIVE,
     };
 
     req.token = token;
 
     logger.debug('Usuario autenticado', {
-      userId: req.user.id,
-      email: req.user.email,
-      role: req.user.role,
+      userId: req.user?.id,
+      email: req.user?.email,
+      role: req.user?.role,
     });
 
     next();

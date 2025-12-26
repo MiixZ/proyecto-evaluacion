@@ -165,9 +165,7 @@ export async function closeDatabase(): Promise<void> {
  */
 export function getPool(): mysql.Pool {
   if (!pool || !pool._initialized) {
-    throw new Error(
-      'Database pool not initialized. Llama a initializeDatabase() primero.'
-    );
+    throw new Error('Database pool not initialized.');
   }
 
   return pool;
