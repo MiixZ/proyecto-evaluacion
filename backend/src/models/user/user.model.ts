@@ -302,30 +302,30 @@ export class UserModel {
     }
   ): Promise<PaginatedResponse<UserDTO>> {
     let whereClause = 'deleted_at IS NULL';
-    const values: any[] = [];
+    const filterValues: any[] = [];
 
     if (filters?.role) {
       whereClause += ' AND role = ?';
-      values.push(filters.role);
+      filterValues.push(filters.role);
     }
 
     if (filters?.status) {
       whereClause += ' AND status = ?';
-      values.push(filters.status);
+      filterValues.push(filters.status);
     }
 
     if (filters?.search) {
       whereClause +=
         ' AND (email LIKE ? OR first_name LIKE ? OR last_name LIKE ?)';
       const searchTerm = `%${filters.search}%`;
-      values.push(searchTerm, searchTerm, searchTerm);
+      filterValues.push(searchTerm, searchTerm, searchTerm);
     }
 
     // Total count
     const countQuery = `SELECT COUNT(*) as total FROM users WHERE ${whereClause}`;
     const [countRows] = await this.getPool().execute<RowDataPacket[]>(
       countQuery,
-      values
+      filterValues
     );
 
     const total = (countRows[0] as any).total;
@@ -345,9 +345,12 @@ export class UserModel {
       LIMIT ? OFFSET ?
     `;
 
-    values.push(limit, offset);
+    const paginationValues = [...filterValues, limit, offset];
 
-    const [rows] = await this.getPool().execute<RowDataPacket[]>(query, values);
+    const [rows] = await this.getPool().execute<RowDataPacket[]>(
+      query,
+      paginationValues
+    );
 
     const items = rows.map((row) => this.mapRowToDTO(row));
 
