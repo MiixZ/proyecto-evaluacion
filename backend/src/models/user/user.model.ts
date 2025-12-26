@@ -298,7 +298,7 @@ export class UserModel {
     filters?: {
       role?: UserRole;
       status?: UserStatus;
-      search?: string; // Busca en email, firstName, lastName
+      search?: string;
     }
   ): Promise<PaginatedResponse<UserDTO>> {
     let whereClause = 'deleted_at IS NULL';
