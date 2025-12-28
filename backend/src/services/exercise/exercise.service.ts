@@ -7,17 +7,30 @@ import {
 import { CreateExerciseInput } from '@validators/exercise.validator';
 import { UUID, PaginatedResponse } from '@CustomTypes/common.types';
 import { exerciseMapper } from '@mappers/exercise.mapper';
+import { NotFoundError } from '@utils/errors';
+// TODO: Importar syllabusModel cuando esté creado
+// import { syllabusModel } from '@models/syllabus/syllabus.model';
 
 export class ExerciseService {
   async createExercise(
     input: CreateExerciseInput,
     teacherId: UUID
   ): Promise<ExerciseDTO> {
-    const newId = uuidv4() as UUID;
+    // 1. Validar Syllabus (Resolviendo el TODO conceptual)
+    /*
+    const syllabus = await syllabusModel.exists(input.syllabusId);
+    if (!syllabus) {
+      throw new NotFoundError('El temario (Syllabus) especificado no existe');
+    }
+    */
 
-    // TODO: Aquí se podría validar si el syllabus existe o si el profesor tiene acceso al curso, etc.
+    const newExerciseId = uuidv4() as UUID;
 
-    const exercise = await exerciseModel.createWithId(newId, input, teacherId);
+    const exercise = await exerciseModel.createTransactional(
+      newExerciseId,
+      input,
+      teacherId
+    );
 
     return exerciseMapper.toDTO(exercise);
   }
@@ -30,8 +43,9 @@ export class ExerciseService {
 
     if (isStudent) {
       if (!exercise.isPublished) {
-        throw new Error('El ejercicio no está disponible');
+        throw new NotFoundError('Ejercicio no encontrado o no disponible');
       }
+
       return exerciseMapper.toStudentDTO(exercise);
     }
 
@@ -44,13 +58,13 @@ export class ExerciseService {
     limit: number,
     isStudent: boolean
   ): Promise<PaginatedResponse<ExerciseDTO | ExerciseStudentDTO>> {
-    const onlyPublished = isStudent;
+    // TODO: Validar existencia de syllabus
 
     const result = await exerciseModel.listBySyllabus(
       syllabusId,
       page,
       limit,
-      onlyPublished
+      isStudent
     );
 
     const dtos = result.items.map((entity) =>

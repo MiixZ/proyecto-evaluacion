@@ -4,7 +4,7 @@
 
 @backend_url = http://localhost:3000
 @execution_engine_url = http://localhost:3001
-@api_key = tu-api-key-secreta-aqui
+@api_key = dev-secret-key-12345-change-in-production
 
 ###############################################################################
 # 1. HEALTH CHECKS

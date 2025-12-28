@@ -1,100 +1,100 @@
-import { ResultSetHeader } from 'mysql2/promise';
-import { getPool } from '@config/database';
+import { PoolConnection, ResultSetHeader } from 'mysql2/promise';
+import { getPool, withTransaction } from '@config/database';
 import { UUID, PaginatedResponse } from '@CustomTypes/common.types';
 import { ExerciseEntity } from './exercise.entity';
 import { TestCaseEntity, ExecutionLimitEntity } from './exercise.types';
 import { ExerciseRow, TestCaseRow, ExecutionLimitRow } from './exercise.row';
 import { exerciseMapper } from '@mappers/exercise.mapper';
 import { NotFoundError } from '@utils/errors';
-import { CreateExerciseInput } from '@validators/exercise.validator';
+import {
+  CreateExerciseInput,
+} from '@validators/exercise.validator';
+import { v4 as uuidv4 } from 'uuid';
 
 export class ExerciseModel {
-  async create(
+  async createTransactional(
+    exerciseId: UUID,
     input: CreateExerciseInput,
     createdById: UUID
   ): Promise<ExerciseEntity> {
-    const query = `
-      INSERT INTO exercises (
-        id, syllabus_id, title, description, difficulty, language,
-        template_code, is_published, created_by, order_index, points,
-        efficiency_order, deadline, late_submission_penalty_percent, max_attempts,
-        created_at, updated_at
-      ) VALUES (
-        UUID(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW()
-      )
-    `;
+    await withTransaction(async (connection: PoolConnection) => {
+      const exerciseQuery = `
+        INSERT INTO exercises (
+          id, syllabus_id, title, description, difficulty, language,
+          template_code, is_published, created_by, order_index, points,
+          efficiency_order, deadline, late_submission_penalty_percent, max_attempts,
+          created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+      `;
 
-    const values = [
-      input.syllabusId,
-      input.title,
-      input.description,
-      input.difficulty,
-      input.language,
-      input.templateCode || null,
-      false,
-      createdById,
-      input.orderIndex || null,
-      input.points,
-      input.efficiencyOrder,
-      input.deadline || null,
-      input.lateSubmissionPenaltyPercent,
-      input.maxAttempts,
-    ];
+      const exerciseValues = [
+        exerciseId,
+        input.syllabusId,
+        input.title,
+        input.description,
+        input.difficulty,
+        input.language,
+        input.templateCode || null,
+        0,
+        createdById,
+        input.orderIndex || null,
+        input.points,
+        input.efficiencyOrder,
+        input.deadline || null,
+        input.lateSubmissionPenaltyPercent,
+        input.maxAttempts,
+      ];
 
-    const [result] = await getPool().execute<ResultSetHeader>(query, values);
+      await connection.execute(exerciseQuery, exerciseValues);
 
-    // TODO: Recuperamos el ID generado (si usamos UUID() de MySQL, necesitamos recuperarlo o generarlo en JS)
-    // NOTA: Tu query usa UUID() de MySQL. Para recuperar ese UUID insertado necesitamos hacer una select
-    // o generarlo en la aplicación (recomendado). Asumiremos generación en app para consistencia:
+      const limitId = uuidv4();
+      const limitsQuery = `
+        INSERT INTO execution_limits (
+          id, exercise_id, language, time_limit_seconds, memory_limit_mb, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, NOW(), NOW())
+      `;
 
-    // *CORRECCIÓN*: Generemos el UUID en la app para evitar round-trips extra.
-    // (Ver implementación en Service, aquí asumiremos que pasamos el ID o cambiamos la query abajo)
+      const timeLimit = input.limits?.timeLimitSeconds ?? 5;
+      const memLimit = input.limits?.memoryLimitMb ?? 256;
 
-    // Si mantenemos UUID() de MySQL, no podemos devolver el ID fácilmente sin select last_insert_id si fuera auto_inc.
-    // Vamos a asumir que el modelo recibe el ID o lo cambiamos para que haga SELECT.
-    // Para simplificar y consistencia con submission, haremos SELECT by syllabus ordenado desc limit 1 por ahora,
-    // o mejor, refactorizaremos para generar UUID en el servicio (paso 4).
+      await connection.execute(limitsQuery, [
+        limitId,
+        exerciseId,
+        input.language,
+        timeLimit,
+        memLimit,
+      ]);
 
-    // Por ahora, asumamos que funciona y busquemos el último insertado (no ideal) o devolvemos void.
-    // Lo ideal: Cambiar la query para recibir el UUID desde el servicio.
+      if (input.testCases && input.testCases.length > 0) {
+        const testCaseQuery = `
+          INSERT INTO test_cases (
+            id, exercise_id, input, expected_output, is_hidden, order_index,
+            time_limit_seconds, memory_limit_mb, efficiency_order,
+            hint_text, hint_penalty_percent, created_at, updated_at
+          ) VALUES ?
+        `;
 
-    throw new Error('Refactor needed: Generate UUID in service layer');
-  }
+        const testCaseValues = input.testCases.map((tc, index) => [
+          uuidv4(),
+          exerciseId,
+          tc.input,
+          tc.expectedOutput,
+          tc.isHidden,
+          index + 1,
+          tc.timeLimitSeconds,
+          tc.memoryLimitMb,
+          input.efficiencyOrder,
+          tc.hintText || null,
+          tc.hintPenaltyPercent,
+          new Date(),
+          new Date(),
+        ]);
 
-  async createWithId(
-    id: UUID,
-    input: CreateExerciseInput,
-    createdById: UUID
-  ): Promise<ExerciseEntity> {
-    const query = `
-      INSERT INTO exercises (
-        id, syllabus_id, title, description, difficulty, language,
-        template_code, is_published, created_by, order_index, points,
-        efficiency_order, deadline, late_submission_penalty_percent, max_attempts,
-        created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
-    `;
+        await connection.query(testCaseQuery, [testCaseValues]);
+      }
+    });
 
-    const values = [
-      id,
-      input.syllabusId,
-      input.title,
-      input.description,
-      input.difficulty,
-      input.language,
-      input.templateCode || null,
-      0,
-      createdById,
-      input.orderIndex || null,
-      input.points,
-      input.efficiencyOrder,
-      input.deadline || null,
-      input.lateSubmissionPenaltyPercent,
-      input.maxAttempts,
-    ];
-
-    await getPool().execute(query, values);
-    return this.getById(id);
+    return this.getById(exerciseId);
   }
 
   async getById(id: UUID): Promise<ExerciseEntity> {
@@ -115,30 +115,31 @@ export class ExerciseModel {
     onlyPublished: boolean = false
   ): Promise<PaginatedResponse<ExerciseEntity>> {
     const offset = (page - 1) * limit;
-    let where = 'syllabus_id = ?';
-    const params: any[] = [syllabusId];
+
+    let whereClause = 'syllabus_id = ?';
+    const params: (string | number)[] = [syllabusId];
 
     if (onlyPublished) {
-      where += ' AND is_published = 1';
+      whereClause += ' AND is_published = 1';
     }
 
     // Count
-    const countQuery = `SELECT COUNT(*) as total FROM exercises WHERE ${where}`;
+    const countQuery = `SELECT COUNT(*) as total FROM exercises WHERE ${whereClause}`;
     const [countRows] = await getPool().execute<any[]>(countQuery, params);
     const total = countRows[0].total;
 
     // Data
     const query = `
       SELECT * FROM exercises 
-      WHERE ${where} 
+      WHERE ${whereClause} 
       ORDER BY order_index ASC, created_at DESC 
       LIMIT ? OFFSET ?
     `;
 
     const [rows] = await getPool().execute<ExerciseRow[]>(query, [
       ...params,
-      limit.toString(),
-      offset.toString(),
+      limit,
+      offset,
     ]);
 
     const items = rows.map((row) => exerciseMapper.toEntity(row));
