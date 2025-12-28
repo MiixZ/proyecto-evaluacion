@@ -5,6 +5,7 @@ import { UUID, PaginatedResponse } from '@CustomTypes/common.types';
 import { ExerciseEntity, ExerciseDTO } from './exercise.entity';
 import { CreateExerciseInput } from '@validators/schemas';
 import { NotFoundError } from '@utils/errors';
+import { ExecutionLimitEntity, TestCaseEntity } from './exercise.types';
 
 export class ExerciseModel {
   /**
@@ -169,6 +170,39 @@ export class ExerciseModel {
     logger.info(`Ejercicio publicado: ${id}`);
 
     return this.getById(id);
+  }
+
+  async getTestCases(exerciseId: UUID): Promise<TestCaseEntity[]> {
+    const query = `
+      SELECT id, exercise_id as exerciseId, input, expected_output as expectedOutput, 
+             is_hidden as isHidden, time_limit_seconds as timeLimitSeconds, 
+             memory_limit_mb as memoryLimitMb
+      FROM test_cases 
+      WHERE exercise_id = ? 
+      ORDER BY order_index ASC
+    `;
+    const [rows] = await getPool().execute<any[]>(query, [exerciseId]);
+    return rows;
+  }
+
+  async getExecutionLimits(
+    exerciseId: UUID,
+    language: string
+  ): Promise<ExecutionLimitEntity | null> {
+    const query = `
+      SELECT id, exercise_id as exerciseId, language, 
+             time_limit_seconds as timeLimitSeconds, memory_limit_mb as memoryLimitMb
+      FROM execution_limits
+      WHERE exercise_id = ? AND language = ?
+      LIMIT 1
+    `;
+
+    const [rows] = await getPool().execute<any[]>(query, [
+      exerciseId,
+      language,
+    ]);
+
+    return rows.length > 0 ? rows[0] : null;
   }
 
   /**

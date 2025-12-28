@@ -27,7 +27,7 @@ export interface ExecutionLimits {
 
 export interface ExecutionResult {
   submissionId: string;
-  verdict: Verdict;
+  verdict: Veredict;
   score: number;
   testResults: TestResult[];
   executionTime: number;
@@ -47,7 +47,7 @@ export interface TestResult {
   errorMessage?: string;
 }
 
-export enum Verdict {
+export enum Veredict {
   ACCEPTED = 'accepted',
   WRONG_ANSWER = 'wrong_answer',
   COMPILATION_ERROR = 'compilation_error',

@@ -52,6 +52,9 @@ const envSchema = z.object({
   DB_MAX_RETRIES: z.coerce.number().int().positive().default(5),
   DB_RETRY_DELAY_MS: z.coerce.number().int().positive().default(1000),
   DB_QUERY_TIMEOUT_MS: z.coerce.number().int().positive().default(30000),
+
+  EXECUTION_ENGINE_URL: z.string().url().default('http://localhost:3001'),
+  EXECUTION_ENGINE_API_KEY: z.string().optional(),
 });
 
 export type EnvConfig = z.infer<typeof envSchema>;
@@ -86,6 +89,10 @@ export interface AppConfig {
   };
   logging: {
     level: string;
+  };
+  executionEngine: {
+    url: string;
+    apiKey?: string;
   };
   isDevelopment: boolean;
   isProduction: boolean;
@@ -163,6 +170,10 @@ function loadConfig(): AppConfig {
       maxRetries: env.DB_MAX_RETRIES,
       retryDelayMs: env.DB_RETRY_DELAY_MS,
       queryTimeoutMs: env.DB_QUERY_TIMEOUT_MS,
+    },
+    executionEngine: {
+      url: env.EXECUTION_ENGINE_URL,
+      apiKey: env.EXECUTION_ENGINE_API_KEY,
     },
     jwt: {
       secret: env.JWT_SECRET,

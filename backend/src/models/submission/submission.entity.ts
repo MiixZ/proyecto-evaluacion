@@ -1,8 +1,9 @@
-import { UUID } from '@CustomTypes/common.types';
 import {
+  UUID,
   SubmissionStatus,
   SubmissionVerdict,
   Timestamps,
+  EfficiencyOrder,
 } from '@CustomTypes/common.types';
 
 export interface SubmissionEntity extends Timestamps {
@@ -18,17 +19,29 @@ export interface SubmissionEntity extends Timestamps {
   score: number;
   isLate: boolean;
   usedHint: boolean;
-  createdAt: Date;
-  updatedAt: Date;
 }
 
-export interface SubmissionDTO {
+export interface SubmissionTestResultEntity {
   id: UUID;
-  exerciseId: UUID;
-  attemptNumber: number;
+  submissionId: UUID;
+  testCaseId: UUID;
+  status: 'passed' | 'failed' | 'error';
+  actualOutput?: string | null;
+  executionTimeMs: number;
+  memoryUsedMb: number;
+  efficiencyAchieved: EfficiencyOrder;
+}
+
+export interface SubmissionDetailDTO {
+  id: UUID;
   status: SubmissionStatus;
   verdict: SubmissionVerdict;
   score: number;
-  isLate: boolean;
+  testResults: {
+    status: string;
+    executionTimeMs: number;
+    isHidden: boolean;
+    actualOutput?: string | null;
+  }[];
   createdAt: Date;
 }

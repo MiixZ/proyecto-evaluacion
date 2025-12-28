@@ -1,46 +1,15 @@
 import { Router } from 'express';
-import { ExecutionEngineClient } from '@services/shared/executionEngineClient';
-import { v4 as uuidv4 } from 'uuid';
+import { submissionController } from '@controllers/submission/submission.controller';
+import { authMiddleware } from '@middleware/auth.middleware';
 
-const routerSubmissions = Router();
-const executionClient = new ExecutionEngineClient();
+const router = Router();
+
+router.use(authMiddleware);
 
 /**
- * POST /api/submissions/:exerciseId
- * Enviar código para evaluación
+ * POST /api/v1/submissions
+ * Body: { exerciseId, courseId, code, language }
  */
-routerSubmissions.post('/:exerciseId', async (req, res) => {
-  try {
-    const { code, language, testCases, limits } = req.body;
-    const exerciseId = req.params.exerciseId;
+router.post('/', submissionController.submitCode);
 
-    const executionRequest = {
-      id: uuidv4(),
-      exerciseId,
-      submissionId: uuidv4(),
-      code,
-      language,
-      testCases,
-      limits,
-      createdAt: new Date(),
-    };
-
-    const result = await executionClient.executeCode(executionRequest);
-
-    // TODO: Guardar resultado en BD
-    // await saveSubmissionResult(result);
-
-    res.json({
-      success: true,
-      data: result,
-    });
-  } catch (error: unknown) {
-    console.error('Error submitting code:', error);
-    res.status(500).json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
-  }
-});
-
-export default routerSubmissions;
+export default router;
