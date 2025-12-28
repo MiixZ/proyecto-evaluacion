@@ -33,13 +33,35 @@ export const createExerciseSchema = z.object({
   deadline: z.coerce.date().optional().nullable(),
   lateSubmissionPenaltyPercent: z.number().int().min(0).max(100).default(0),
   maxAttempts: z.number().int().positive().default(10),
-
-  // === NUEVO: Agregamos las relaciones ===
   testCases: z
     .array(createTestCaseInputSchema)
     .min(1, 'Debe haber al menos un caso de prueba'),
   limits: createExecutionLimitInputSchema.optional(),
 });
 
+export const createExerciseRequest = z.object({
+  body: createExerciseSchema,
+});
+
+export const publishExerciseRequest = z.object({
+  params: z.object({
+    id: uuidSchema,
+  }),
+  body: z.object({
+    isPublished: z.boolean(),
+  }),
+});
+
+export const getExerciseRequest = z.object({
+  params: z.object({
+    id: uuidSchema,
+  }),
+});
+
+export const getExercisesBySyllabusRequest = z.object({
+  params: z.object({
+    syllabusId: uuidSchema,
+  }),
+});
+
 export type CreateExerciseInput = z.infer<typeof createExerciseSchema>;
-export type CreateTestCaseInput = z.infer<typeof createTestCaseInputSchema>;

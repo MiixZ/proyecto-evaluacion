@@ -1,0 +1,241 @@
+{
+  "info": {
+    "name": "Evaluacion Platform TFM",
+    "description": "Pruebas de integración Backend + Execution Engine",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Auth",
+      "item": [
+        {
+          "name": "Login (Teacher)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.success) {",
+                  "    pm.environment.set(\"token\", jsonData.data.token);",
+                  "    pm.environment.set(\"teacher_id\", jsonData.data.user.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"juan.garcia@university.edu\",\n    \"password\": \"TeacherPass123!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Login (Student)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.success) {",
+                  "    pm.environment.set(\"student_token\", jsonData.data.token);",
+                  "    pm.environment.set(\"student_id\", jsonData.data.user.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"alumni.garcia@student.edu\",\n    \"password\": \"StudentPass123!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Exercises (Teacher)",
+      "item": [
+        {
+          "name": "Create Exercise (Python Suma)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.success) {",
+                  "    pm.environment.set(\"exercise_id\", jsonData.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"syllabusId\": \"550e8400-e29b-41d4-a716-446655880003\",\n  \"title\": \"Suma Avanzada Python\",\n  \"description\": \"Realiza una suma de dos números leídos de stdin.\",\n  \"difficulty\": \"beginner\",\n  \"language\": \"python\",\n  \"points\": 10,\n  \"testCases\": [\n    {\n      \"input\": \"5\\n5\",\n      \"expectedOutput\": \"10\",\n      \"isHidden\": false\n    },\n    {\n      \"input\": \"-1\\n1\",\n      \"expectedOutput\": \"0\",\n      \"isHidden\": true\n    }\n  ],\n  \"limits\": {\n      \"timeLimitSeconds\": 2,\n      \"memoryLimitMb\": 128\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/exercises",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "exercises"]
+            }
+          }
+        },
+        {
+          "name": "Publish Exercise",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"isPublished\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/exercises/{{exercise_id}}/publish",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "exercises", "{{exercise_id}}", "publish"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Submissions (Student)",
+      "item": [
+        {
+          "name": "Submit Correct Solution",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{student_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"exerciseId\": \"{{exercise_id}}\",\n    \"courseId\": \"550e8400-e29b-41d4-a716-446655770010\",\n    \"language\": \"python\",\n    \"code\": \"a = int(input())\\nb = int(input())\\nprint(a + b)\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/submissions",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "submissions"]
+            }
+          }
+        },
+        {
+          "name": "Submit Wrong Answer",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{student_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"exerciseId\": \"{{exercise_id}}\",\n    \"courseId\": \"550e8400-e29b-41d4-a716-446655770010\",\n    \"language\": \"python\",\n    \"code\": \"print('Error provocado')\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/submissions",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "submissions"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:4000",
+      "type": "string"
+    }
+  ]
+}

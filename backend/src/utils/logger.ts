@@ -25,7 +25,23 @@ class Logger {
 
   private format(level: LogLevel, message: string, meta?: unknown): string {
     const timestamp = new Date().toISOString();
-    const metaStr = meta ? ` ${JSON.stringify(meta)}` : '';
+
+    let metaStr = '';
+    if (meta) {
+      if (meta instanceof Error) {
+        // [CORRECCIÓN] Extraer info útil del error
+        metaStr = ` ${JSON.stringify({ ...meta, message: meta.message, stack: meta.stack })}`;
+      } else if (typeof meta === 'object') {
+        try {
+          metaStr = ` ${JSON.stringify(meta)}`;
+        } catch (e) {
+          metaStr = ' [Circular]';
+        }
+      } else {
+        metaStr = ` ${meta}`;
+      }
+    }
+
     return `[${timestamp}] [${level}] ${message}${metaStr}`;
   }
 

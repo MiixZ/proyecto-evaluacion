@@ -1,0 +1,104 @@
+@baseUrl = http://localhost:4000
+@contentType = application/json
+
+# ==========================================
+# 0. VARIABLES (Actualizar manualmente tras Login/Creación)
+# ==========================================
+@teacher_token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0OWIyMGJhMy1iZTk2LTRlNGMtOWRhMC1mNGEyNDc3M2YxNGIiLCJlbWFpbCI6InByb2Zlc29yOEB1bml2ZXJzaWRhZC5lZHUiLCJyb2xlIjoidGVhY2hlciIsImlhdCI6MTc2NjkzMjM5MSwiZXhwIjoxNzY3NTM3MTkxfQ.m0USDCSNUbcgG-d0E7TeAlQrtdl8o1il5X3LBxF_p_k
+@student_token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZjkzYWE5My0wNjQ2LTRjMDMtYjZiNS05NjgxMjQzODM0MzEiLCJlbWFpbCI6ImFsdW1ubzMwQHVuaXZlcnNpZGFkLmVkdSIsInJvbGUiOiJzdHVkZW50IiwiaWF0IjoxNzY2OTMyNDgxLCJleHAiOjE3Njc1MzcyODF9.1-fys6TEbvQl3YBbM0I6NmeLXeXbYu3f48lA8DT4m7I
+@exercise_id = b106e8ab-ca75-451d-9eef-ed85aed05c4a
+
+# ==========================================
+# 1. AUTHENTICATION
+# ==========================================
+
+### Login Profesor
+# @name loginTeacher
+POST {{baseUrl}}/api/auth/login
+Content-Type: {{contentType}}
+
+{
+    "email": "profesor8@universidad.edu",
+    "password": "2686954Qf"
+}
+
+### Login Estudiante
+# @name loginStudent
+POST {{baseUrl}}/api/auth/login
+Content-Type: {{contentType}}
+
+{
+    "email": "alumno30@universidad.edu",
+    "password": "123pass123!"
+}
+
+# ==========================================
+# 2. EXERCISES (Teacher)
+# ==========================================
+
+### Crear Ejercicio (Python Suma)
+POST {{baseUrl}}/api/v1/exercises
+Content-Type: {{contentType}}
+Authorization: Bearer {{teacher_token}}
+
+{
+  "syllabusId": "550e8400-e29b-41d4-a716-446655880001",
+  "title": "Suma Avanzada Python (VS Code)",
+  "description": "Realiza una suma de dos números leídos de stdin.",
+  "difficulty": "beginner",
+  "language": "python",
+  "points": 10,
+  "testCases": [
+    {
+      "input": "5\n5",
+      "expectedOutput": "10",
+      "isHidden": false
+    },
+    {
+      "input": "-1\n1",
+      "expectedOutput": "0",
+      "isHidden": true
+    }
+  ],
+  "limits": {
+      "timeLimitSeconds": 2,
+      "memoryLimitMb": 128
+  }
+}
+
+### Publicar Ejercicio
+PATCH {{baseUrl}}/api/v1/exercises/{{exercise_id}}/publish
+Content-Type: {{contentType}}
+Authorization: Bearer {{teacher_token}}
+
+{
+    "isPublished": true
+}
+
+# ==========================================
+# 3. SUBMISSIONS (Student)
+# ==========================================
+
+### Enviar Solución Correcta
+POST {{baseUrl}}/api/v1/submissions
+Content-Type: {{contentType}}
+Authorization: Bearer {{student_token}}
+
+{
+    "exerciseId": "{{exercise_id}}",
+    "courseId": "550e8400-e29b-41d4-a716-446655770010",
+    "language": "python",
+    "code": "a = int(input())\nb = int(input())\nprint(a + b)"
+}
+
+### Enviar Solución Incorrecta (Para probar error)
+POST {{baseUrl}}/api/v1/submissions
+Content-Type: {{contentType}}
+Authorization: Bearer {{student_token}}
+
+{
+    "exerciseId": "{{exercise_id}}",
+    "courseId": "550e8400-e29b-41d4-a716-446655770010",
+    "language": "python",
+    "code": "print('Error provocado')"
+}

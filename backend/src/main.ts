@@ -1,40 +1,38 @@
 import express, { Response } from 'express';
 import cors from 'cors';
-import config from './config/environment.js';
-import { initializeDatabase } from './config/database.js';
-import { logger } from './utils/logger.js';
+import config from './config/environment';
+import { initializeDatabase } from './config/database';
+import { logger } from './utils/logger';
 import {
   authMiddleware,
   requestLoggerMiddleware,
   errorHandlerMiddleware,
-} from './middleware/auth.middleware.js';
-import { AuthRequest } from './types/request.types.js';
-import routerAuth from '@routes/auth/auth.js';
-import routerUsers from '@routes/user/user.js';
-import routerSubmissions from '@routes/submission/submission.js';
+} from './middleware/auth.middleware';
+import { AuthRequest } from './types/request.types';
+
+// Rutas
+import routerAuth from '@routes/auth/auth';
+import routerUsers from '@routes/user/user';
+import routerSubmissions from '@routes/submission/submission';
+import routerExercises from '@routes/exercise/exercise';
 
 const app = express();
 const PORT = config.port;
 
-// ==================== INICIALIZACIÓN DE BD ====================
+// ==================== INICIALIZACIÓN ====================
 
-/**
- * Inicializar base de datos antes de iniciar el servidor
- */
 async function initializeApp(): Promise<void> {
   try {
     await initializeDatabase();
     logger.info('Base de datos inicializada correctamente');
   } catch (error) {
     logger.error('Error inicializando base de datos:', error);
-
     process.exit(1);
   }
 }
 
-// ==================== MIDDLEWARES GLOBALES ====================
+// ==================== MIDDLEWARES ====================
 
-// CORS
 app.use(
   cors({
     origin: config.cors.origin,
@@ -44,56 +42,39 @@ app.use(
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
-
-// Request logger
 app.use(requestLoggerMiddleware);
 
-// ==================== RUTAS DE SALUD ====================
+// ==================== RUTAS BASE ====================
 
-/**
- * Health check
- * GET /health
- */
 app.get('/health', (_req, res: Response) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-/**
- * Información de la API
- * GET /api/v1
- */
 app.get('/api/v1', (_req, res: Response) => {
   res.json({
-    name: 'Evaluación Automática de Programación API',
+    name: 'Evaluación Automática API',
     version: '1.0.0',
-    environment: config.nodeEnv,
-    authentication: 'JWT Local',
     endpoints: {
       auth: '/api/auth',
       users: '/api/v1/users',
-      submissions: '/api/v1/submissions',
       exercises: '/api/v1/exercises',
+      submissions: '/api/v1/submissions',
     },
   });
 });
 
-// ==================== RUTAS PÚBLICAS (Sin autenticación) ====================
+// ==================== API ROUTER ====================
 
-/**
- * Autenticación
- * POST /api/auth/register - Registrar usuario
- * POST /api/auth/login - Autenticar usuario
- */
+// 1. Rutas Públicas
 app.use('/api/auth', routerAuth);
 
-// ==================== RUTAS PROTEGIDAS ====================
+// 2. Rutas Protegidas (API v1)
+const apiV1 = express.Router();
 
-/**
- * Ejemplo de ruta protegida
- * GET /api/v1/me
- * Requiere: Bearer token de JWT
- */
-app.get('/api/v1/me', authMiddleware, (req: AuthRequest, res) => {
+// Middleware de autenticación global para v1
+apiV1.use(authMiddleware);
+
+apiV1.get('/me', (req: AuthRequest, res) => {
   res.json({
     success: true,
     data: req.user,
@@ -101,95 +82,59 @@ app.get('/api/v1/me', authMiddleware, (req: AuthRequest, res) => {
   });
 });
 
-// Middleware de autenticación para todas las rutas /api/v1
-app.use('/api/v1/', authMiddleware);
+// Registro de submódulos
+apiV1.use('/users', routerUsers);
+apiV1.use('/exercises', routerExercises);
+apiV1.use('/submissions', routerSubmissions);
 
-/**
- * Usuarios
- * /api/v1/users
- * - POST   /api/v1/users                    → Crear usuario
- * - GET    /api/v1/users                    → Listar usuarios (paginado)
- * - GET    /api/v1/users/:id                → Obtener usuario por ID
- * - PATCH  /api/v1/users/:id                → Actualizar usuario
- * - PATCH  /api/v1/users/:id/role           → Cambiar rol (admin only)
- * - PATCH  /api/v1/users/:id/status         → Cambiar estado (admin only)
- * - DELETE /api/v1/users/:id                → Soft delete usuario
- * - GET    /api/v1/users/teachers           → Listar profesores
- * - GET    /api/v1/users/students           → Listar estudiantes
- */
-app.use('/api/v1/users', routerUsers);
+app.use('/api/v1', apiV1);
 
-/**
- * Submissions
- * /api/v1/submissions
- * (A implementar)
- */
-app.use('/api/v1/submissions', routerSubmissions);
+// ==================== MANEJO DE ERRORES ====================
 
-// ==================== MIDDLEWARE DE ERROR 404 ====================
-
+// 404 Not Found
 app.use((_req, res) => {
   res.status(404).json({
     success: false,
-    error: 'Ruta no encontrada',
+    error: {
+      code: 'NOT_FOUND',
+      message: 'Ruta no encontrada',
+    },
     timestamp: new Date().toISOString(),
   });
 });
 
-// ==================== MIDDLEWARE DE ERROR GLOBAL ====================
-
-// Debe ser el último middleware registrado
+// Global Error Handler
 app.use(errorHandlerMiddleware);
 
-// ==================== INICIO DEL SERVIDOR ====================
+// ==================== ARRANQUE ====================
 
-/**
- * Función principal para iniciar la aplicación
- */
 async function start(): Promise<void> {
-  try {
-    // Inicializar BD
-    await initializeApp();
+  await initializeApp();
 
-    // Iniciar servidor
-    app.listen(PORT, () => {
-      console.log('\n' + '='.repeat(60));
-      console.log('🎯 Backend escuchando en puerto', PORT);
-      console.log('🌍 Ambiente:', config.nodeEnv);
-      console.log('🔗 URL base: http://localhost:' + PORT);
-      console.log('📋 API v1: http://localhost:' + PORT + '/api/v1');
-      console.log('💚 Health: http://localhost:' + PORT + '/health');
-      console.log('🔐 Autenticación: JWT Local (BCrypt)');
-      console.log('📝 Auth: http://localhost:' + PORT + '/api/auth');
-      console.log('='.repeat(60) + '\n');
-
-      logger.info(`Servidor iniciado correctamente en puerto ${PORT}`, {
-        environment: config.nodeEnv,
-        authentication: 'JWT Local',
-      });
+  app.listen(PORT, () => {
+    logger.info(`Servidor iniciado en puerto ${PORT}`, {
+      env: config.nodeEnv,
+      url: `http://localhost:${PORT}`,
     });
-  } catch (error) {
-    logger.error('Error iniciando servidor:', error);
-    process.exit(1);
-  }
+
+    if (config.isDevelopment) {
+      console.log('\n' + '='.repeat(50));
+      console.log(`🚀 Server ready at http://localhost:${PORT}`);
+      console.log(`📚 Health check: http://localhost:${PORT}/health`);
+      console.log('='.repeat(50) + '\n');
+    }
+  });
 }
 
-// ==================== MANEJO DE SEÑALES ====================
-
-/**
- * Graceful shutdown
- */
-process.on('SIGTERM', () => {
-  logger.info('SIGTERM recibido, cerrando servidor...');
+// Graceful shutdown
+const shutdown = () => {
+  logger.info('Cerrando servidor...');
   process.exit(0);
-});
+};
 
-process.on('SIGINT', () => {
-  logger.info('SIGINT recibido, cerrando servidor...');
-  process.exit(0);
-});
+process.on('SIGTERM', shutdown);
+process.on('SIGINT', shutdown);
 
-// Iniciar aplicación
 start();
 
 export default app;

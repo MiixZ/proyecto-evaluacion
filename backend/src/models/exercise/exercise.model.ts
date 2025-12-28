@@ -1,14 +1,16 @@
 import { PoolConnection, ResultSetHeader } from 'mysql2/promise';
 import { getPool, withTransaction } from '@config/database';
-import { UUID, PaginatedResponse } from '@CustomTypes/common.types';
+import {
+  UUID,
+  PaginatedResponse,
+  EfficiencyOrder,
+} from '@CustomTypes/common.types';
 import { ExerciseEntity } from './exercise.entity';
 import { TestCaseEntity, ExecutionLimitEntity } from './exercise.types';
 import { ExerciseRow, TestCaseRow, ExecutionLimitRow } from './exercise.row';
 import { exerciseMapper } from '@mappers/exercise.mapper';
 import { NotFoundError } from '@utils/errors';
-import {
-  CreateExerciseInput,
-} from '@validators/exercise.validator';
+import { CreateExerciseInput } from '@validators/exercise.validator';
 import { v4 as uuidv4 } from 'uuid';
 
 export class ExerciseModel {
@@ -34,15 +36,15 @@ export class ExerciseModel {
         input.description,
         input.difficulty,
         input.language,
-        input.templateCode || null,
+        input.templateCode ?? null,
         0,
         createdById,
-        input.orderIndex || null,
+        input.orderIndex ?? null,
         input.points,
-        input.efficiencyOrder,
-        input.deadline || null,
-        input.lateSubmissionPenaltyPercent,
-        input.maxAttempts,
+        input.efficiencyOrder ?? EfficiencyOrder.ANY,
+        input.deadline ?? null,
+        input.lateSubmissionPenaltyPercent ?? 0,
+        input.maxAttempts ?? 10,
       ];
 
       await connection.execute(exerciseQuery, exerciseValues);

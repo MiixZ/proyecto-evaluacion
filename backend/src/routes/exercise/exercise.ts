@@ -2,26 +2,38 @@ import { Router } from 'express';
 import { exerciseController } from '@controllers/exercise/exercise.controller';
 import { authMiddleware } from '@middleware/auth.middleware';
 import { validateRequest } from '@middleware/validator.middleware';
-import { createExerciseSchema } from '@validators/exercise.validator';
-import { z } from 'zod';
+import {
+  createExerciseRequest,
+  getExerciseRequest,
+  getExercisesBySyllabusRequest,
+  publishExerciseRequest,
+} from '@validators/exercise.validator';
 
 const router = Router();
 
 router.use(authMiddleware);
 
-const createSchema = z.object({ body: createExerciseSchema });
-const publishSchema = z.object({
-  body: z.object({ isPublished: z.boolean() }),
-});
+router.post(
+  '/',
+  validateRequest(createExerciseRequest),
+  exerciseController.create
+);
 
-router.post('/', validateRequest(createSchema), exerciseController.create);
-router.get('/:id', exerciseController.getById);
+router.get(
+  '/:id',
+  validateRequest(getExerciseRequest),
+  exerciseController.getById
+);
 
-router.get('/syllabus/:syllabusId', exerciseController.listBySyllabus);
+router.get(
+  '/syllabus/:syllabusId',
+  validateRequest(getExercisesBySyllabusRequest),
+  exerciseController.listBySyllabus
+);
 
 router.patch(
   '/:id/publish',
-  validateRequest(publishSchema),
+  validateRequest(publishExerciseRequest),
   exerciseController.togglePublish
 );
 
