@@ -1,7 +1,3 @@
-import bcrypt from 'bcrypt';
-import { logger } from '@utils/logger';
-import { AuthenticationError } from '@utils/errors';
-import { generateToken } from '@utils/jwt.utils';
 import { userModel } from '@models/user/user.model';
 import { UserEntity } from '@models/user/user.entity';
 import {
@@ -11,34 +7,10 @@ import {
   UserStatus,
 } from '@CustomTypes/common.types';
 import { CreateUserInput, UpdateUserInput } from '@validators/user.validator';
-
-interface AuthResponse {
-  user: UserEntity;
-  token: string;
-}
+import { UserFilters } from './user.filter';
 
 export class UserService {
-  // --- AUTH METHODS ---
-
-  async login(email: string, password: string): Promise<AuthResponse> {
-    const user = await userModel.getByEmail(email);
-
-    const isPasswordValid = await bcrypt.compare(password, user.authId);
-    if (!isPasswordValid)
-      throw new AuthenticationError('Credenciales inválidas');
-
-    if (user.status !== UserStatus.ACTIVE)
-      throw new AuthenticationError('Usuario no activo');
-
-    const token = generateToken(user.id, user.email, user.role);
-
-    logger.info('Usuario autenticado', { userId: user.id });
-
-    return { user, token };
-  }
-
   // --- CRUD METHODS ---
-
   async createUser(input: CreateUserInput): Promise<UserEntity> {
     return await userModel.create(input, input.password);
   }
@@ -54,7 +26,7 @@ export class UserService {
   async listUsers(
     page: number,
     limit: number,
-    filters: any
+    filters: UserFilters
   ): Promise<PaginatedResponse<UserEntity>> {
     return await userModel.list(page, limit, filters);
   }

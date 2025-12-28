@@ -1,18 +1,15 @@
-import { RowDataPacket, Pool, ResultSetHeader } from 'mysql2/promise';
+import { Pool, ResultSetHeader } from 'mysql2/promise';
 import bcrypt from 'bcrypt';
 import { randomUUID } from 'crypto';
 import { getPool } from '@config/database';
 import { logger } from '@utils/logger';
-import {
-  UUID,
-  UserRole,
-  UserStatus
-} from '@CustomTypes/common.types';
+import { UUID, UserRole, UserStatus } from '@CustomTypes/common.types';
 import { UserEntity } from './user.entity';
 import { CreateUserInput, UpdateUserInput } from '@validators/user.validator';
 import { NotFoundError, ValidationError } from '@utils/errors';
 import { userMapper } from '@mappers/user.mapper';
 import { UserRow } from './user.row';
+import { CountResult } from '@models/common/count.row';
 
 export class UserModel {
   private pool: Pool | null = null;
@@ -90,11 +87,11 @@ export class UserModel {
 
   async existsByEmail(email: string): Promise<boolean> {
     const query = `SELECT COUNT(*) as count FROM users WHERE email = ? AND deleted_at IS NULL LIMIT 1`;
-    const [rows] = await this.getPool().execute<RowDataPacket[]>(query, [
+    const [rows] = await this.getPool().execute<CountResult[]>(query, [
       email.toLowerCase(),
     ]);
 
-    return (rows[0] as any).count > 0;
+    return rows[0].count > 0;
   }
 
   async update(id: UUID, input: UpdateUserInput): Promise<UserEntity> {
@@ -211,11 +208,11 @@ export class UserModel {
       filterValues.push(searchTerm, searchTerm, searchTerm);
     }
 
-    const [countRows] = await this.getPool().execute<RowDataPacket[]>(
+    const [countRows] = await this.getPool().execute<CountResult[]>(
       `SELECT COUNT(*) as total FROM users WHERE ${whereClause}`,
       filterValues
     );
-    const total = (countRows[0] as any).total;
+    const total = countRows[0].count;
 
     const offset = (page - 1) * limit;
     const query = `SELECT * FROM users WHERE ${whereClause} ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}`;
