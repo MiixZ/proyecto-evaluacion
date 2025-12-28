@@ -1,22 +1,18 @@
-import { RowDataPacket } from 'mysql2/promise';
+import { ResultSetHeader } from 'mysql2/promise';
 import { getPool } from '@config/database';
-import { logger } from '@utils/logger';
 import { UUID, PaginatedResponse } from '@CustomTypes/common.types';
-import { ExerciseEntity, ExerciseDTO } from './exercise.entity';
+import { ExerciseEntity } from './exercise.entity';
+import { TestCaseEntity, ExecutionLimitEntity } from './exercise.types';
+import { ExerciseRow, TestCaseRow, ExecutionLimitRow } from './exercise.row';
+import { exerciseMapper } from '@mappers/exercise.mapper';
 import { NotFoundError } from '@utils/errors';
-import { ExecutionLimitEntity, TestCaseEntity } from './exercise.types';
-import { CreateExerciseInput } from '@validators/submission.validator';
+import { CreateExerciseInput } from '@validators/exercise.validator';
 
 export class ExerciseModel {
-  /**
-   * Crea un nuevo ejercicio
-   */
   async create(
     input: CreateExerciseInput,
     createdById: UUID
   ): Promise<ExerciseEntity> {
-    const pool = getPool();
-
     const query = `
       INSERT INTO exercises (
         id, syllabus_id, title, description, difficulty, language,
@@ -35,7 +31,7 @@ export class ExerciseModel {
       input.difficulty,
       input.language,
       input.templateCode || null,
-      false, // is_published
+      false,
       createdById,
       input.orderIndex || null,
       input.points,
@@ -45,81 +41,110 @@ export class ExerciseModel {
       input.maxAttempts,
     ];
 
-    const [result] = await pool.execute(query, values);
-    const insertedId = (result as any).insertId;
+    const [result] = await getPool().execute<ResultSetHeader>(query, values);
 
-    logger.info(`Ejercicio creado: ${input.title} (ID: ${insertedId})`);
+    // TODO: Recuperamos el ID generado (si usamos UUID() de MySQL, necesitamos recuperarlo o generarlo en JS)
+    // NOTA: Tu query usa UUID() de MySQL. Para recuperar ese UUID insertado necesitamos hacer una select
+    // o generarlo en la aplicación (recomendado). Asumiremos generación en app para consistencia:
 
-    return this.getById(insertedId as UUID);
+    // *CORRECCIÓN*: Generemos el UUID en la app para evitar round-trips extra.
+    // (Ver implementación en Service, aquí asumiremos que pasamos el ID o cambiamos la query abajo)
+
+    // Si mantenemos UUID() de MySQL, no podemos devolver el ID fácilmente sin select last_insert_id si fuera auto_inc.
+    // Vamos a asumir que el modelo recibe el ID o lo cambiamos para que haga SELECT.
+    // Para simplificar y consistencia con submission, haremos SELECT by syllabus ordenado desc limit 1 por ahora,
+    // o mejor, refactorizaremos para generar UUID en el servicio (paso 4).
+
+    // Por ahora, asumamos que funciona y busquemos el último insertado (no ideal) o devolvemos void.
+    // Lo ideal: Cambiar la query para recibir el UUID desde el servicio.
+
+    throw new Error('Refactor needed: Generate UUID in service layer');
   }
 
-  /**
-   * Obtiene un ejercicio por ID
-   */
-  async getById(id: UUID): Promise<ExerciseEntity> {
-    const pool = getPool();
-
+  async createWithId(
+    id: UUID,
+    input: CreateExerciseInput,
+    createdById: UUID
+  ): Promise<ExerciseEntity> {
     const query = `
-      SELECT 
-        id, syllabus_id as syllabusId, title, description, difficulty,
-        language, template_code as templateCode, is_published as isPublished,
-        created_by as createdBy, order_index as orderIndex, points,
-        efficiency_order as efficiencyOrder, deadline,
-        late_submission_penalty_percent as lateSubmissionPenaltyPercent,
-        max_attempts as maxAttempts, created_at as createdAt,
-        updated_at as updatedAt
-      FROM exercises
-      WHERE id = ?
-      LIMIT 1
+      INSERT INTO exercises (
+        id, syllabus_id, title, description, difficulty, language,
+        template_code, is_published, created_by, order_index, points,
+        efficiency_order, deadline, late_submission_penalty_percent, max_attempts,
+        created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
     `;
 
-    const [rows] = await pool.execute<RowDataPacket[]>(query, [id]);
+    const values = [
+      id,
+      input.syllabusId,
+      input.title,
+      input.description,
+      input.difficulty,
+      input.language,
+      input.templateCode || null,
+      0,
+      createdById,
+      input.orderIndex || null,
+      input.points,
+      input.efficiencyOrder,
+      input.deadline || null,
+      input.lateSubmissionPenaltyPercent,
+      input.maxAttempts,
+    ];
+
+    await getPool().execute(query, values);
+    return this.getById(id);
+  }
+
+  async getById(id: UUID): Promise<ExerciseEntity> {
+    const query = `SELECT * FROM exercises WHERE id = ? LIMIT 1`;
+    const [rows] = await getPool().execute<ExerciseRow[]>(query, [id]);
 
     if (rows.length === 0) {
       throw new NotFoundError(`Ejercicio no encontrado: ${id}`);
     }
 
-    return this.mapRowToEntity(rows[0]);
+    return exerciseMapper.toEntity(rows[0]);
   }
 
-  /**
-   * Obtiene ejercicios por syllabus
-   */
-  async getBySyllabusId(
+  async listBySyllabus(
     syllabusId: UUID,
-    page: number = 1,
-    limit: number = 20
-  ): Promise<PaginatedResponse<ExerciseDTO>> {
-    const pool = getPool();
+    page: number,
+    limit: number,
+    onlyPublished: boolean = false
+  ): Promise<PaginatedResponse<ExerciseEntity>> {
     const offset = (page - 1) * limit;
+    let where = 'syllabus_id = ?';
+    const params: any[] = [syllabusId];
 
-    // Total
-    const countQuery = `SELECT COUNT(*) as total FROM exercises WHERE syllabus_id = ?`;
-    const [countRows] = await pool.execute<RowDataPacket[]>(countQuery, [
-      syllabusId,
-    ]);
-    const total = (countRows[0] as any).total;
+    if (onlyPublished) {
+      where += ' AND is_published = 1';
+    }
 
-    // Resultados
+    // Count
+    const countQuery = `SELECT COUNT(*) as total FROM exercises WHERE ${where}`;
+    const [countRows] = await getPool().execute<any[]>(countQuery, params);
+    const total = countRows[0].total;
+
+    // Data
     const query = `
-      SELECT 
-        id, syllabus_id as syllabusId, title, description, difficulty,
-        language, is_published as isPublished, points, max_attempts as maxAttempts,
-        deadline, created_at as createdAt, updated_at as updatedAt
-      FROM exercises
-      WHERE syllabus_id = ?
-      ORDER BY order_index ASC, created_at DESC
+      SELECT * FROM exercises 
+      WHERE ${where} 
+      ORDER BY order_index ASC, created_at DESC 
       LIMIT ? OFFSET ?
     `;
 
-    const [rows] = await pool.execute<RowDataPacket[]>(query, [
-      syllabusId,
-      limit,
-      offset,
+    const [rows] = await getPool().execute<ExerciseRow[]>(query, [
+      ...params,
+      limit.toString(),
+      offset.toString(),
     ]);
 
+    const items = rows.map((row) => exerciseMapper.toEntity(row));
+
     return {
-      items: rows.map((row) => this.mapRowToDTO(row)),
+      items,
       total,
       page,
       limit,
@@ -128,124 +153,43 @@ export class ExerciseModel {
     };
   }
 
-  /**
-   * Obtiene ejercicios publicados de un syllabus (para estudiantes)
-   */
-  async getPublishedBySyllabusId(syllabusId: UUID): Promise<ExerciseDTO[]> {
-    const pool = getPool();
+  async setPublishedStatus(
+    id: UUID,
+    isPublished: boolean
+  ): Promise<ExerciseEntity> {
+    const query = `UPDATE exercises SET is_published = ?, updated_at = NOW() WHERE id = ?`;
+    const [result] = await getPool().execute<ResultSetHeader>(query, [
+      isPublished,
+      id,
+    ]);
 
-    const query = `
-      SELECT 
-        id, syllabus_id as syllabusId, title, description, difficulty,
-        language, is_published as isPublished, points, max_attempts as maxAttempts,
-        deadline, created_at as createdAt, updated_at as updatedAt
-      FROM exercises
-      WHERE syllabus_id = ? AND is_published = TRUE
-      ORDER BY order_index ASC
-    `;
-
-    const [rows] = await pool.execute<RowDataPacket[]>(query, [syllabusId]);
-
-    return rows.map((row) => this.mapRowToDTO(row));
-  }
-
-  /**
-   * Publica un ejercicio
-   */
-  async publish(id: UUID): Promise<ExerciseEntity> {
-    const pool = getPool();
-
-    const query = `
-      UPDATE exercises
-      SET is_published = TRUE, updated_at = NOW()
-      WHERE id = ?
-    `;
-
-    const result = await pool.execute(query, [id]);
-
-    if ((result[0] as any).affectedRows === 0) {
+    if (result.affectedRows === 0) {
       throw new NotFoundError(`Ejercicio no encontrado: ${id}`);
     }
-
-    logger.info(`Ejercicio publicado: ${id}`);
 
     return this.getById(id);
   }
 
+  // --- Test Cases & Limits ---
+
   async getTestCases(exerciseId: UUID): Promise<TestCaseEntity[]> {
-    const query = `
-      SELECT id, exercise_id as exerciseId, input, expected_output as expectedOutput, 
-             is_hidden as isHidden, time_limit_seconds as timeLimitSeconds, 
-             memory_limit_mb as memoryLimitMb
-      FROM test_cases 
-      WHERE exercise_id = ? 
-      ORDER BY order_index ASC
-    `;
-    const [rows] = await getPool().execute<any[]>(query, [exerciseId]);
-    return rows;
+    const query = `SELECT * FROM test_cases WHERE exercise_id = ? ORDER BY order_index ASC`;
+    const [rows] = await getPool().execute<TestCaseRow[]>(query, [exerciseId]);
+    return rows.map((row) => exerciseMapper.toTestCaseEntity(row));
   }
 
   async getExecutionLimits(
     exerciseId: UUID,
     language: string
   ): Promise<ExecutionLimitEntity | null> {
-    const query = `
-      SELECT id, exercise_id as exerciseId, language, 
-             time_limit_seconds as timeLimitSeconds, memory_limit_mb as memoryLimitMb
-      FROM execution_limits
-      WHERE exercise_id = ? AND language = ?
-      LIMIT 1
-    `;
-
-    const [rows] = await getPool().execute<any[]>(query, [
+    const query = `SELECT * FROM execution_limits WHERE exercise_id = ? AND language = ? LIMIT 1`;
+    const [rows] = await getPool().execute<ExecutionLimitRow[]>(query, [
       exerciseId,
       language,
     ]);
-
-    return rows.length > 0 ? rows[0] : null;
-  }
-
-  /**
-   * ============================================================================
-   * HELPERS
-   * ============================================================================
-   */
-
-  private mapRowToEntity(row: RowDataPacket): ExerciseEntity {
-    return {
-      id: row.id,
-      syllabusId: row.syllabusId,
-      title: row.title,
-      description: row.description,
-      difficulty: row.difficulty,
-      language: row.language,
-      templateCode: row.templateCode,
-      isPublished: Boolean(row.isPublished),
-      createdBy: row.createdBy,
-      orderIndex: row.orderIndex,
-      points: row.points,
-      efficiencyOrder: row.efficiencyOrder,
-      deadline: row.deadline ? new Date(row.deadline) : null,
-      lateSubmissionPenaltyPercent: row.lateSubmissionPenaltyPercent,
-      maxAttempts: row.maxAttempts,
-      createdAt: new Date(row.createdAt),
-      updatedAt: new Date(row.updatedAt),
-    };
-  }
-
-  private mapRowToDTO(row: RowDataPacket): ExerciseDTO {
-    return {
-      id: row.id,
-      syllabusId: row.syllabusId,
-      title: row.title,
-      description: row.description,
-      difficulty: row.difficulty,
-      language: row.language,
-      isPublished: Boolean(row.isPublished),
-      points: row.points,
-      maxAttempts: row.maxAttempts,
-      deadline: row.deadline ? new Date(row.deadline) : null,
-    };
+    return rows.length > 0
+      ? exerciseMapper.toExecutionLimitEntity(rows[0])
+      : null;
   }
 }
 
