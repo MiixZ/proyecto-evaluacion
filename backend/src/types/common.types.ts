@@ -100,6 +100,9 @@ export enum ExercisePublishStatus {
   ARCHIVED = 'archived',
 }
 
+export const LanguageTypes = ['es', 'en'] as const;
+export type LanguageType = (typeof LanguageTypes)[number];
+
 /**
  * Interfaz base para respuestas API
  */

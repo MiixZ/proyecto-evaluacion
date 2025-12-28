@@ -1,9 +1,9 @@
-import { UUID } from '@CustomTypes/common.types';
+import { LanguageType, UUID } from '@CustomTypes/common.types';
 import { UserRole, UserStatus, Timestamps } from '@CustomTypes/common.types';
 
 /**
  * Mapeo directo de la tabla 'users' en la base de datos
- * Incluye TODOS los campos tal como están en MySQL
+ * Incluye TODOS los campos
  */
 export interface UserEntity extends Timestamps {
   id: UUID;
@@ -16,7 +16,7 @@ export interface UserEntity extends Timestamps {
   phone?: string | null;
   bio?: string | null;
   profileImageUrl?: string | null;
-  preferredLanguage: 'es' | 'en';
+  preferredLanguage: LanguageType;
   createdAt: Date;
   updatedAt: Date;
   deletedAt?: Date | null;
@@ -35,7 +35,7 @@ export interface UserDTO {
   phone?: string | null;
   bio?: string | null;
   profileImageUrl?: string | null;
-  preferredLanguage: 'es' | 'en';
+  preferredLanguage: LanguageType;
   createdAt: Date;
 }
 
