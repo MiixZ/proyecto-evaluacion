@@ -3,33 +3,29 @@ import { AuthRequest } from '@CustomTypes/request.types';
 import { catchAsync } from '@utils/async.handler';
 import { ApiResponse } from '@utils/response.handler';
 import { submissionService } from '@services/submission/submission.service';
-import { createSubmissionSchema } from '@validators/schemas';
-import { z } from 'zod';
 import { UUID } from '@CustomTypes/common.types';
-
-const submitSchema = createSubmissionSchema.extend({
-  courseId: z.string().uuid(),
-});
+import { CreateSubmissionInput } from '@validators/submission.validator';
 
 export class SubmissionController {
   submitCode = catchAsync(async (req: AuthRequest, res: Response) => {
     const userId = req.user!.id;
 
-    const input = submitSchema.parse(req.body);
+    const input = req.body as CreateSubmissionInput & { courseId: string };
 
-    const result = await submissionService.processSubmission(
+    const resultDTO = await submissionService.processSubmission(
       userId as UUID,
-      input as any
+      {
+        ...input,
+        courseId: input.courseId as UUID,
+      }
     );
 
     return ApiResponse.created(
       res,
-      result,
+      resultDTO,
       'Solución enviada y evaluada correctamente'
     );
   });
-
-  // TODO: getSubmissionById, listSubmissionsByExercise, etc.
 }
 
 export const submissionController = new SubmissionController();

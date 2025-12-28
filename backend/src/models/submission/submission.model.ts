@@ -1,16 +1,36 @@
 import { PoolConnection } from 'mysql2/promise';
 import { getPool, withTransaction } from '@config/database';
-import { SubmissionTestResultEntity } from './submission.entity';
+import {
+  SubmissionEntity,
+  SubmissionTestResultEntity,
+} from './submission.entity';
+import { SubmissionRow } from './submission.row';
 import {
   UUID,
   SubmissionStatus,
   SubmissionVerdict,
 } from '@CustomTypes/common.types';
 import { logger } from '@utils/logger';
+import { submissionMapper } from '@mappers/submission.mapper';
+import { NotFoundError } from '@utils/errors';
 
 export class SubmissionModel {
   /**
-   * Obtiene el siguiente número de intento para un estudiante en un ejercicio
+   * Obtiene una sumisión por ID
+   */
+  async getById(id: UUID): Promise<SubmissionEntity> {
+    const query = `SELECT * FROM submissions WHERE id = ? LIMIT 1`;
+    const [rows] = await getPool().execute<SubmissionRow[]>(query, [id]);
+
+    if (rows.length === 0) {
+      throw new NotFoundError(`Envío no encontrado: ${id}`);
+    }
+
+    return submissionMapper.toEntity(rows[0]);
+  }
+
+  /**
+   * Obtiene el siguiente número de intento
    */
   async getNextAttemptNumber(
     studentId: UUID,
@@ -26,7 +46,7 @@ export class SubmissionModel {
   }
 
   /**
-   * Crea la sumisión inicial en estado PENDING
+   * Crea la sumisión inicial
    */
   async create(data: {
     id: UUID;
@@ -37,7 +57,7 @@ export class SubmissionModel {
     language: string;
     attemptNumber: number;
     isLate: boolean;
-  }): Promise<void> {
+  }): Promise<SubmissionEntity> {
     const query = `
       INSERT INTO submissions (
         id, exercise_id, student_id, course_id, attempt_number, code, language,
@@ -57,25 +77,25 @@ export class SubmissionModel {
       SubmissionVerdict.PENDING,
       data.isLate,
     ]);
+
+    return this.getById(data.id);
   }
 
   /**
-   * Actualiza el resultado de una sumisión tras la ejecución
-   * Incluye guardar los resultados de los test cases en una transacción
+   * Actualiza el resultado de una sumisión y guarda resultados de tests
    */
   async updateResult(
     submissionId: UUID,
     verdict: SubmissionVerdict,
     score: number,
     testResults: SubmissionTestResultEntity[]
-  ): Promise<void> {
+  ): Promise<SubmissionEntity> {
     await withTransaction(async (connection: PoolConnection) => {
       const updateQuery = `
         UPDATE submissions 
         SET status = ?, verdict = ?, score = ?, updated_at = NOW() 
         WHERE id = ?
       `;
-
       await connection.execute(updateQuery, [
         SubmissionStatus.COMPLETED,
         verdict,
@@ -107,8 +127,13 @@ export class SubmissionModel {
     });
 
     logger.info(
-      `Submission actualizada: ${submissionId} - Verdict: ${verdict}`
+      `Submission actualizada: ${submissionId} (Verdict: ${verdict})`
     );
+
+    const updatedEntity = await this.getById(submissionId);
+    updatedEntity.testResults = testResults;
+
+    return updatedEntity;
   }
 }
 

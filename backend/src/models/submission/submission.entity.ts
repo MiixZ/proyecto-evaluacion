@@ -4,7 +4,10 @@ import {
   SubmissionVerdict,
   Timestamps,
   EfficiencyOrder,
+  TestCaseStatus,
 } from '@CustomTypes/common.types';
+
+// --- ENTIDADES DE DOMINIO ---
 
 export interface SubmissionEntity extends Timestamps {
   id: UUID;
@@ -19,29 +22,53 @@ export interface SubmissionEntity extends Timestamps {
   score: number;
   isLate: boolean;
   usedHint: boolean;
+  testResults?: SubmissionTestResultEntity[];
 }
 
 export interface SubmissionTestResultEntity {
   id: UUID;
   submissionId: UUID;
   testCaseId: UUID;
-  status: 'passed' | 'failed' | 'error';
+  status: TestCaseStatus | string;
   actualOutput?: string | null;
   executionTimeMs: number;
   memoryUsedMb: number;
   efficiencyAchieved: EfficiencyOrder;
+  createdAt?: Date;
 }
 
-export interface SubmissionDetailDTO {
+// --- DATA TRANSFER OBJECTS (DTOs) ---
+
+export interface SubmissionTestResultDTO {
   id: UUID;
+  status: string;
+  executionTimeMs: number;
+  memoryUsedMb: number;
+  actualOutput?: string | null;
+}
+
+export interface SubmissionDTO {
+  id: UUID;
+  exerciseId: UUID;
+  studentId: UUID;
+  courseId: UUID;
+  attemptNumber: number;
+  language: string;
+  code: string;
   status: SubmissionStatus;
   verdict: SubmissionVerdict;
   score: number;
-  testResults: {
-    status: string;
-    executionTimeMs: number;
-    isHidden: boolean;
-    actualOutput?: string | null;
-  }[];
+  isLate: boolean;
+  usedHint: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  testResults?: SubmissionTestResultDTO[];
+}
+
+export interface SubmissionSimpleDTO {
+  id: UUID;
+  verdict: SubmissionVerdict;
+  score: number;
+  status: SubmissionStatus;
   createdAt: Date;
 }

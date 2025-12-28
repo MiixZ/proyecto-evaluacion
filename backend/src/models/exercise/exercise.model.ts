@@ -3,9 +3,9 @@ import { getPool } from '@config/database';
 import { logger } from '@utils/logger';
 import { UUID, PaginatedResponse } from '@CustomTypes/common.types';
 import { ExerciseEntity, ExerciseDTO } from './exercise.entity';
-import { CreateExerciseInput } from '@validators/schemas';
 import { NotFoundError } from '@utils/errors';
 import { ExecutionLimitEntity, TestCaseEntity } from './exercise.types';
+import { CreateExerciseInput } from '@validators/submission.validator';
 
 export class ExerciseModel {
   /**

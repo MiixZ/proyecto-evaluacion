@@ -6,6 +6,16 @@ import axios, { AxiosInstance } from 'axios';
 import config from '@config/environment';
 import { logger } from '@utils/logger';
 
+export interface EngineStats {
+  uptime: number;
+  memoryUsage: {
+    heapTotal: number;
+    heapUsed: number;
+  };
+  queueSize: number;
+  activeExecutions: number;
+}
+
 export class ExecutionEngineClient {
   private client: AxiosInstance;
 
@@ -23,29 +33,22 @@ export class ExecutionEngineClient {
   async executeCode(request: ExecutionRequest): Promise<ExecutionResult> {
     try {
       logger.debug(`Enviando a Execution Engine: ${request.id}`);
-
       const response = await this.client.post<ExecutionResult>(
         '/execute',
         request
       );
-
-      logger.debug(
-        `Resultado recibido: ${request.id} - ${response.data.verdict}`
-      );
-
       return response.data;
     } catch (error: any) {
       logger.error(`❌ Error Engine: ${error.message}`, {
         response: error.response?.data,
       });
 
-      throw new Error(`Execution Engine Error: ${error.message}`);
+      throw new Error(
+        `Execution Engine Error: ${error.response?.data?.message || error.message}`
+      );
     }
   }
 
-  /**
-   * Health check
-   */
   async health(): Promise<boolean> {
     try {
       await this.client.get('/health');
@@ -56,13 +59,12 @@ export class ExecutionEngineClient {
     }
   }
 
-  async getStats(): Promise<any> {
+  async getStats(): Promise<EngineStats | null> {
     try {
-      const response = await this.client.get('/stats');
-
+      const response = await this.client.get<EngineStats>('/stats');
       return response.data;
     } catch (error: unknown) {
-      console.error('Error getting stats:', error);
+      logger.error('Error getting stats form engine', error);
 
       return null;
     }

@@ -14,3 +14,16 @@ export const phoneSchema = z
   .regex(/^\+?[1-9]\d{1,14}$/, 'Número de teléfono inválido');
 
 export const urlSchema = z.string().url('URL inválida');
+
+export const languageCodeSchema = z
+  .enum([
+    'python',
+    'java',
+    'javascript',
+    'cpp',
+    'go',
+    'rust',
+    'c',
+    'typescript',
+  ])
+  .describe('Código del lenguaje de programación');
