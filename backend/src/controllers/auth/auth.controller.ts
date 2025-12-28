@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { userService } from '@services/user/userService';
+import { userService } from '@services/user/user.service';
 import { catchAsync } from '@utils/async.handler';
 import { ApiResponse } from '@utils/response.handler';
 import { userMapper } from '@mappers/user.mapper';
