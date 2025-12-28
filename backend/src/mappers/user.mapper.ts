@@ -1,23 +1,7 @@
 import { UserRole, UserStatus, UUID } from '@CustomTypes/common.types';
 import { UserEntity, UserDTO } from '@models/user/user.entity';
+import { UserRow } from '@models/user/user.row';
 import { BaseMapper } from '@utils/mapper';
-import { RowDataPacket } from 'mysql2';
-
-interface UserRow extends RowDataPacket {
-  id: string;
-  auth_id: string;
-  email: string;
-  first_name: string;
-  last_name: string;
-  role: string;
-  status: string;
-  phone: string | null;
-  bio: string | null;
-  profile_image_url: string | null;
-  preferred_language: string;
-  created_at: Date;
-  updated_at: Date;
-}
 
 class UserMapper extends BaseMapper<UserEntity, UserDTO, UserRow> {
   toEntity(row: UserRow): UserEntity {

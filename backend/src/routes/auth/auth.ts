@@ -1,90 +1,10 @@
-import { Router, Request, Response } from 'express';
-import { logger } from '@utils/logger';
-import { userService, LoginRequest } from '@services/user/userService';
-import { AppError, AuthenticationError } from '@utils/errors';
+import { Router } from 'express';
+import { authController } from '@controllers/auth/auth.controller';
+import { validateRequest } from '@middleware/validator.middleware';
+import { loginRequest } from '@validators/auth.validator';
 
 const router = Router();
 
-/**
- * POST /api/auth/login
- * Autentica un usuario y devuelve JWT
- *
- * Body:
- * {
- *   "email": "usuario@example.com",
- *   "password": "SecurePass123!"
- * }
- *
- * Response:
- * {
- *   "success": true,
- *   "data": {
- *     "user": { id, email, firstName, lastName, role, status },
- *     "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
- *   },
- *   "timestamp": "2025-12-25T..."
- * }
- */
-router.post('/login', async (req: Request, res: Response) => {
-  try {
-    const { email, password } = req.body;
-
-    // Validar datos
-    if (!email || !password) {
-      return res.status(400).json({
-        success: false,
-        error: {
-          code: 'VALIDATION_ERROR',
-          message: 'Faltan campos requeridos: email, password',
-        },
-        timestamp: new Date().toISOString(),
-      });
-    }
-
-    // Autenticar usuario
-    const request: LoginRequest = { email, password };
-    const result = await userService.login(request);
-
-    logger.info('Usuario autenticado exitosamente', { email });
-
-    return res.status(200).json(result);
-  } catch (error) {
-    if (error instanceof AuthenticationError) {
-      logger.warn('Error de autenticación en login', {
-        message: error.message,
-      });
-      return res.status(401).json({
-        success: false,
-        error: {
-          code: 'AUTHENTICATION_ERROR',
-          message: error.message,
-        },
-        timestamp: new Date().toISOString(),
-      });
-    }
-
-    if (error instanceof AppError) {
-      logger.error('Error de aplicación en login', error);
-      return res.status(error.statusCode).json({
-        success: false,
-        error: {
-          code: 'APP_ERROR',
-          message: error.message,
-        },
-        timestamp: new Date().toISOString(),
-      });
-    }
-
-    logger.error('Error inesperado en login', error);
-    return res.status(500).json({
-      success: false,
-      error: {
-        code: 'INTERNAL_ERROR',
-        message: 'Error interno del servidor',
-      },
-      timestamp: new Date().toISOString(),
-    });
-  }
-});
+router.post('/login', validateRequest(loginRequest), authController.login);
 
 export default router;

@@ -21,9 +21,13 @@ export const createUserSchema = z.object({
   preferredLanguage: z.enum(LanguageTypes).default('es'),
 });
 
+export type CreateUserInput = z.infer<typeof createUserSchema>;
+
 export const updateUserSchema = createUserSchema
   .partial()
   .omit({ password: true });
+
+export type UpdateUserInput = z.infer<typeof updateUserSchema>;
 
 export const changeRoleSchema = z.object({
   role: z.nativeEnum(UserRole, {

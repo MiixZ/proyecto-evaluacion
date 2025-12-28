@@ -1,57 +1,44 @@
-import { RowDataPacket, Pool } from 'mysql2/promise';
+import { RowDataPacket, Pool, ResultSetHeader } from 'mysql2/promise';
 import bcrypt from 'bcrypt';
+import { randomUUID } from 'crypto';
 import { getPool } from '@config/database';
 import { logger } from '@utils/logger';
 import {
   UUID,
   UserRole,
-  UserStatus,
-  PaginatedResponse,
+  UserStatus
 } from '@CustomTypes/common.types';
-import { UserEntity, UserDTO } from './user.entity';
-import { CreateUserInput, UpdateUserInput } from '@validators/schemas';
+import { UserEntity } from './user.entity';
+import { CreateUserInput, UpdateUserInput } from '@validators/user.validator';
 import { NotFoundError, ValidationError } from '@utils/errors';
-import { randomUUID } from 'crypto';
+import { userMapper } from '@mappers/user.mapper';
+import { UserRow } from './user.row';
 
-/**
- * Modelo User: contiene todas las queries relacionadas con usuarios
- */
 export class UserModel {
   private pool: Pool | null = null;
-
-  constructor() {}
 
   private getPool(): Pool {
     if (!this.pool) {
       this.pool = getPool();
     }
-
     return this.pool;
   }
 
-  /**
-   * Crea un nuevo usuario en la base de datos
-   * @throws ValidationError si el email ya existe
-   * @throws Error si hay problemas en BD
-   */
   async create(
     input: CreateUserInput,
     plaintextPassword: string
   ): Promise<UserEntity> {
     const pool = this.getPool();
     const newId = randomUUID();
-
     const hashedPassword = await bcrypt.hash(plaintextPassword, 12);
 
     const query = `
-    INSERT INTO users (
-      id, auth_id, email, first_name, last_name, 
-      role, status, phone, bio, profile_image_url, preferred_language,
-      created_at, updated_at
-    ) VALUES (
-      ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW()
-    )
-  `;
+      INSERT INTO users (
+        id, auth_id, email, first_name, last_name, 
+        role, status, phone, bio, profile_image_url, preferred_language,
+        created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+    `;
 
     const values = [
       newId,
@@ -69,79 +56,40 @@ export class UserModel {
 
     try {
       await pool.execute(query, values);
-      logger.info(`Usuario creado: ${input.email} (ID: ${newId})`);
       return this.getById(newId as UUID);
     } catch (error: any) {
       if (error.code === 'ER_DUP_ENTRY') {
-        throw new ValidationError('El email ya existe en el sistema', {
-          field: 'email',
-          value: input.email,
-        });
+        throw new ValidationError('El email ya existe', { field: 'email' });
       }
+
       throw error;
     }
   }
 
-  /**
-   * Obtiene un usuario por ID
-   * @throws NotFoundError si no existe
-   */
   async getById(id: UUID): Promise<UserEntity> {
-    const query = `
-      SELECT 
-        id, auth_id as authId, email, first_name as firstName,
-        last_name as lastName, role, status, phone, bio,
-        profile_image_url as profileImageUrl, preferred_language as preferredLanguage,
-        created_at as createdAt, updated_at as updatedAt, deleted_at as deletedAt
-      FROM users
-      WHERE id = ? AND deleted_at IS NULL
-      LIMIT 1
-    `;
+    const query = `SELECT * FROM users WHERE id = ? AND deleted_at IS NULL LIMIT 1`;
+    const [rows] = await this.getPool().execute<UserRow[]>(query, [id]);
 
-    const [rows] = await this.getPool().execute<RowDataPacket[]>(query, [id]);
-
-    if (rows.length === 0) {
+    if (rows.length === 0)
       throw new NotFoundError(`Usuario no encontrado: ${id}`);
-    }
 
-    return this.mapRowToEntity(rows[0]);
+    return userMapper.toEntity(rows[0]);
   }
 
-  /**
-   * Obtiene un usuario por email
-   * @throws NotFoundError si no existe
-   */
   async getByEmail(email: string): Promise<UserEntity> {
-    const query = `
-      SELECT 
-        id, auth_id as authId, email, first_name as firstName,
-        last_name as lastName, role, status, phone, bio,
-        profile_image_url as profileImageUrl, preferred_language as preferredLanguage,
-        created_at as createdAt, updated_at as updatedAt, deleted_at as deletedAt
-      FROM users
-      WHERE email = ? AND deleted_at IS NULL
-      LIMIT 1
-    `;
-
-    const [rows] = await this.getPool().execute<RowDataPacket[]>(query, [
+    const query = `SELECT * FROM users WHERE email = ? AND deleted_at IS NULL LIMIT 1`;
+    const [rows] = await this.getPool().execute<UserRow[]>(query, [
       email.toLowerCase(),
     ]);
 
-    if (rows.length === 0) {
+    if (rows.length === 0)
       throw new NotFoundError(`Usuario no encontrado: ${email}`);
-    }
 
-    return this.mapRowToEntity(rows[0]);
+    return userMapper.toEntity(rows[0]);
   }
 
   async existsByEmail(email: string): Promise<boolean> {
-    const query = `
-      SELECT COUNT(*) as count
-      FROM users
-      WHERE email = ? AND deleted_at IS NULL
-      LIMIT 1
-    `;
-
+    const query = `SELECT COUNT(*) as count FROM users WHERE email = ? AND deleted_at IS NULL LIMIT 1`;
     const [rows] = await this.getPool().execute<RowDataPacket[]>(query, [
       email.toLowerCase(),
     ]);
@@ -149,38 +97,7 @@ export class UserModel {
     return (rows[0] as any).count > 0;
   }
 
-  /**
-   * Obtiene un usuario por auth_id (desde Authgear)
-   */
-  async getByAuthId(authId: string): Promise<UserEntity | null> {
-    const query = `
-      SELECT 
-        id, auth_id as authId, email, first_name as firstName,
-        last_name as lastName, role, status, phone, bio,
-        profile_image_url as profileImageUrl, preferred_language as preferredLanguage,
-        created_at as createdAt, updated_at as updatedAt, deleted_at as deletedAt
-      FROM users
-      WHERE auth_id = ? AND deleted_at IS NULL
-      LIMIT 1
-    `;
-
-    const [rows] = await this.getPool().execute<RowDataPacket[]>(query, [
-      authId,
-    ]);
-
-    if (rows.length === 0) {
-      return null;
-    }
-
-    return this.mapRowToEntity(rows[0]);
-  }
-
-  /**
-   * Actualiza un usuario existente
-   * @throws NotFoundError si no existe
-   */
   async update(id: UUID, input: UpdateUserInput): Promise<UserEntity> {
-    // Construir query dinámicamente según qué campos se actualizan
     const updates: string[] = [];
     const values: any[] = [];
 
@@ -210,23 +127,21 @@ export class UserModel {
     }
 
     if (updates.length === 0) {
-      // Si no hay updates, retornar usuario actual
       return this.getById(id);
     }
 
     updates.push('updated_at = NOW()');
     values.push(id);
 
-    const query = `
-      UPDATE users
-      SET ${updates.join(', ')}
-      WHERE id = ? AND deleted_at IS NULL
-    `;
+    const query = `UPDATE users SET ${updates.join(', ')} WHERE id = ? AND deleted_at IS NULL`;
 
-    const result = await this.getPool().execute(query, values);
+    const [result] = await this.getPool().execute<ResultSetHeader>(
+      query,
+      values
+    );
 
-    if ((result[0] as any).affectedRows === 0) {
-      throw new NotFoundError(`Usuario no encontrado: ${id}`);
+    if (result.affectedRows === 0) {
+      throw new NotFoundError(`Usuario no encontrado o eliminado: ${id}`);
     }
 
     logger.info(`Usuario actualizado: ${id}`);
@@ -234,79 +149,50 @@ export class UserModel {
     return this.getById(id);
   }
 
-  /**
-   * Soft delete de usuario (marca como eliminado)
-   */
   async softDelete(id: UUID): Promise<void> {
-    const query = `
-      UPDATE users
-      SET deleted_at = NOW(), updated_at = NOW()
-      WHERE id = ? AND deleted_at IS NULL
-    `;
+    const query = `UPDATE users SET deleted_at = NOW(), updated_at = NOW() WHERE id = ? AND deleted_at IS NULL`;
+    const [result] = await this.getPool().execute<ResultSetHeader>(query, [id]);
 
-    const result = await this.getPool().execute(query, [id]);
-
-    if ((result[0] as any).affectedRows === 0) {
+    if (result.affectedRows === 0) {
       throw new NotFoundError(`Usuario no encontrado: ${id}`);
     }
 
     logger.info(`Usuario eliminado (soft): ${id}`);
   }
 
-  /**
-   * Cambia el rol de un usuario (admin only)
-   */
   async updateRole(id: UUID, newRole: UserRole): Promise<UserEntity> {
-    const query = `
-      UPDATE users
-      SET role = ?, updated_at = NOW()
-      WHERE id = ? AND deleted_at IS NULL
-    `;
+    const query = `UPDATE users SET role = ?, updated_at = NOW() WHERE id = ? AND deleted_at IS NULL`;
+    const [result] = await this.getPool().execute<ResultSetHeader>(query, [
+      newRole,
+      id,
+    ]);
 
-    const result = await this.getPool().execute(query, [newRole, id]);
-
-    if ((result[0] as any).affectedRows === 0) {
+    if (result.affectedRows === 0)
       throw new NotFoundError(`Usuario no encontrado: ${id}`);
-    }
 
     logger.info(`Rol actualizado para ${id}: ${newRole}`);
 
     return this.getById(id);
   }
 
-  /**
-   * Cambia el estado de un usuario
-   */
   async updateStatus(id: UUID, newStatus: UserStatus): Promise<UserEntity> {
-    const query = `
-      UPDATE users
-      SET status = ?, updated_at = NOW()
-      WHERE id = ?
-    `;
+    const query = `UPDATE users SET status = ?, updated_at = NOW() WHERE id = ?`;
+    const [result] = await this.getPool().execute<ResultSetHeader>(query, [
+      newStatus,
+      id,
+    ]);
 
-    const result = await this.getPool().execute(query, [newStatus, id]);
-
-    if ((result[0] as any).affectedRows === 0) {
+    if (result.affectedRows === 0)
       throw new NotFoundError(`Usuario no encontrado: ${id}`);
-    }
-
-    logger.info(`Estado actualizado para ${id}: ${newStatus}`);
 
     return this.getById(id);
   }
 
-  /**
-   * Lista todos los usuarios con paginación y filtros
-   */
   async list(
-    page: number = 1,
-    limit: number = 20,
-    filters?: {
-      role?: UserRole;
-      status?: UserStatus;
-      search?: string;
-    }
-  ): Promise<PaginatedResponse<UserDTO>> {
+    page: number,
+    limit: number,
+    filters?: { role?: UserRole; status?: UserStatus; search?: string }
+  ) {
     let whereClause = 'deleted_at IS NULL';
     const filterValues: any[] = [];
 
@@ -314,12 +200,10 @@ export class UserModel {
       whereClause += ' AND role = ?';
       filterValues.push(filters.role);
     }
-
     if (filters?.status) {
       whereClause += ' AND status = ?';
       filterValues.push(filters.status);
     }
-
     if (filters?.search) {
       whereClause +=
         ' AND (email LIKE ? OR first_name LIKE ? OR last_name LIKE ?)';
@@ -327,36 +211,17 @@ export class UserModel {
       filterValues.push(searchTerm, searchTerm, searchTerm);
     }
 
-    // Total count
-    const countQuery = `SELECT COUNT(*) as total FROM users WHERE ${whereClause}`;
     const [countRows] = await this.getPool().execute<RowDataPacket[]>(
-      countQuery,
+      `SELECT COUNT(*) as total FROM users WHERE ${whereClause}`,
       filterValues
     );
-
     const total = (countRows[0] as any).total;
 
-    // Paginación - LIMIT y OFFSET NO pueden ser parámetros en mysql2
     const offset = (page - 1) * limit;
+    const query = `SELECT * FROM users WHERE ${whereClause} ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}`;
 
-    const query = `
-      SELECT 
-        id, auth_id as authId, email, first_name as firstName,
-        last_name as lastName, role, status, phone, bio,
-        profile_image_url as profileImageUrl, preferred_language as preferredLanguage,
-        created_at as createdAt, updated_at as updatedAt, deleted_at as deletedAt
-      FROM users
-      WHERE ${whereClause}
-      ORDER BY created_at DESC
-      LIMIT ${limit} OFFSET ${offset}
-    `;
-
-    const [rows] = await this.getPool().execute<RowDataPacket[]>(
-      query,
-      filterValues
-    );
-
-    const items = rows.map((row) => this.mapRowToDTO(row));
+    const [rows] = await this.getPool().execute<UserRow[]>(query, filterValues);
+    const items = rows.map((row) => userMapper.toEntity(row));
 
     return {
       items,
@@ -368,101 +233,25 @@ export class UserModel {
     };
   }
 
-  /**
-   * Obtiene todos los profesores
-   */
-  async getTeachers(): Promise<UserDTO[]> {
-    const query = `
-      SELECT 
-        id, auth_id as authId, email, first_name as firstName,
-        last_name as lastName, role, status, phone, bio,
-        profile_image_url as profileImageUrl, preferred_language as preferredLanguage,
-        created_at as createdAt, updated_at as updatedAt, deleted_at as deletedAt
-      FROM users
-      WHERE role = ? AND status = ? AND deleted_at IS NULL
-      ORDER BY first_name, last_name
-    `;
-
-    const [rows] = await this.getPool().execute<RowDataPacket[]>(query, [
+  async getTeachers(): Promise<UserEntity[]> {
+    const query = `SELECT * FROM users WHERE role = ? AND status = ? AND deleted_at IS NULL ORDER BY first_name, last_name`;
+    const [rows] = await this.getPool().execute<UserRow[]>(query, [
       UserRole.TEACHER,
       UserStatus.ACTIVE,
     ]);
 
-    return rows.map((row) => this.mapRowToDTO(row));
+    return rows.map((row) => userMapper.toEntity(row));
   }
 
-  /**
-   * Obtiene todos los estudiantes
-   */
-  async getStudents(): Promise<UserDTO[]> {
-    const query = `
-      SELECT 
-        id, auth_id as authId, email, first_name as firstName,
-        last_name as lastName, role, status, phone, bio,
-        profile_image_url as profileImageUrl, preferred_language as preferredLanguage,
-        created_at as createdAt, updated_at as updatedAt, deleted_at as deletedAt
-      FROM users
-      WHERE role = ? AND status = ? AND deleted_at IS NULL
-      ORDER BY first_name, last_name
-    `;
-
-    const [rows] = await this.getPool().execute<RowDataPacket[]>(query, [
+  async getStudents(): Promise<UserEntity[]> {
+    const query = `SELECT * FROM users WHERE role = ? AND status = ? AND deleted_at IS NULL ORDER BY first_name, last_name`;
+    const [rows] = await this.getPool().execute<UserRow[]>(query, [
       UserRole.STUDENT,
       UserStatus.ACTIVE,
     ]);
 
-    return rows.map((row) => this.mapRowToDTO(row));
-  }
-
-  /**
-   * ============================================================================
-   * HELPERS PRIVADOS
-   * ============================================================================
-   */
-
-  /**
-   * Convierte un RowDataPacket en UserEntity
-   */
-  private mapRowToEntity(row: RowDataPacket): UserEntity {
-    return {
-      id: row.id,
-      authId: row.authId,
-      email: row.email,
-      firstName: row.firstName,
-      lastName: row.lastName,
-      role: row.role as UserRole,
-      status: row.status as UserStatus,
-      phone: row.phone,
-      bio: row.bio,
-      profileImageUrl: row.profileImageUrl,
-      preferredLanguage: row.preferredLanguage,
-      createdAt: new Date(row.createdAt),
-      updatedAt: new Date(row.updatedAt),
-      deletedAt: row.deletedAt ? new Date(row.deletedAt) : null,
-    };
-  }
-
-  /**
-   * Convierte un RowDataPacket en UserDTO (sin datos sensibles)
-   */
-  private mapRowToDTO(row: RowDataPacket): UserDTO {
-    return {
-      id: row.id,
-      email: row.email,
-      firstName: row.firstName,
-      lastName: row.lastName,
-      role: row.role,
-      status: row.status,
-      phone: row.phone,
-      bio: row.bio,
-      profileImageUrl: row.profileImageUrl,
-      preferredLanguage: row.preferredLanguage,
-      createdAt: new Date(row.createdAt),
-    };
+    return rows.map((row) => userMapper.toEntity(row));
   }
 }
 
-/**
- * Instancia singleton del modelo
- */
 export const userModel = new UserModel();
