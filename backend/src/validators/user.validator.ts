@@ -41,8 +41,8 @@ export const changeStatusSchema = z.object({
 
 export const listUsersRequest = z.object({
   query: paginationSchema.extend({
-    role: z.string().optional(),
-    status: z.string().optional(),
+    role: z.nativeEnum(UserRole).optional(),
+    status: z.nativeEnum(UserStatus).optional(),
     search: z.string().optional(),
   }),
 });
