@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { userMapper } from '@mappers/user.mapper';
-import { userService } from '@services/user/user.service'; // ¡Solo Service!
+import { userService } from '@services/user/user.service';
 import { AuthRequest } from '@CustomTypes/request.types';
 import { UserRole } from '@CustomTypes/common.types';
 import { AppError } from '@utils/errors';
