@@ -1,15 +1,29 @@
 import { Router } from 'express';
 import { userController } from '@controllers/user/userController';
 import { authMiddleware } from '@middleware/auth.middleware';
+import { createUserSchema, updateUserSchema } from '@validators/schemas';
+import { z } from 'zod';
+import { validateRequest } from '@middleware/validator.middleware';
 
 const router = Router();
+
+const createUserRequest = z.object({ body: createUserSchema });
+const updateUserRequest = z.object({
+  params: z.object({ id: z.string().uuid() }),
+  body: updateUserSchema,
+});
 
 /**
  * POST /api/v1/users
  * Crear un nuevo usuario
- * Acceso: Público (sería protegido con Authgear en producción)
+ * Acceso: Público
  */
-router.post('/', (req, res) => userController.createUser(req, res));
+router.post(
+  '/',
+  authMiddleware,
+  validateRequest(createUserRequest),
+  userController.createUser
+);
 
 /**
  * GET /api/v1/users
@@ -17,9 +31,7 @@ router.post('/', (req, res) => userController.createUser(req, res));
  * Query params: page=1, limit=10, role=student, status=active
  * Acceso: Autenticado
  */
-router.get('/', authMiddleware, (req, res) =>
-  userController.listUsers(req, res)
-);
+router.get('/', authMiddleware, userController.listUsers);
 
 /**
  * GET /api/v1/users/teachers
@@ -52,8 +64,11 @@ router.get('/:id', authMiddleware, (req, res) =>
  * Body: { firstName?, lastName?, email?, status? }
  * Acceso: Autenticado (su propio usuario o admin)
  */
-router.patch('/:id', authMiddleware, (req, res) =>
-  userController.updateUser(req, res)
+router.patch(
+  '/:id',
+  authMiddleware,
+  validateRequest(updateUserRequest),
+  userController.updateUser
 );
 
 /**
@@ -81,8 +96,6 @@ router.patch('/:id/status', authMiddleware, (req, res) =>
  * Soft delete (desactivar) usuario
  * Acceso: Autenticado (su propio usuario o admin)
  */
-router.delete('/:id', authMiddleware, (req, res) =>
-  userController.deleteUser(req, res)
-);
+router.delete('/:id', authMiddleware, userController.deleteUser);
 
 export default router;

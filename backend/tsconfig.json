@@ -34,7 +34,8 @@
       "@CustomTypes/*": ["types/*"],
       "@validators/*": ["validators/*"],
       "@utils/*": ["utils/*"],
-      "@database/*": ["database/*"]
+      "@database/*": ["database/*"],
+      "@mappers/*": ["mappers/*"]
     }
   },
   "include": ["src/**/*"],

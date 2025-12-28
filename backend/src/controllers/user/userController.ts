@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { logger } from '@utils/logger';
+import { userMapper } from '@mappers/user.mapper';
 import { userService } from '@services/user/userService';
 import { userModel } from '@models/user/user.model';
 import { AuthRequest } from '@CustomTypes/request.types';
@@ -10,6 +11,8 @@ import {
   NotFoundError,
   AuthenticationError,
 } from '@utils/errors';
+import { catchAsync } from '@utils/async.handler';
+import { ApiResponse } from '@utils/response.handler';
 
 /**
  * Controller para manejo de usuarios
@@ -20,66 +23,19 @@ export class UserController {
    * POST /api/v1/auth/createUser
    * Crear un nuevo usuario
    */
-  async createUser(req: AuthRequest, res: Response): Promise<void> {
+  createUser = catchAsync(async (req: AuthRequest, res: Response) => {
     if (req.user?.role !== 'admin') {
-      res.status(403).json({
-        success: false,
-        error: 'Solo administradores pueden crear usuarios',
-        timestamp: new Date().toISOString(),
-      });
-
-      return;
-    }
-
-    try {
-      const {
-        email,
-        firstName,
-        lastName,
-        role,
-        password,
-        phone,
-        bio,
-        profileImageUrl,
-        preferredLanguage,
-      } = req.body;
-
-      if (!email || !firstName || !lastName || !role || !password) {
-        res.status(400).json({
-          success: false,
-          error: 'Faltan campos requeridos',
-          timestamp: new Date().toISOString(),
-        });
-
-        return;
-      }
-
-      const newUser = await userModel.create(
-        {
-          email,
-          firstName,
-          lastName,
-          role,
-          password,
-          phone,
-          bio,
-          profileImageUrl,
-          preferredLanguage,
-        },
-        password
+      throw new AppError(
+        'FORBIDDEN',
+        403,
+        'Sólo administradores pueden crear usuarios'
       );
-
-      logger.info(`Nuevo usuario creado: ${newUser.id} - ${newUser.email}`);
-
-      res.status(201).json({
-        success: true,
-        data: newUser,
-        timestamp: new Date().toISOString(),
-      });
-    } catch (error) {
-      this.handleError(error, res);
     }
-  }
+
+    const newUser = await userModel.create(req.body, req.body.password);
+
+    return ApiResponse.created(res, userMapper.toDTO(newUser));
+  });
 
   /**
    * POST /api/v1/auth/login
@@ -89,7 +45,6 @@ export class UserController {
     try {
       const { email, password } = req.body;
 
-      // Validación básica
       if (!email || !password) {
         res.status(400).json({
           success: false,
@@ -117,30 +72,16 @@ export class UserController {
    * GET /api/v1/users/me
    * Obtener perfil del usuario autenticado
    */
-  async getProfile(req: AuthRequest, res: Response): Promise<void> {
-    try {
-      const userId = req.user?.id;
+  getProfile = catchAsync(async (req: AuthRequest, res: Response) => {
+    const userId = req.user?.id;
 
-      if (!userId) {
-        res.status(401).json({
-          success: false,
-          error: 'Usuario no autenticado',
-          timestamp: new Date().toISOString(),
-        });
-        return;
-      }
+    if (!userId)
+      throw new AppError('UNAUTHORIZED', 401, 'Usuario no autenticado');
 
-      const user = await userService.getUserById(userId);
+    const user = await userService.getUserById(userId);
 
-      res.status(200).json({
-        success: true,
-        data: user,
-        timestamp: new Date().toISOString(),
-      });
-    } catch (error) {
-      this.handleError(error, res);
-    }
-  }
+    return ApiResponse.success(res, user);
+  });
 
   /**
    * GET /api/v1/users/:id
@@ -166,62 +107,34 @@ export class UserController {
    * GET /api/v1/users
    * Listar usuarios con paginación
    */
-  async listUsers(req: Request, res: Response): Promise<void> {
-    try {
-      const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 10;
-      const role = req.query.role as string | undefined;
-      const status = req.query.status as string | undefined;
-      const search = req.query.search as string | undefined;
+  listUsers = catchAsync(async (req: Request, res: Response) => {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
 
-      const result = await userModel.list(page, limit, {
-        role: role as any,
-        status: status as any,
-        search,
-      });
+    const result = await userModel.list(page, limit, {
+      role: req.query.role as any,
+      status: req.query.status as any,
+      search: req.query.search as string,
+    });
 
-      res.status(200).json({
-        success: true,
-        data: result,
-        timestamp: new Date().toISOString(),
-      });
-    } catch (error) {
-      this.handleError(error, res);
-    }
-  }
+    return ApiResponse.success(res, result);
+  });
 
   /**
    * PATCH /api/v1/users/:id
    * Actualizar usuario
    */
-  async updateUser(req: AuthRequest, res: Response): Promise<void> {
-    try {
-      const { id } = req.params;
-      const updates = req.body;
+  updateUser = catchAsync(async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
 
-      // Verificar que el usuario esté autenticado y sea el propietario o admin
-      if (req.user?.id !== id && req.user?.role !== 'admin') {
-        res.status(403).json({
-          success: false,
-          error: 'No tienes permisos para actualizar este usuario',
-          timestamp: new Date().toISOString(),
-        });
-        return;
-      }
-
-      const user = await userModel.update(id as UUID, updates);
-
-      logger.info(`Usuario actualizado: ${id}`);
-
-      res.status(200).json({
-        success: true,
-        data: user,
-        timestamp: new Date().toISOString(),
-      });
-    } catch (error) {
-      this.handleError(error, res);
+    if (req.user?.id !== id && req.user?.role !== 'admin') {
+      throw new AppError('FORBIDDEN', 403, 'No tienes permisos');
     }
-  }
+
+    const user = await userModel.update(id as UUID, req.body);
+
+    return ApiResponse.success(res, userMapper.toDTO(user));
+  });
 
   /**
    * PATCH /api/v1/users/:id/role
@@ -311,30 +224,17 @@ export class UserController {
    * DELETE /api/v1/users/:id
    * Soft delete (desactivar) usuario
    */
-  async deleteUser(req: AuthRequest, res: Response): Promise<void> {
-    try {
-      const { id } = req.params;
+  deleteUser = catchAsync(async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
 
-      // Validar que sea admin o el propietario
-      if (req.user?.id !== id && req.user?.role !== 'admin') {
-        res.status(403).json({
-          success: false,
-          error: 'No tienes permisos para eliminar este usuario',
-          timestamp: new Date().toISOString(),
-        });
-
-        return;
-      }
-
-      await userModel.softDelete(id as UUID);
-
-      logger.info(`Usuario desactivado: ${id}`);
-
-      res.status(204).send();
-    } catch (error) {
-      this.handleError(error, res);
+    if (req.user?.id !== id && req.user?.role !== 'admin') {
+      throw new AppError('FORBIDDEN', 403, 'No tienes permisos.');
     }
-  }
+
+    await userModel.softDelete(id as UUID);
+
+    return ApiResponse.noContent(res);
+  });
 
   /**
    * GET /api/v1/users/teachers
