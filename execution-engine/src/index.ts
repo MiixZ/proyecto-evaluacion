@@ -55,7 +55,7 @@ app.post("/execute", async (req: Request, res: Response) => {
  * GET /health
  * Health check
  */
-app.get("/health", (res: Response) => {
+app.get("/health", (_req: Request, res: Response) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
