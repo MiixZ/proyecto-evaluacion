@@ -8,7 +8,6 @@ import { courseModel } from '@models/course/course.model';
 import { userModel } from '@models/user/user.model';
 import { NotFoundError } from '@utils/errors';
 import { parseStudentCsv } from '@utils/csv.parser';
-import { v4 as uuidv4 } from 'uuid';
 import { UserStatus, UserRole } from '@CustomTypes/common.types';
 
 export class GroupService {
@@ -76,10 +75,9 @@ export class GroupService {
           const existingUser = await userModel.getByEmail(studentData.email);
           userId = existingUser.id;
         } catch (e) {
-          userId = uuidv4() as UUID;
           const tempPassword = `csv_import_${studentData.email}`;
 
-          await userModel.create(
+          const newUser = await userModel.create(
             {
               email: studentData.email,
               firstName: studentData.firstName,
@@ -91,6 +89,8 @@ export class GroupService {
             },
             tempPassword
           );
+
+          userId = newUser.id;
         }
 
         const isMember = await groupModel.isMember(groupId as UUID, userId);
