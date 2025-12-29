@@ -87,13 +87,10 @@ export class AuditModel {
     const total = countRows[0].count;
 
     const offset = (page - 1) * limit;
-    const query = `SELECT * FROM audit_logs WHERE ${whereClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`;
 
-    const [rows] = await getPool().execute<AuditRow[]>(query, [
-      ...params,
-      limit,
-      offset,
-    ]);
+    const query = `SELECT * FROM audit_logs WHERE ${whereClause} ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}`;
+
+    const [rows] = await getPool().execute<AuditRow[]>(query, params);
     const items = rows.map((row) => auditMapper.toEntity(row));
 
     return {
