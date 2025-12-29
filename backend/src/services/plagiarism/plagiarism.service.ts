@@ -5,8 +5,11 @@ import {
 } from '@validators/plagiarism.validator';
 import { UUID, PlagiarismType } from '@CustomTypes/common.types';
 import { submissionModel } from '@models/submission/submission.model';
+import stringSimilarity from 'string-similarity';
 
 export class PlagiarismService {
+  // --- MÉTODOS CRUD ESTÁNDAR ---
+
   async createCheck(input: CreatePlagiarismCheckInput) {
     await submissionModel.getById(input.submissionId as UUID);
     await submissionModel.getById(input.comparedWithSubmissionId as UUID);
@@ -38,7 +41,12 @@ export class PlagiarismService {
     return await plagiarismModel.list(page, limit, filters);
   }
 
-  // TODO: esto sería un Job en cola
+  // --- LÓGICA DE COMPARACIÓN (ALGORITMO DICE) ---
+
+  /**
+   * Ejecuta una comparación de similitud básica entre dos envíos.
+   * Utiliza el coeficiente de Sørensen-Dice (string-similarity).
+   */
   async runBasicComparison(
     submissionId: UUID,
     targetSubmissionId: UUID
@@ -46,24 +54,42 @@ export class PlagiarismService {
     const source = await submissionModel.getById(submissionId);
     const target = await submissionModel.getById(targetSubmissionId);
 
-    const similarity = this.calculateMockSimilarity(source.code, target.code);
+    const similarityScore = this.calculateSimilarity(source.code, target.code);
+    const similarityPercent = Math.round(similarityScore * 100);
+
+    const SIMILARITY_THRESHOLD = 80;
+    const isFlagged = similarityPercent >= SIMILARITY_THRESHOLD;
 
     await this.createCheck({
       submissionId,
       comparedWithSubmissionId: targetSubmissionId,
-      similarityPercent: similarity,
+      similarityPercent: similarityPercent,
       plagiarismType: PlagiarismType.INTERNAL,
-      isFlagged: similarity > 80,
+      isFlagged,
+      toolUsed: 'String Similarity (Dice Coefficient)',
+      notes: isFlagged
+        ? `Alta similitud textual detectada (${similarityPercent}%). Revisión manual recomendada.`
+        : undefined,
     });
 
-    return similarity;
+    return similarityPercent;
   }
 
-  private calculateMockSimilarity(code1: string, code2: string): number {
-    // TODO: Implementación real pendiente (usar librería 'string-similarity' o similar)
-    if (code1 === code2) return 100;
+  /**
+   * Normaliza y compara dos cadenas de código.
+   */
+  private calculateSimilarity(code1: string, code2: string): number {
+    const clean1 = this.normalizeCode(code1);
+    const clean2 = this.normalizeCode(code2);
 
-    return Math.floor(Math.random() * 50);
+    if (!clean1 || !clean2) return 0;
+    if (clean1 === clean2) return 1;
+
+    return stringSimilarity.compareTwoStrings(clean1, clean2);
+  }
+
+  private normalizeCode(code: string): string {
+    return code.replace(/\s+/g, ' ').trim();
   }
 }
 

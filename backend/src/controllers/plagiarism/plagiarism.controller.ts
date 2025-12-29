@@ -10,7 +10,11 @@ import { UserRole, PlagiarismType } from '@CustomTypes/common.types';
 export class PlagiarismController {
   create = catchAsync(async (req: AuthRequest, res: Response) => {
     if (req.user?.role === UserRole.STUDENT) {
-      throw new AppError('FORBIDDEN', 403, 'No autorizado');
+      throw new AppError(
+        'FORBIDDEN',
+        403,
+        'No autorizado para registrar chequeos de plagio'
+      );
     }
 
     const result = await plagiarismService.createCheck(req.body);
@@ -18,14 +22,17 @@ export class PlagiarismController {
     return ApiResponse.created(
       res,
       plagiarismMapper.toDTO(result),
-      'Chequeo registrado'
+      'Chequeo registrado correctamente'
     );
   });
 
   getBySubmission = catchAsync(async (req: AuthRequest, res: Response) => {
     if (req.user?.role === UserRole.STUDENT) {
-      // TODO: Validar si el estudiante es dueño de la submission
-      throw new AppError('FORBIDDEN', 403, 'No autorizado');
+      throw new AppError(
+        'FORBIDDEN',
+        403,
+        'No autorizado para ver reportes de plagio'
+      );
     }
 
     const { submissionId } = req.params;
@@ -36,7 +43,11 @@ export class PlagiarismController {
 
   review = catchAsync(async (req: AuthRequest, res: Response) => {
     if (req.user?.role === UserRole.STUDENT) {
-      throw new AppError('FORBIDDEN', 403, 'No autorizado');
+      throw new AppError(
+        'FORBIDDEN',
+        403,
+        'No autorizado para revisar plagios'
+      );
     }
 
     const result = await plagiarismService.reviewCheck(
@@ -49,7 +60,7 @@ export class PlagiarismController {
       res,
       plagiarismMapper.toDTO(result),
       200,
-      'Revisión actualizada'
+      'Revisión actualizada correctamente'
     );
   });
 

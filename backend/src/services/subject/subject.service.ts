@@ -6,7 +6,6 @@ import {
 import { UUID } from '@CustomTypes/common.types';
 import { degreeModel } from '@models/degree/degree.model';
 import { NotFoundError } from '@utils/errors';
-// TODO: Importar degreeModel cuando se cree el módulo Degree
 
 export class SubjectService {
   async createSubject(input: CreateSubjectInput) {
