@@ -1,4 +1,4 @@
-import { Response, Request } from 'express';
+import { Response } from 'express';
 import { AuthRequest } from '@CustomTypes/request.types';
 import { catchAsync } from '@utils/async.handler';
 import { ApiResponse } from '@utils/response.handler';
@@ -22,11 +22,14 @@ export class FeedbackController {
     );
   });
 
-  getBySubmission = catchAsync(async (req: Request, res: Response) => {
+  getBySubmission = catchAsync(async (req: AuthRequest, res: Response) => {
     const { submissionId } = req.params;
-    const result = await feedbackService.getFeedbackBySubmission(submissionId);
 
-    // TODO: Filtrar por visibilidad si el usuario es estudiante (pendiente implementar lógica de visibilidad detallada)
+    const result = await feedbackService.getFeedbackBySubmission(
+      submissionId,
+      req.user!.role,
+      req.user!.id
+    );
 
     return ApiResponse.success(res, feedbackMapper.toDTOList(result));
   });

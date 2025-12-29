@@ -3,9 +3,10 @@ import {
   CreateFeedbackInput,
   UpdateFeedbackInput,
 } from '@validators/feedback.validator';
-import { UUID } from '@CustomTypes/common.types';
+import { UserRole, UUID } from '@CustomTypes/common.types';
 import { submissionModel } from '@models/submission/submission.model';
 import { ForbiddenError } from '@utils/errors';
+import { FeedbackVisibility } from '@models/feedback/feedback.entity';
 
 export class FeedbackService {
   async createFeedback(input: CreateFeedbackInput, teacherId: UUID) {
@@ -14,8 +15,27 @@ export class FeedbackService {
     return await feedbackModel.create(input, teacherId);
   }
 
-  async getFeedbackBySubmission(submissionId: string) {
-    return await feedbackModel.listBySubmission(submissionId as UUID);
+  async getFeedbackBySubmission(
+    submissionId: string,
+    requestingUserRole: UserRole,
+    requestingUserId: string
+  ) {
+    const feedbacks = await feedbackModel.listBySubmission(
+      submissionId as UUID
+    );
+
+    if (
+      requestingUserRole === UserRole.ADMIN ||
+      requestingUserRole === UserRole.TEACHER
+    ) {
+      return feedbacks;
+    }
+
+    return feedbacks.filter((f) => {
+      if (f.visibility === FeedbackVisibility.PRIVATE) return false;
+      // TODO futuro: Si visibility es GROUP, verificar si requestingUserId está en el mismo grupo
+      return true;
+    });
   }
 
   async updateFeedback(
