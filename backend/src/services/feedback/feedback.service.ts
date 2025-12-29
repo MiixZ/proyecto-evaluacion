@@ -7,6 +7,7 @@ import { UserRole, UUID } from '@CustomTypes/common.types';
 import { submissionModel } from '@models/submission/submission.model';
 import { ForbiddenError } from '@utils/errors';
 import { FeedbackVisibility } from '@models/feedback/feedback.entity';
+import { groupModel } from '@models/group/group.model';
 
 export class FeedbackService {
   async createFeedback(input: CreateFeedbackInput, teacherId: UUID) {
@@ -31,9 +32,31 @@ export class FeedbackService {
       return feedbacks;
     }
 
+    const submission = await submissionModel.getById(submissionId as UUID);
+
+    if (submission.studentId === requestingUserId) {
+      return feedbacks.filter(
+        (f) => f.visibility !== FeedbackVisibility.PRIVATE
+      );
+    }
+
+    const ownerGroupId = await groupModel.getStudentGroupInCourse(
+      submission.courseId,
+      submission.studentId
+    );
+
+    const isRequesterInGroup = ownerGroupId
+      ? await groupModel.isMember(ownerGroupId, requestingUserId as UUID)
+      : false;
+
     return feedbacks.filter((f) => {
       if (f.visibility === FeedbackVisibility.PRIVATE) return false;
-      // TODO futuro: Si visibility es GROUP, verificar si requestingUserId está en el mismo grupo
+      if (f.visibility === FeedbackVisibility.STUDENT) return false;
+
+      if (f.visibility === FeedbackVisibility.GROUP) {
+        return isRequesterInGroup;
+      }
+
       return true;
     });
   }

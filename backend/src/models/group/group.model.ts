@@ -92,6 +92,26 @@ export class GroupModel {
       throw new NotFoundError('Usuario no encontrado en este grupo');
   }
 
+  async getStudentGroupInCourse(
+    courseId: UUID,
+    studentId: UUID
+  ): Promise<UUID | null> {
+    const query = `
+      SELECT g.id 
+      FROM \`groups\` g
+      JOIN user_groups ug ON g.id = ug.group_id
+      WHERE g.course_id = ? AND ug.user_id = ? AND ug.role = 'student'
+      LIMIT 1
+    `;
+
+    const [rows] = await getPool().execute<GroupRow[]>(query, [
+      courseId,
+      studentId,
+    ]);
+
+    return rows.length > 0 ? (rows[0].id as UUID) : null;
+  }
+
   async getMembers(groupId: UUID, role?: string): Promise<GroupMemberEntity[]> {
     let query = `
       SELECT ug.*, u.first_name, u.last_name, u.email

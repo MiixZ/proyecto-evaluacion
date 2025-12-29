@@ -4,10 +4,17 @@ import {
   UpdateCourseInput,
 } from '@validators/course.validator';
 import { UUID, CourseStatus } from '@CustomTypes/common.types';
+import { subjectModel } from '@models/subject/subject.model';
+import { NotFoundError } from '@utils/errors';
 
 export class CourseService {
   async createCourse(input: CreateCourseInput) {
-    // TODO: Validar que input.subjectId existe cuando creemos el módulo Subject
+    const subjectExists = await subjectModel.exists(input.subjectId as UUID);
+
+    if (!subjectExists) {
+      throw new NotFoundError('La asignatura especificada no existe');
+    }
+
     return await courseModel.create(input);
   }
 

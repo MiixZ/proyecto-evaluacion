@@ -19,6 +19,7 @@ import routerSyllabus from '@routes/syllabus/syllabus';
 import routerCourse from '@routes/course/course';
 import routerGroup from '@routes/group/group';
 import routerFeedback from '@routes/feedback/feedback';
+import routerSubject from '@routes/subject/subject';
 
 const app = express();
 const PORT = config.port;
@@ -96,6 +97,7 @@ apiV1.use('/syllabi', routerSyllabus);
 apiV1.use('/courses', routerCourse);
 apiV1.use('/groups', routerGroup);
 apiV1.use('/feedback', routerFeedback);
+apiV1.use('/subjects', routerSubject);
 
 // ==================== MANEJO DE ERRORES ====================
 
