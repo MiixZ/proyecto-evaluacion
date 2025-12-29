@@ -1,8 +1,9 @@
 import { syllabusModel } from '@models/syllabus/syllabus.model';
 import { CreateSyllabusInput } from '@validators/syllabus.validator';
-import { UUID } from '@CustomTypes/common.types';
+import { UserRole, UUID } from '@CustomTypes/common.types';
 import { courseModel } from '@models/course/course.model';
-import { NotFoundError } from '@utils/errors';
+import { ForbiddenError, NotFoundError } from '@utils/errors';
+import { groupModel } from '@models/group/group.model';
 
 export class SyllabusService {
   async createSyllabus(input: CreateSyllabusInput) {
@@ -15,7 +16,18 @@ export class SyllabusService {
     return await syllabusModel.create(input);
   }
 
-  async getByCourse(courseId: string) {
+  async getByCourse(courseId: string, userId: string, userRole: UserRole) {
+    if (userRole === UserRole.STUDENT) {
+      const isEnrolled = await groupModel.isUserEnrolledInCourse(
+        userId as UUID,
+        courseId as UUID
+      );
+
+      if (!isEnrolled) {
+        throw new ForbiddenError('No estás matriculado en este curso');
+      }
+    }
+
     return await syllabusModel.listByCourse(courseId as UUID);
   }
 }

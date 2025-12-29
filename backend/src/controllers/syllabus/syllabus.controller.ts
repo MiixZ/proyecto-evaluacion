@@ -31,10 +31,11 @@ export class SyllabusController {
   listByCourse = catchAsync(async (req: AuthRequest, res: Response) => {
     const { courseId } = req.params;
 
-    // TODO: Agregar validación extra: ¿El usuario está matriculado en este curso?
-    // Por ahora permitimos lectura si está autenticado
-
-    const result = await syllabusService.getByCourse(courseId);
+    const result = await syllabusService.getByCourse(
+      courseId,
+      req.user!.id,
+      req.user!.role
+    );
 
     return ApiResponse.success(res, syllabusMapper.toDTOList(result));
   });

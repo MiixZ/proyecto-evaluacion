@@ -68,6 +68,23 @@ export class GroupModel {
     }
   }
 
+  async isUserEnrolledInCourse(userId: UUID, courseId: UUID): Promise<boolean> {
+    const query = `
+      SELECT 1 
+      FROM user_groups ug
+      JOIN \`groups\` g ON ug.group_id = g.id
+      WHERE ug.user_id = ? AND g.course_id = ?
+      LIMIT 1
+    `;
+
+    const [rows] = await getPool().execute<GroupRow[]>(query, [
+      userId,
+      courseId,
+    ]);
+
+    return rows.length > 0;
+  }
+
   async removeMember(groupId: UUID, userId: UUID): Promise<void> {
     const query = 'DELETE FROM user_groups WHERE group_id = ? AND user_id = ?';
     const [result] = await getPool().execute<any>(query, [groupId, userId]);
@@ -82,6 +99,7 @@ export class GroupModel {
       JOIN users u ON ug.user_id = u.id
       WHERE ug.group_id = ?
     `;
+
     const params: any[] = [groupId];
 
     if (role) {
