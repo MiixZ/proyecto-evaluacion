@@ -1,11 +1,17 @@
 import { syllabusModel } from '@models/syllabus/syllabus.model';
 import { CreateSyllabusInput } from '@validators/syllabus.validator';
 import { UUID } from '@CustomTypes/common.types';
-// import { courseModel } from '@models/course/course.model'; // Necesitarás validar que el curso existe
+import { courseModel } from '@models/course/course.model';
+import { NotFoundError } from '@utils/errors';
 
 export class SyllabusService {
   async createSyllabus(input: CreateSyllabusInput) {
-    // TODO: Validar que input.courseId existe usando courseModel.exists(input.courseId)
+    const courseExists = await courseModel.exists(input.courseId as UUID);
+
+    if (!courseExists) {
+      throw new NotFoundError('El curso especificado no existe');
+    }
+
     return await syllabusModel.create(input);
   }
 
