@@ -5,6 +5,7 @@ import { generateToken } from '@utils/jwt.utils';
 import { userModel } from '@models/user/user.model';
 import { UserEntity } from '@models/user/user.entity';
 import { UserStatus } from '@CustomTypes/common.types';
+import { auditService } from '@services/audit/audit.service';
 
 interface LoginResponse {
   user: UserEntity;
@@ -35,6 +36,16 @@ export class AuthService {
     }
 
     const token = generateToken(user.id, user.email, user.role);
+
+    await auditService.log(
+      'LOGIN',
+      'user',
+      user.id,
+      { email: user.email },
+      user.id,
+      'IP_PENDIENTE',
+      'USER_AGENT_PENDIENTE'
+    );
 
     logger.info('Usuario autenticado exitosamente', { userId: user.id });
 

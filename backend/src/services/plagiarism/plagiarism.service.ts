@@ -6,10 +6,9 @@ import {
 import { UUID, PlagiarismType } from '@CustomTypes/common.types';
 import { submissionModel } from '@models/submission/submission.model';
 import stringSimilarity from 'string-similarity';
+import { auditService } from '@services/audit/audit.service';
 
 export class PlagiarismService {
-  // --- MÉTODOS CRUD ESTÁNDAR ---
-
   async createCheck(input: CreatePlagiarismCheckInput) {
     await submissionModel.getById(input.submissionId as UUID);
     await submissionModel.getById(input.comparedWithSubmissionId as UUID);
@@ -30,7 +29,21 @@ export class PlagiarismService {
     input: ReviewPlagiarismInput,
     reviewerId: UUID
   ) {
-    return await plagiarismModel.updateReview(id as UUID, input, reviewerId);
+    const updatedCheck = await plagiarismModel.updateReview(
+      id as UUID,
+      input,
+      reviewerId
+    );
+
+    await auditService.log(
+      'REVIEW_PLAGIARISM',
+      'plagiarism_check',
+      updatedCheck.id,
+      { isFlagged: input.isFlagged, notes: input.notes },
+      reviewerId
+    );
+
+    return updatedCheck;
   }
 
   async listChecks(
@@ -41,12 +54,6 @@ export class PlagiarismService {
     return await plagiarismModel.list(page, limit, filters);
   }
 
-  // --- LÓGICA DE COMPARACIÓN (ALGORITMO DICE) ---
-
-  /**
-   * Ejecuta una comparación de similitud básica entre dos envíos.
-   * Utiliza el coeficiente de Sørensen-Dice (string-similarity).
-   */
   async runBasicComparison(
     submissionId: UUID,
     targetSubmissionId: UUID
@@ -60,7 +67,7 @@ export class PlagiarismService {
     const SIMILARITY_THRESHOLD = 80;
     const isFlagged = similarityPercent >= SIMILARITY_THRESHOLD;
 
-    await this.createCheck({
+    const check = await this.createCheck({
       submissionId,
       comparedWithSubmissionId: targetSubmissionId,
       similarityPercent: similarityPercent,
@@ -72,12 +79,23 @@ export class PlagiarismService {
         : undefined,
     });
 
+    if (isFlagged) {
+      await auditService.log(
+        'PLAGIARISM_FLAGGED',
+        'plagiarism_check',
+        check.id,
+        {
+          similarity: similarityPercent,
+          source: submissionId,
+          target: targetSubmissionId,
+        },
+        undefined
+      );
+    }
+
     return similarityPercent;
   }
 
-  /**
-   * Normaliza y compara dos cadenas de código.
-   */
   private calculateSimilarity(code1: string, code2: string): number {
     const clean1 = this.normalizeCode(code1);
     const clean2 = this.normalizeCode(code2);

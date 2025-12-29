@@ -18,6 +18,7 @@ import { SubmissionTestResultEntity } from '@models/submission/submission.entity
 import { submissionMapper } from '@mappers/submission.mapper';
 import { SubmissionDTO } from '@models/submission/submission.entity';
 import { CreateSubmissionInput } from '@validators/submission.validator';
+import { auditService } from '@services/audit/audit.service';
 
 export class SubmissionService {
   private executionClient: ExecutionEngineClient;
@@ -26,9 +27,6 @@ export class SubmissionService {
     this.executionClient = new ExecutionEngineClient();
   }
 
-  /**
-   * Procesa el envío de una solución
-   */
   async processSubmission(
     userId: UUID,
     input: CreateSubmissionInput & { courseId: UUID }
@@ -142,6 +140,19 @@ export class SubmissionService {
       submissionTestResults
     );
 
+    await auditService.log(
+      'CREATE_SUBMISSION',
+      'submission',
+      submissionId,
+      {
+        exerciseId: exercise.id,
+        verdict: finalVerdict,
+        score: finalScore,
+        attempt: attemptNumber,
+      },
+      userId
+    );
+
     return submissionMapper.toDTO(updatedEntity);
   }
 
@@ -173,12 +184,6 @@ export class SubmissionService {
     }
 
     const timeRatio = executionTime / (timeLimit * 1000);
-
-    // Lógica heurística simple:
-    // < 30% del tiempo límite -> BEST
-    // < 60% del tiempo límite -> GOOD
-    // < 90% del tiempo límite -> ACCEPTABLE
-    // Resto -> ANY
 
     if (timeRatio <= 0.3) return EfficiencyOrder.BEST;
     if (timeRatio <= 0.6) return EfficiencyOrder.GOOD;

@@ -9,6 +9,7 @@ import { UUID, PaginatedResponse } from '@CustomTypes/common.types';
 import { exerciseMapper } from '@mappers/exercise.mapper';
 import { NotFoundError } from '@utils/errors';
 import { syllabusModel } from '@models/syllabus/syllabus.model';
+import { auditService } from '@services/audit/audit.service';
 
 export class ExerciseService {
   async createExercise(
@@ -26,6 +27,14 @@ export class ExerciseService {
     const exercise = await exerciseModel.createTransactional(
       newExerciseId,
       input,
+      teacherId
+    );
+
+    await auditService.log(
+      'CREATE_EXERCISE',
+      'exercise',
+      exercise.id,
+      { title: exercise.title, syllabusId: exercise.syllabusId },
       teacherId
     );
 
@@ -83,11 +92,27 @@ export class ExerciseService {
   async publishExercise(id: UUID): Promise<ExerciseDTO> {
     const exercise = await exerciseModel.setPublishedStatus(id, true);
 
+    await auditService.log(
+      'PUBLISH_EXERCISE',
+      'exercise',
+      id,
+      { isPublished: true },
+      exercise.createdBy
+    );
+
     return exerciseMapper.toDTO(exercise);
   }
 
   async unpublishExercise(id: UUID): Promise<ExerciseDTO> {
     const exercise = await exerciseModel.setPublishedStatus(id, false);
+
+    await auditService.log(
+      'UNPUBLISH_EXERCISE',
+      'exercise',
+      id,
+      { isPublished: false },
+      exercise.createdBy
+    );
 
     return exerciseMapper.toDTO(exercise);
   }
