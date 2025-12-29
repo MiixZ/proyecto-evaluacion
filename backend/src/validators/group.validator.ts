@@ -40,6 +40,15 @@ export const getGroupRequest = z.object({
   params: z.object({ id: uuidSchema }),
 });
 
+export const importGroupMembersSchema = z.object({
+  csvContent: z.string().min(1, 'El contenido CSV es obligatorio'),
+});
+
+export const importGroupMembersRequest = z.object({
+  params: z.object({ id: uuidSchema }),
+  body: importGroupMembersSchema,
+});
+
 export type CreateGroupInput = z.infer<typeof createGroupSchema>;
 export type UpdateGroupInput = z.infer<typeof updateGroupSchema>;
 export type EnrollMemberInput = z.infer<typeof enrollMemberSchema>;

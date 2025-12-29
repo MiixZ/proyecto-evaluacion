@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { groupController } from '@controllers/group/group.controller';
 import { authMiddleware } from '@middleware/auth.middleware';
 import { validateRequest } from '@middleware/validator.middleware';
+import { importGroupMembersRequest } from '@validators/group.validator';
 import {
   createGroupRequest,
   enrollMemberRequest,
@@ -38,6 +39,11 @@ router.delete(
     z.object({ params: z.object({ id: uuidSchema, userId: uuidSchema }) })
   ),
   groupController.removeMember
+);
+router.post(
+  '/:id/import',
+  validateRequest(importGroupMembersRequest),
+  groupController.importMembers
 );
 
 export default router;

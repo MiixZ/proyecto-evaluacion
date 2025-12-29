@@ -47,6 +47,24 @@ export class GroupController {
     );
   });
 
+  importMembers = catchAsync(async (req: AuthRequest, res: Response) => {
+    if (req.user?.role === UserRole.STUDENT) {
+      throw new AppError('FORBIDDEN', 403, 'No autorizado para importar');
+    }
+
+    const { id } = req.params;
+    const { csvContent } = req.body;
+
+    const result = await groupService.importStudentsFromCsv(id, csvContent);
+
+    return ApiResponse.success(
+      res,
+      result,
+      200,
+      'Proceso de importación finalizado'
+    );
+  });
+
   getMembers = catchAsync(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     const { role } = req.query;

@@ -24,6 +24,7 @@ import routerDegree from '@routes/degree/degree';
 import routerPlagiarism from '@routes/plagiarism/plagiarism';
 import routerExport from '@routes/export/export';
 import routerAudit from '@routes/audit/audit';
+import routerDashboard from '@routes/dashboard/dashboard';
 
 const app = express();
 const PORT = config.port;
@@ -106,6 +107,7 @@ apiV1.use('/degrees', routerDegree);
 apiV1.use('/plagiarism', routerPlagiarism);
 apiV1.use('/exports', routerExport);
 apiV1.use('/audit', routerAudit);
+apiV1.use('/dashboard', routerDashboard);
 
 // ==================== MANEJO DE ERRORES ====================
 
