@@ -4,11 +4,18 @@ import {
   UpdateSubjectInput,
 } from '@validators/subject.validator';
 import { UUID } from '@CustomTypes/common.types';
+import { degreeModel } from '@models/degree/degree.model';
+import { NotFoundError } from '@utils/errors';
 // TODO: Importar degreeModel cuando se cree el módulo Degree
 
 export class SubjectService {
   async createSubject(input: CreateSubjectInput) {
-    // TODO: Validar input.degreeId con degreeModel.exists(input.degreeId)
+    const degreeExists = await degreeModel.exists(input.degreeId as UUID);
+
+    if (!degreeExists) {
+      throw new NotFoundError('La titulación especificada no existe');
+    }
+
     return await subjectModel.create(input);
   }
 
