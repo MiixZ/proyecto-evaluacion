@@ -15,6 +15,7 @@ import routerAuth from '@routes/auth/auth';
 import routerUsers from '@routes/user/user';
 import routerSubmissions from '@routes/submission/submission';
 import routerExercises from '@routes/exercise/exercise';
+import routerSyllabus from '@routes/syllabus/syllabus';
 
 const app = express();
 const PORT = config.port;
@@ -83,11 +84,12 @@ apiV1.get('/me', (req: AuthRequest, res) => {
 });
 
 // Registro de submódulos
+app.use('/api/v1', apiV1);
+
 apiV1.use('/users', routerUsers);
 apiV1.use('/exercises', routerExercises);
 apiV1.use('/submissions', routerSubmissions);
-
-app.use('/api/v1', apiV1);
+apiV1.use('/syllabi', routerSyllabus);
 
 // ==================== MANEJO DE ERRORES ====================
 

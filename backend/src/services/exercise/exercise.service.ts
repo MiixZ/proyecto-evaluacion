@@ -8,21 +8,18 @@ import { CreateExerciseInput } from '@validators/exercise.validator';
 import { UUID, PaginatedResponse } from '@CustomTypes/common.types';
 import { exerciseMapper } from '@mappers/exercise.mapper';
 import { NotFoundError } from '@utils/errors';
-// TODO: Importar syllabusModel cuando esté creado
-// import { syllabusModel } from '@models/syllabus/syllabus.model';
+import { syllabusModel } from '@models/syllabus/syllabus.model';
 
 export class ExerciseService {
   async createExercise(
     input: CreateExerciseInput,
     teacherId: UUID
   ): Promise<ExerciseDTO> {
-    // 1. Validar Syllabus (Resolviendo el TODO conceptual)
-    /*
-    const syllabus = await syllabusModel.exists(input.syllabusId);
-    if (!syllabus) {
+    const exists = await syllabusModel.exists(input.syllabusId as UUID);
+
+    if (!exists) {
       throw new NotFoundError('El temario (Syllabus) especificado no existe');
     }
-    */
 
     const newExerciseId = uuidv4() as UUID;
 
@@ -58,7 +55,11 @@ export class ExerciseService {
     limit: number,
     isStudent: boolean
   ): Promise<PaginatedResponse<ExerciseDTO | ExerciseStudentDTO>> {
-    // TODO: Validar existencia de syllabus
+    const exists = await syllabusModel.exists(syllabusId);
+
+    if (!exists) {
+      throw new NotFoundError('El temario (Syllabus) especificado no existe');
+    }
 
     const result = await exerciseModel.listBySyllabus(
       syllabusId,
