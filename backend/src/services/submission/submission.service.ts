@@ -33,14 +33,12 @@ export class SubmissionService {
     userId: UUID,
     input: CreateSubmissionInput & { courseId: UUID }
   ): Promise<SubmissionDTO> {
-    // Validar existencia y publicación del ejercicio
     const exercise = await exerciseModel.getById(input.exerciseId as UUID);
 
     if (!exercise.isPublished) {
       throw new ValidationError('El ejercicio no está disponible o no existe.');
     }
 
-    // Obtener metadatos necesarios
     const testCases = await exerciseModel.getTestCases(exercise.id);
     const limits = await exerciseModel.getExecutionLimits(
       exercise.id,
@@ -52,7 +50,6 @@ export class SubmissionService {
       memoryLimitMb: limits?.memoryLimitMb ?? 256,
     };
 
-    // Preparar datos de la submission
     const submissionId = uuidv4() as UUID;
     const attemptNumber = await submissionModel.getNextAttemptNumber(
       userId,
@@ -61,7 +58,6 @@ export class SubmissionService {
     const now = new Date();
     const isLate = exercise.deadline ? now > exercise.deadline : false;
 
-    // Crear submission inicial (Pending)
     await submissionModel.create({
       id: submissionId,
       exerciseId: exercise.id,
@@ -73,7 +69,6 @@ export class SubmissionService {
       isLate,
     });
 
-    // Preparar Request para el Motor
     const execRequest: ExecutionRequest = {
       id: uuidv4(),
       submissionId,
@@ -94,7 +89,6 @@ export class SubmissionService {
 
     let execResult: ExecutionResult;
 
-    // Ejecutar código
     try {
       execResult = await this.executionClient.executeCode(execRequest);
     } catch (error) {
@@ -109,7 +103,6 @@ export class SubmissionService {
       throw error;
     }
 
-    // Calcular Score con penalizaciones
     let finalScore = execResult.score;
 
     if (isLate && exercise.lateSubmissionPenaltyPercent > 0) {
@@ -118,18 +111,27 @@ export class SubmissionService {
       finalScore = Math.max(0, finalScore - penalty);
     }
 
-    // 8. Mapear resultados de tests
     const submissionTestResults: SubmissionTestResultEntity[] =
-      execResult.testResults.map((tr) => ({
-        id: uuidv4() as UUID,
-        submissionId,
-        testCaseId: tr.testCaseId as UUID,
-        status: tr.status,
-        actualOutput: tr.actualOutput,
-        executionTimeMs: tr.executionTime,
-        memoryUsedMb: tr.memoryUsed,
-        efficiencyAchieved: EfficiencyOrder.ANY, // TODO: Implementar lógica de eficiencia real
-      }));
+      execResult.testResults.map((tr) => {
+        const limitTime = executionLimits.timeLimitSeconds;
+        const limitMem = executionLimits.memoryLimitMb;
+
+        return {
+          id: uuidv4() as UUID,
+          submissionId,
+          testCaseId: tr.testCaseId as UUID,
+          status: tr.status,
+          actualOutput: tr.actualOutput,
+          executionTimeMs: tr.executionTime,
+          memoryUsedMb: tr.memoryUsed,
+          efficiencyAchieved: this.calculateEfficiency(
+            tr.executionTime,
+            limitTime,
+            tr.memoryUsed,
+            limitMem
+          ),
+        };
+      });
 
     const finalVerdict = this.mapEngineVerdict(execResult.verdict);
 
@@ -153,7 +155,36 @@ export class SubmissionService {
       [EngineVerdict.MEMORY_LIMIT_EXCEEDED]: SubmissionVerdict.MEMORY_LIMIT,
       [EngineVerdict.SYSTEM_ERROR]: SubmissionVerdict.RUNTIME_ERROR,
     };
+
     return map[engineVerdict] || SubmissionVerdict.RUNTIME_ERROR;
+  }
+
+  private calculateEfficiency(
+    executionTime: number,
+    timeLimit: number,
+    memoryUsed: number,
+    memoryLimit: number
+  ): EfficiencyOrder {
+    if (
+      executionTime > timeLimit * 1000 ||
+      memoryUsed > memoryLimit * 1024 * 1024
+    ) {
+      return EfficiencyOrder.ANY;
+    }
+
+    const timeRatio = executionTime / (timeLimit * 1000);
+
+    // Lógica heurística simple:
+    // < 30% del tiempo límite -> BEST
+    // < 60% del tiempo límite -> GOOD
+    // < 90% del tiempo límite -> ACCEPTABLE
+    // Resto -> ANY
+
+    if (timeRatio <= 0.3) return EfficiencyOrder.BEST;
+    if (timeRatio <= 0.6) return EfficiencyOrder.GOOD;
+    if (timeRatio <= 0.9) return EfficiencyOrder.ACCEPTABLE;
+
+    return EfficiencyOrder.ANY;
   }
 }
 
