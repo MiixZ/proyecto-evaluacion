@@ -3,8 +3,9 @@ import { CreateExportInput } from '@validators/export.validator';
 import { UUID, UserRole } from '@CustomTypes/common.types';
 import { submissionModel } from '@models/submission/submission.model';
 import { ForbiddenError } from '@utils/errors';
-import path from 'path';
-// import fs from 'fs/promises'; // Descomentar para implementación real
+import { ExportFormat } from '@models/export/export.entity';
+// import path from 'path';
+// import fs from 'fs/promises';
 
 export class ExportService {
   async createExport(input: CreateExportInput, userId: UUID) {
@@ -12,14 +13,37 @@ export class ExportService {
       input.submissionId as UUID
     );
 
-    // TODO: Simular generación de archivo
-    // En un caso real: generar CSV/JSON, escribir a disco (ej: /tmp o S3)
-    const fileName = `export_${submission.id}_${Date.now()}.${input.format}`;
-    const filePath = path.join('/exports', fileName); // Ruta virtual
+    let content = '';
+    const timestamp = Date.now();
 
-    const fileSize = Buffer.byteLength(submission.code, 'utf8') + 500;
+    if (input.format === ExportFormat.JSON) {
+      content = JSON.stringify(
+        {
+          meta: {
+            generatedAt: new Date(),
+            requestedBy: userId,
+          },
+          data: submission,
+        },
+        null,
+        2
+      );
+    } else if (input.format === ExportFormat.CSV) {
+      const headers =
+        'id,studentId,exerciseId,language,verdict,score,createdAt,code\n';
 
-    return await exportModel.create(input, filePath, fileSize, userId);
+      const safeCode = submission.code.replace(/"/g, '""');
+      const row = `${submission.id},${submission.studentId},${submission.exerciseId},${submission.language},${submission.verdict},${submission.score},${submission.createdAt},"${safeCode}"`;
+      content = headers + row;
+    } else {
+      content = submission.code;
+    }
+
+    const fileName = `export_${submission.id}_${timestamp}.${input.format}`;
+    const virtualPath = `/exports/${fileName}`;
+    const fileSize = Buffer.byteLength(content, 'utf8');
+
+    return await exportModel.create(input, virtualPath, fileSize, userId);
   }
 
   async getExportById(id: string, userRole: UserRole) {
