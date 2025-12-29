@@ -17,6 +17,7 @@ import routerSubmissions from '@routes/submission/submission';
 import routerExercises from '@routes/exercise/exercise';
 import routerSyllabus from '@routes/syllabus/syllabus';
 import routerCourse from '@routes/course/course';
+import routerGroup from '@routes/group/group';
 
 const app = express();
 const PORT = config.port;
@@ -92,6 +93,7 @@ apiV1.use('/exercises', routerExercises);
 apiV1.use('/submissions', routerSubmissions);
 apiV1.use('/syllabi', routerSyllabus);
 apiV1.use('/courses', routerCourse);
+apiV1.use('/groups', routerGroup);
 
 // ==================== MANEJO DE ERRORES ====================
 
