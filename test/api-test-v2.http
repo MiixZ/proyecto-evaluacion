@@ -4,9 +4,9 @@
 # ==========================================
 # 0. VARIABLES (Actualizar manualmente tras Login/Creación)
 # ==========================================
-@teacher_token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI0OWIyMGJhMy1iZTk2LTRlNGMtOWRhMC1mNGEyNDc3M2YxNGIiLCJlbWFpbCI6InByb2Zlc29yOEB1bml2ZXJzaWRhZC5lZHUiLCJyb2xlIjoidGVhY2hlciIsImlhdCI6MTc2NjkzMjM5MSwiZXhwIjoxNzY3NTM3MTkxfQ.m0USDCSNUbcgG-d0E7TeAlQrtdl8o1il5X3LBxF_p_k
-@student_token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZjkzYWE5My0wNjQ2LTRjMDMtYjZiNS05NjgxMjQzODM0MzEiLCJlbWFpbCI6ImFsdW1ubzMwQHVuaXZlcnNpZGFkLmVkdSIsInJvbGUiOiJzdHVkZW50IiwiaWF0IjoxNzY2OTMyNDgxLCJleHAiOjE3Njc1MzcyODF9.1-fys6TEbvQl3YBbM0I6NmeLXeXbYu3f48lA8DT4m7I
-@exercise_id = b106e8ab-ca75-451d-9eef-ed85aed05c4a
+@teacher_token = <<token_profesor_valido>>
+@student_token = <<token_estudiante_valido>>
+@exercise_id = <<exercise_id_creado>>
 
 # ==========================================
 # 1. AUTHENTICATION
@@ -19,7 +19,7 @@ Content-Type: {{contentType}}
 
 {
     "email": "profesor8@universidad.edu",
-    "password": "2686954Qf"
+    "password": "<<contraseña_profesor>>"
 }
 
 ### Login Estudiante
@@ -29,7 +29,7 @@ Content-Type: {{contentType}}
 
 {
     "email": "alumno30@universidad.edu",
-    "password": "123pass123!"
+    "password": "<<contraseña_alumna>>"
 }
 
 # ==========================================

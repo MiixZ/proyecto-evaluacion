@@ -1,6 +1,6 @@
 import bcrypt from 'bcrypt';
 import { logger } from '@utils/logger';
-import { AuthenticationError } from '@utils/errors';
+import { AuthenticationError, NotFoundError } from '@utils/errors';
 import { generateToken } from '@utils/jwt.utils';
 import { userModel } from '@models/user/user.model';
 import { UserEntity } from '@models/user/user.entity';
@@ -21,12 +21,17 @@ export class AuthService {
     try {
       user = await userModel.getByEmail(email);
     } catch (error) {
-      throw new AuthenticationError('Credenciales inválidas');
+      if (error instanceof NotFoundError) {
+        throw new NotFoundError('Email: ' + email);
+      }
+
+      throw new AuthenticationError('Email inválido.');
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.authId);
+
     if (!isPasswordValid) {
-      throw new AuthenticationError('Credenciales inválidas');
+      throw new AuthenticationError('Contraseña inválida');
     }
 
     if (user.status !== UserStatus.ACTIVE) {

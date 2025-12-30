@@ -67,8 +67,7 @@ export class UserModel {
     const query = `SELECT * FROM users WHERE id = ? AND deleted_at IS NULL LIMIT 1`;
     const [rows] = await this.getPool().execute<UserRow[]>(query, [id]);
 
-    if (rows.length === 0)
-      throw new NotFoundError(`Usuario no encontrado: ${id}`);
+    if (rows.length === 0) throw new NotFoundError(`Usuario con id: ${id}`);
 
     return userMapper.toEntity(rows[0]);
   }
@@ -80,7 +79,7 @@ export class UserModel {
     ]);
 
     if (rows.length === 0)
-      throw new NotFoundError(`Usuario no encontrado: ${email}`);
+      throw new NotFoundError(`Usuario con email: ${email}`);
 
     return userMapper.toEntity(rows[0]);
   }
@@ -138,7 +137,7 @@ export class UserModel {
     );
 
     if (result.affectedRows === 0) {
-      throw new NotFoundError(`Usuario no encontrado o eliminado: ${id}`);
+      throw new NotFoundError(`Usuario con id: ${id}`);
     }
 
     logger.info(`Usuario actualizado: ${id}`);
@@ -151,7 +150,7 @@ export class UserModel {
     const [result] = await this.getPool().execute<ResultSetHeader>(query, [id]);
 
     if (result.affectedRows === 0) {
-      throw new NotFoundError(`Usuario no encontrado: ${id}`);
+      throw new NotFoundError(`Usuario: ${id}`);
     }
 
     logger.info(`Usuario eliminado (soft): ${id}`);
@@ -164,8 +163,7 @@ export class UserModel {
       id,
     ]);
 
-    if (result.affectedRows === 0)
-      throw new NotFoundError(`Usuario no encontrado: ${id}`);
+    if (result.affectedRows === 0) throw new NotFoundError(`Usuario: ${id}`);
 
     logger.info(`Rol actualizado para ${id}: ${newRole}`);
 
@@ -179,8 +177,7 @@ export class UserModel {
       id,
     ]);
 
-    if (result.affectedRows === 0)
-      throw new NotFoundError(`Usuario no encontrado: ${id}`);
+    if (result.affectedRows === 0) throw new NotFoundError(`Usuario: ${id}`);
 
     return this.getById(id);
   }

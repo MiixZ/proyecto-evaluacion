@@ -19,7 +19,7 @@ export class ExerciseService {
     const exists = await syllabusModel.exists(input.syllabusId as UUID);
 
     if (!exists) {
-      throw new NotFoundError('El temario (Syllabus) especificado no existe');
+      throw new NotFoundError('Temario (Syllabus)');
     }
 
     const newExerciseId = uuidv4() as UUID;
@@ -67,7 +67,7 @@ export class ExerciseService {
     const exists = await syllabusModel.exists(syllabusId);
 
     if (!exists) {
-      throw new NotFoundError('El temario (Syllabus) especificado no existe');
+      throw new NotFoundError('Temario (Syllabus)');
     }
 
     const result = await exerciseModel.listBySyllabus(

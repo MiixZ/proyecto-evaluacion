@@ -42,7 +42,7 @@ export class ExportModel {
       [id]
     );
 
-    if (rows.length === 0) throw new NotFoundError('Exportación no encontrada');
+    if (rows.length === 0) throw new NotFoundError('Exportación con id: ' + id);
 
     return exportMapper.toEntity(rows[0]);
   }

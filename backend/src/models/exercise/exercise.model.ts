@@ -104,7 +104,7 @@ export class ExerciseModel {
     const [rows] = await getPool().execute<ExerciseRow[]>(query, [id]);
 
     if (rows.length === 0) {
-      throw new NotFoundError(`Ejercicio no encontrado: ${id}`);
+      throw new NotFoundError(`Ejercicio con id: ${id}`);
     }
 
     return exerciseMapper.toEntity(rows[0]);
@@ -167,7 +167,7 @@ export class ExerciseModel {
     ]);
 
     if (result.affectedRows === 0) {
-      throw new NotFoundError(`Ejercicio no encontrado: ${id}`);
+      throw new NotFoundError(`Ejercicio con id: ${id}`);
     }
 
     return this.getById(id);
