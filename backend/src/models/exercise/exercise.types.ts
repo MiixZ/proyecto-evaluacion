@@ -8,6 +8,8 @@ export interface TestCaseEntity {
   isHidden: boolean;
   timeLimitSeconds: number;
   memoryLimitMb: number;
+  hintText?: string | null;
+  hintPenaltyPercent?: number;
 }
 
 export interface ExecutionLimitEntity {

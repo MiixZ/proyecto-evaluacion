@@ -46,7 +46,6 @@ class ExerciseMapper extends BaseMapper<
     };
   }
 
-  // DTO completo (para profesores/admin)
   toDTO(entity: ExerciseEntity): ExerciseDTO {
     return {
       id: entity.id,
@@ -62,15 +61,12 @@ class ExerciseMapper extends BaseMapper<
     };
   }
 
-  // DTO específico para estudiantes
   toStudentDTO(entity: ExerciseEntity): ExerciseStudentDTO {
     return {
       ...this.toDTO(entity),
       templateCode: entity.templateCode,
     };
   }
-
-  // --- Sub-mappers para Test Cases y Límites ---
 
   toTestCaseEntity(row: TestCaseRow): TestCaseEntity {
     return {
@@ -81,6 +77,8 @@ class ExerciseMapper extends BaseMapper<
       isHidden: Boolean(row.is_hidden),
       timeLimitSeconds: row.time_limit_seconds,
       memoryLimitMb: row.memory_limit_mb,
+      hintText: row.hint_text,
+      hintPenaltyPercent: row.hint_penalty_percent,
     };
   }
 
