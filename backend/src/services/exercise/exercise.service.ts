@@ -19,7 +19,7 @@ export class ExerciseService {
     const exists = await syllabusModel.exists(input.syllabusId as UUID);
 
     if (!exists) {
-      throw new NotFoundError('Temario (Syllabus)');
+      throw new NotFoundError('Temario (Syllabus) con id: ' + input.syllabusId);
     }
 
     const newExerciseId = uuidv4() as UUID;
@@ -49,7 +49,7 @@ export class ExerciseService {
 
     if (isStudent) {
       if (!exercise.isPublished) {
-        throw new NotFoundError('Ejercicio no encontrado o no disponible');
+        throw new NotFoundError('Ejercicio con id: ' + id);
       }
 
       return exerciseMapper.toStudentDTO(exercise);
@@ -67,7 +67,7 @@ export class ExerciseService {
     const exists = await syllabusModel.exists(syllabusId);
 
     if (!exists) {
-      throw new NotFoundError('Temario (Syllabus)');
+      throw new NotFoundError('Temario (Syllabus) con id: ' + syllabusId);
     }
 
     const result = await exerciseModel.listBySyllabus(

@@ -46,7 +46,7 @@ export class DegreeModel {
       [id]
     );
 
-    if (rows.length === 0) throw new NotFoundError('Titulación no encontrada');
+    if (rows.length === 0) throw new NotFoundError('Titulación con id: ' + id);
 
     return degreeMapper.toEntity(rows[0]);
   }

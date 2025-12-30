@@ -13,7 +13,8 @@ import { UserStatus, UserRole } from '@CustomTypes/common.types';
 export class GroupService {
   async createGroup(input: CreateGroupInput) {
     const courseExists = await courseModel.exists(input.courseId as UUID);
-    if (!courseExists) throw new NotFoundError('El curso no existe');
+    if (!courseExists)
+      throw new NotFoundError('El curso con id: ' + input.courseId);
 
     return await groupModel.create(input);
   }
@@ -37,7 +38,7 @@ export class GroupService {
     }
 
     if (!userId) {
-      throw new NotFoundError('Usuario no especificado o no encontrado');
+      throw new NotFoundError('Usuario');
     }
 
     if (input.userId) {

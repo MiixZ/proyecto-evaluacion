@@ -12,7 +12,7 @@ export class SubjectService {
     const degreeExists = await degreeModel.exists(input.degreeId as UUID);
 
     if (!degreeExists) {
-      throw new NotFoundError('La titulación especificada no existe');
+      throw new NotFoundError('La titulación con id: ' + input.degreeId);
     }
 
     return await subjectModel.create(input);

@@ -47,7 +47,7 @@ export class PlagiarismModel {
       [id]
     );
     if (rows.length === 0)
-      throw new NotFoundError('Registro de plagio no encontrado');
+      throw new NotFoundError('Registro de plagio con id: ' + id);
 
     return plagiarismMapper.toEntity(rows[0]);
   }
@@ -80,7 +80,7 @@ export class PlagiarismModel {
     ]);
 
     if (result.affectedRows === 0)
-      throw new NotFoundError('Registro no encontrado');
+      throw new NotFoundError('Registro de plagio con id: ' + id);
 
     return this.getById(id);
   }

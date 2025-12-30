@@ -37,7 +37,7 @@ export class GroupModel {
       [id]
     );
 
-    if (rows.length === 0) throw new NotFoundError('Grupo no encontrado');
+    if (rows.length === 0) throw new NotFoundError('Grupo con id: ' + id);
 
     return groupMapper.toEntity(rows[0]);
   }
@@ -89,7 +89,9 @@ export class GroupModel {
     const query = 'DELETE FROM user_groups WHERE group_id = ? AND user_id = ?';
     const [result] = await getPool().execute<any>(query, [groupId, userId]);
     if (result.affectedRows === 0)
-      throw new NotFoundError('Usuario no encontrado en este grupo');
+      throw new NotFoundError(
+        'Usuario con id: ' + userId + ' en el grupo con id: ' + groupId
+      );
   }
 
   async getStudentGroupInCourse(

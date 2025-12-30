@@ -150,7 +150,7 @@ export class UserModel {
     const [result] = await this.getPool().execute<ResultSetHeader>(query, [id]);
 
     if (result.affectedRows === 0) {
-      throw new NotFoundError(`Usuario: ${id}`);
+      throw new NotFoundError(`Usuario con id: ${id}`);
     }
 
     logger.info(`Usuario eliminado (soft): ${id}`);
@@ -163,7 +163,8 @@ export class UserModel {
       id,
     ]);
 
-    if (result.affectedRows === 0) throw new NotFoundError(`Usuario: ${id}`);
+    if (result.affectedRows === 0)
+      throw new NotFoundError(`Usuario con id: ${id}`);
 
     logger.info(`Rol actualizado para ${id}: ${newRole}`);
 
@@ -177,7 +178,8 @@ export class UserModel {
       id,
     ]);
 
-    if (result.affectedRows === 0) throw new NotFoundError(`Usuario: ${id}`);
+    if (result.affectedRows === 0)
+      throw new NotFoundError(`Usuario con id: ${id}`);
 
     return this.getById(id);
   }

@@ -12,7 +12,9 @@ export class CourseService {
     const subjectExists = await subjectModel.exists(input.subjectId as UUID);
 
     if (!subjectExists) {
-      throw new NotFoundError('La asignatura especificada no existe');
+      throw new NotFoundError(
+        'Asignatura especificada con id: ' + input.subjectId
+      );
     }
 
     return await courseModel.create(input);

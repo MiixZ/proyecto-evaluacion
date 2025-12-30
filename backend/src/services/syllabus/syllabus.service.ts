@@ -10,7 +10,9 @@ export class SyllabusService {
     const courseExists = await courseModel.exists(input.courseId as UUID);
 
     if (!courseExists) {
-      throw new NotFoundError('El curso especificado no existe');
+      throw new NotFoundError(
+        'El curso especificado con id: ' + input.courseId
+      );
     }
 
     return await syllabusModel.create(input);

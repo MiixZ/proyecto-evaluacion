@@ -43,7 +43,7 @@ export class FeedbackModel {
       [id]
     );
 
-    if (rows.length === 0) throw new NotFoundError('Feedback no encontrado');
+    if (rows.length === 0) throw new NotFoundError('Feedback con id: ' + id);
 
     return feedbackMapper.toEntity(rows[0]);
   }
@@ -92,7 +92,7 @@ export class FeedbackModel {
     const [result] = await getPool().execute<any>(query, params);
 
     if (result.affectedRows === 0)
-      throw new NotFoundError('Feedback no encontrado');
+      throw new NotFoundError('Feedback con id: ' + id);
 
     return this.getById(id);
   }
@@ -104,7 +104,7 @@ export class FeedbackModel {
     );
 
     if (result.affectedRows === 0)
-      throw new NotFoundError('Feedback no encontrado');
+      throw new NotFoundError('Feedback con id: ' + id);
   }
 }
 

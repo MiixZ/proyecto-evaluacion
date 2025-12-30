@@ -50,7 +50,7 @@ export class SubjectModel {
       [id]
     );
 
-    if (rows.length === 0) throw new NotFoundError('Asignatura no encontrada');
+    if (rows.length === 0) throw new NotFoundError('Asignatura con id: ' + id);
 
     return subjectMapper.toEntity(rows[0]);
   }

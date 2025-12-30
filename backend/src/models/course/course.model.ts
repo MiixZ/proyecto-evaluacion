@@ -43,7 +43,7 @@ export class CourseModel {
       'SELECT * FROM courses WHERE id = ?',
       [id]
     );
-    if (rows.length === 0) throw new NotFoundError('Curso no encontrado');
+    if (rows.length === 0) throw new NotFoundError('Curso con id: ' + id);
     return courseMapper.toEntity(rows[0]);
   }
 

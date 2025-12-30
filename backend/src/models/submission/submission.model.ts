@@ -23,7 +23,7 @@ export class SubmissionModel {
     const [rows] = await getPool().execute<SubmissionRow[]>(query, [id]);
 
     if (rows.length === 0) {
-      throw new NotFoundError(`Envío no encontrado: ${id}`);
+      throw new NotFoundError(`Envío con id: ${id}`);
     }
 
     return submissionMapper.toEntity(rows[0]);

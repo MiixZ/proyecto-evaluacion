@@ -40,7 +40,7 @@ export class AuditModel {
       [id]
     );
     if (rows.length === 0)
-      throw new NotFoundError('Log de auditoría no encontrado');
+      throw new NotFoundError('Log de auditoría con id: ' + id);
     return auditMapper.toEntity(rows[0]);
   }
 

@@ -34,7 +34,7 @@ export class SyllabusModel {
       'SELECT * FROM syllabi WHERE id = ?',
       [id]
     );
-    if (rows.length === 0) throw new NotFoundError('Temario no encontrado');
+    if (rows.length === 0) throw new NotFoundError('Temario con id: ' + id);
 
     return syllabusMapper.toEntity(rows[0]);
   }
