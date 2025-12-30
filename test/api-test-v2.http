@@ -1,0 +1,104 @@
+@baseUrl = http://localhost:4000
+@contentType = application/json
+
+# ==========================================
+# 0. VARIABLES (Actualizar manualmente tras Login/Creación)
+# ==========================================
+@teacher_token = <<token_profesor_valido>>
+@student_token = <<token_estudiante_valido>>
+@exercise_id = <<exercise_id_creado>>
+
+# ==========================================
+# 1. AUTHENTICATION
+# ==========================================
+
+### Login Profesor
+# @name loginTeacher
+POST {{baseUrl}}/api/auth/login
+Content-Type: {{contentType}}
+
+{
+    "email": "profesor8@universidad.edu",
+    "password": "<<contraseña_profesor>>"
+}
+
+### Login Estudiante
+# @name loginStudent
+POST {{baseUrl}}/api/auth/login
+Content-Type: {{contentType}}
+
+{
+    "email": "alumno30@universidad.edu",
+    "password": "<<contraseña_alumna>>"
+}
+
+# ==========================================
+# 2. EXERCISES (Teacher)
+# ==========================================
+
+### Crear Ejercicio (Python Suma)
+POST {{baseUrl}}/api/v1/exercises
+Content-Type: {{contentType}}
+Authorization: Bearer {{teacher_token}}
+
+{
+  "syllabusId": "550e8400-e29b-41d4-a716-446655880001",
+  "title": "Suma Avanzada Python (VS Code)",
+  "description": "Realiza una suma de dos números leídos de stdin.",
+  "difficulty": "beginner",
+  "language": "python",
+  "points": 10,
+  "testCases": [
+    {
+      "input": "5\n5",
+      "expectedOutput": "10",
+      "isHidden": false
+    },
+    {
+      "input": "-1\n1",
+      "expectedOutput": "0",
+      "isHidden": true
+    }
+  ],
+  "limits": {
+      "timeLimitSeconds": 2,
+      "memoryLimitMb": 128
+  }
+}
+
+### Publicar Ejercicio
+PATCH {{baseUrl}}/api/v1/exercises/{{exercise_id}}/publish
+Content-Type: {{contentType}}
+Authorization: Bearer {{teacher_token}}
+
+{
+    "isPublished": true
+}
+
+# ==========================================
+# 3. SUBMISSIONS (Student)
+# ==========================================
+
+### Enviar Solución Correcta
+POST {{baseUrl}}/api/v1/submissions
+Content-Type: {{contentType}}
+Authorization: Bearer {{student_token}}
+
+{
+    "exerciseId": "{{exercise_id}}",
+    "courseId": "550e8400-e29b-41d4-a716-446655770010",
+    "language": "python",
+    "code": "a = int(input())\nb = int(input())\nprint(a + b)"
+}
+
+### Enviar Solución Incorrecta (Para probar error)
+POST {{baseUrl}}/api/v1/submissions
+Content-Type: {{contentType}}
+Authorization: Bearer {{student_token}}
+
+{
+    "exerciseId": "{{exercise_id}}",
+    "courseId": "550e8400-e29b-41d4-a716-446655770010",
+    "language": "python",
+    "code": "print('Error provocado')"
+}

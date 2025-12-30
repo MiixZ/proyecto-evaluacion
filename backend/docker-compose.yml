@@ -1,0 +1,24 @@
+# SOLO PARA LOCAL DESARROLLO
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: evaluacion-backend-dev
+    environment:
+      NODE_ENV: development
+      DB_HOST: mysql
+      DB_USER: ${MYSQL_USER}
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+      DB_NAME: ${MYSQL_DATABASE}
+      EXECUTION_ENGINE_URL: http://execution-engine:3001
+    ports:
+      - '3000:3000'
+    networks:
+      - evaluacion-net
+    volumes:
+      - ./src:/app/src
+
+networks:
+  evaluacion-net:
+    external: true

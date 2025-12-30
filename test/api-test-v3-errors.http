@@ -1,0 +1,211 @@
+@baseUrl = http://localhost:4000
+@contentType = application/json
+
+# ==========================================
+# 0. PREPARACIÓN (Login válido para obtener tokens)
+# ==========================================
+@admin_email = admin@university.edu
+@admin_password = <<contraseña_admin>>
+@teacher_email = profesor8@universidad.edu
+@teacher_password = <<contraseña_profesor>>
+@student_email = alumna1@universidad.edu
+@student_password = <<contraseña_alumna>>
+
+### Login ADMIN (Para pruebas de 400/404)
+# @name loginAdmin
+POST {{baseUrl}}/api/auth/login
+Content-Type: {{contentType}}
+
+{
+    "email": "{{admin_email}}",
+    "password": "{{admin_password}}" 
+}
+
+### Login ESTUDIANTE (Para pruebas de 403 Forbidden)
+# @name loginStudent
+POST {{baseUrl}}/api/auth/login
+Content-Type: {{contentType}}
+
+{
+    "email": "{{student_email}}",
+    "password": "{{student_password}}" 
+}
+
+
+# ==========================================
+# 1. ERRORES DE AUTENTICACIÓN (401)
+# ==========================================
+
+### 1.1 Login con contraseña incorrecta
+POST {{baseUrl}}/api/auth/login
+Content-Type: {{contentType}}
+
+{
+    "email": "{{admin_email}}",
+    "password": "WRONG_PASSWORD" 
+}
+
+### 1.2 Login con usuario inexistente
+POST {{baseUrl}}/api/auth/login
+Content-Type: {{contentType}}
+
+{
+    "email": "ghost@university.edu",
+    "password": "password123" 
+}
+
+### 1.3 Acceso a ruta protegida SIN token
+GET {{baseUrl}}/api/v1/users
+Content-Type: {{contentType}}
+
+### 1.4 Acceso a ruta protegida con token FALSO
+GET {{baseUrl}}/api/v1/users
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.invalid.signature
+Content-Type: {{contentType}}
+
+
+# ==========================================
+# 2. ERRORES DE VALIDACIÓN (400 Bad Request)
+# ==========================================
+
+### 2.1 Crear Usuario con Email inválido
+POST {{baseUrl}}/api/v1/users
+Authorization: Bearer {{loginAdmin.response.body.data.token}}
+Content-Type: {{contentType}}
+
+{
+    "email": "esto-no-es-un-email",
+    "firstName": "Test",
+    "lastName": "User",
+    "role": "student"
+}
+
+### 2.2 Crear Asignatura con créditos negativos
+# Asumimos un ID de grado válido o dummy UUID
+POST {{baseUrl}}/api/v1/subjects
+Authorization: Bearer {{loginAdmin.response.body.data.token}}
+Content-Type: {{contentType}}
+
+{
+    "degreeId": "550e8400-e29b-41d4-a716-446655440000",
+    "name": "Asignatura Imposible",
+    "code": "IMP-001",
+    "credits": -5
+}
+
+### 2.3 Importar CSV vacío o mal formado
+# Usamos un UUID genérico para la ruta
+POST {{baseUrl}}/api/v1/groups/550e8400-e29b-41d4-a716-446655880000/import
+Authorization: Bearer {{loginAdmin.response.body.data.token}}
+Content-Type: {{contentType}}
+
+{
+    "csvContent": ""
+}
+
+### 2.4 ID inválido en la URL (No es UUID)
+# Esto debería fallar en la validación de Zod antes de llegar al controlador
+GET {{baseUrl}}/api/v1/exercises/codigo-invalido-123
+Authorization: Bearer {{loginAdmin.response.body.data.token}}
+Content-Type: {{contentType}}
+
+
+# ==========================================
+# 3. ERRORES DE PERMISOS (403 Forbidden - RBAC)
+# ==========================================
+
+### 3.1 Estudiante intenta crear una Titulación (Solo Admin)
+POST {{baseUrl}}/api/v1/degrees
+Authorization: Bearer {{loginStudent.response.body.data.token}}
+Content-Type: {{contentType}}
+
+{
+    "name": "Hacktivismo 101",
+    "code": "HCK",
+    "durationYears": 1,
+    "totalCredits": 60
+}
+
+### 3.2 Estudiante intenta crear un Ejercicio (Solo Teacher/Admin)
+POST {{baseUrl}}/api/v1/exercises
+Authorization: Bearer {{loginStudent.response.body.data.token}}
+Content-Type: {{contentType}}
+
+{
+  "syllabusId": "550e8400-e29b-41d4-a716-446655880001",
+  "title": "Ejercicio Hackeado",
+  "description": "Intento de intrusión",
+  "difficulty": "beginner",
+  "language": "python",
+  "points": 100,
+  "testCases": [
+    {
+      "input": "test input",
+      "expectedOutput": "test output"
+    }
+  ]
+}
+
+### 3.3 Estudiante intenta ver Logs de Auditoría (Solo Admin)
+GET {{baseUrl}}/api/v1/audit
+Authorization: Bearer {{loginStudent.response.body.data.token}}
+Content-Type: {{contentType}}
+
+### 3.4 Estudiante intenta ver reporte de Plagio (Privado)
+GET {{baseUrl}}/api/v1/plagiarism/submission/550e8400-e29b-41d4-a716-446655440000
+Authorization: Bearer {{loginStudent.response.body.data.token}}
+Content-Type: {{contentType}}
+
+
+# ==========================================
+# 4. ERRORES DE RECURSO NO ENCONTRADO (404)
+# ==========================================
+
+### 4.1 Obtener usuario que no existe
+# UUID válido sintácticamente pero inexistente en BD
+GET {{baseUrl}}/api/v1/users/00000000-0000-0000-0000-000000000000
+Authorization: Bearer {{loginAdmin.response.body.data.token}}
+Content-Type: {{contentType}}
+
+### 4.2 Crear ejercicio para un Syllabus que no existe
+POST {{baseUrl}}/api/v1/exercises
+Authorization: Bearer {{loginAdmin.response.body.data.token}}
+Content-Type: {{contentType}}
+
+{
+  "syllabusId": "00000000-0000-0000-0000-000000000000",
+  "title": "Ejercicio Fantasma",
+  "description": "Este syllabus no existe",
+  "difficulty": "beginner",
+  "language": "python",
+  "points": 10,
+  "testCases": [
+    {
+      "input": "test input",
+      "expectedOutput": "test output"
+    }
+  ]
+}
+
+
+# ==========================================
+# 5. ERRORES DE LÓGICA DE NEGOCIO
+# ==========================================
+
+### 5.1 Enviar Submission a un ejercicio inexistente
+POST {{baseUrl}}/api/v1/submissions
+Authorization: Bearer {{loginStudent.response.body.data.token}}
+Content-Type: {{contentType}}
+
+{
+    "exerciseId": "00000000-0000-0000-0000-000000000000",
+    "courseId": "550e8400-e29b-41d4-a716-446655770010",
+    "language": "python",
+    "code": "print('hello')"
+}
+
+### 5.2 Estudiante intenta descargar exportación (Forbidden en lógica de servicio)
+# Aunque exista la exportación, el servicio ExportService bloquea a estudiantes
+GET {{baseUrl}}/api/v1/exports/550e8400-e29b-41d4-a716-446655440000
+Authorization: Bearer {{loginStudent.response.body.data.token}}
+Content-Type: {{contentType}}

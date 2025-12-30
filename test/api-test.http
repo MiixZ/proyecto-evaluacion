@@ -1,0 +1,522 @@
+###############################################################################
+# CONFIGURACIÓN DE VARIABLES
+###############################################################################
+
+@backend_url = http://localhost:3000
+@execution_engine_url = http://localhost:3001
+@api_key = dev-secret-key-12345-change-in-production
+
+###############################################################################
+# 1. HEALTH CHECKS
+###############################################################################
+
+### Backend - Health Check
+GET {{backend_url}}/health HTTP/1.1
+
+### Execution Engine - Health Check
+GET {{execution_engine_url}}/health HTTP/1.1
+X-Api-Key: {{api_key}}
+
+### Execution Engine - Stats
+GET {{execution_engine_url}}/stats HTTP/1.1
+X-Api-Key: {{api_key}}
+
+###############################################################################
+# 2. EXECUTION ENGINE - PRUEBAS DIRECTAS (PYTHON)
+###############################################################################
+
+### Test 1: Suma básica (Python) - ACEPTADO
+POST {{execution_engine_url}}/execute HTTP/1.1
+Content-Type: application/json
+X-Api-Key: {{api_key}}
+
+{
+  "id": "exec-test-001",
+  "exerciseId": "ex-suma-basica",
+  "submissionId": "sub-001",
+  "code": "def suma(a, b):\n    return a + b\n\na = int(input())\nb = int(input())\nprint(suma(a, b))",
+  "language": "python",
+  "testCases": [
+    {
+      "id": "tc-1",
+      "input": "2\n3",
+      "expectedOutput": "5",
+      "timeLimit": 5,
+      "memoryLimit": 256,
+      "isHidden": false
+    },
+    {
+      "id": "tc-2",
+      "input": "10\n20",
+      "expectedOutput": "30",
+      "timeLimit": 5,
+      "memoryLimit": 256,
+      "isHidden": false
+    },
+    {
+      "id": "tc-3",
+      "input": "-5\n5",
+      "expectedOutput": "0",
+      "timeLimit": 5,
+      "memoryLimit": 256,
+      "isHidden": true
+    }
+  ],
+  "limits": {
+    "timeLimitSeconds": 5,
+    "memoryLimitMb": 256,
+    "cpuShares": 1024,
+    "maxProcesses": 100
+  },
+  "createdAt": "2025-12-18T11:44:00Z"
+}
+
+### Test 2: Suma incorrecta (Python) - WRONG ANSWER
+POST {{execution_engine_url}}/execute HTTP/1.1
+Content-Type: application/json
+X-Api-Key: {{api_key}}
+
+{
+  "id": "exec-test-002",
+  "exerciseId": "ex-suma-basica",
+  "submissionId": "sub-002",
+  "code": "def suma(a, b):\n    return a - b\n\na = int(input())\nb = int(input())\nprint(suma(a, b))",
+  "language": "python",
+  "testCases": [
+    {
+      "id": "tc-1",
+      "input": "2\n3",
+      "expectedOutput": "5",
+      "timeLimit": 5,
+      "memoryLimit": 256,
+      "isHidden": false
+    }
+  ],
+  "limits": {
+    "timeLimitSeconds": 5,
+    "memoryLimitMb": 256
+  },
+  "createdAt": "2025-12-18T11:44:00Z"
+}
+
+### Test 3: Error de sintaxis (Python) - COMPILATION ERROR
+POST {{execution_engine_url}}/execute HTTP/1.1
+Content-Type: application/json
+X-Api-Key: {{api_key}}
+
+{
+  "id": "exec-test-003",
+  "exerciseId": "ex-suma-basica",
+  "submissionId": "sub-003",
+  "code": "def suma(a, b)\n    return a + b\n\na = int(input())\nb = int(input())\nprint(suma(a, b))",
+  "language": "python",
+  "testCases": [
+    {
+      "id": "tc-1",
+      "input": "2\n3",
+      "expectedOutput": "5",
+      "timeLimit": 5,
+      "memoryLimit": 256,
+      "isHidden": false
+    }
+  ],
+  "limits": {
+    "timeLimitSeconds": 5,
+    "memoryLimitMb": 256
+  },
+  "createdAt": "2025-12-18T11:44:00Z"
+}
+
+### Test 4: Timeout (Python) - TIME LIMIT EXCEEDED
+POST {{execution_engine_url}}/execute HTTP/1.1
+Content-Type: application/json
+X-Api-Key: {{api_key}}
+
+{
+  "id": "exec-test-004",
+  "exerciseId": "ex-suma-basica",
+  "submissionId": "sub-004",
+  "code": "import time\nwhile True:\n    time.sleep(1)",
+  "language": "python",
+  "testCases": [
+    {
+      "id": "tc-1",
+      "input": "",
+      "expectedOutput": "",
+      "timeLimit": 2,
+      "memoryLimit": 256,
+      "isHidden": false
+    }
+  ],
+  "limits": {
+    "timeLimitSeconds": 2,
+    "memoryLimitMb": 256
+  },
+  "createdAt": "2025-12-18T11:44:00Z"
+}
+
+### Test 5: Factorial (Python) - Múltiples test cases
+POST {{execution_engine_url}}/execute HTTP/1.1
+Content-Type: application/json
+X-Api-Key: {{api_key}}
+
+{
+  "id": "exec-test-005",
+  "exerciseId": "ex-factorial",
+  "submissionId": "sub-005",
+  "code": "def factorial(n):\n    if n == 0:\n        return 1\n    return n * factorial(n - 1)\n\nn = int(input())\nprint(factorial(n))",
+  "language": "python",
+  "testCases": [
+    {
+      "id": "tc-1",
+      "input": "5",
+      "expectedOutput": "120",
+      "timeLimit": 5,
+      "memoryLimit": 256,
+      "isHidden": false
+    },
+    {
+      "id": "tc-2",
+      "input": "0",
+      "expectedOutput": "1",
+      "timeLimit": 5,
+      "memoryLimit": 256,
+      "isHidden": false
+    },
+    {
+      "id": "tc-3",
+      "input": "10",
+      "expectedOutput": "3628800",
+      "timeLimit": 5,
+      "memoryLimit": 256,
+      "isHidden": true
+    }
+  ],
+  "limits": {
+    "timeLimitSeconds": 5,
+    "memoryLimitMb": 256
+  },
+  "createdAt": "2025-12-18T11:44:00Z"
+}
+
+### Test 6: Número par o impar (Python)
+POST {{execution_engine_url}}/execute HTTP/1.1
+Content-Type: application/json
+X-Api-Key: {{api_key}}
+
+{
+  "id": "exec-test-006",
+  "exerciseId": "ex-par-impar",
+  "submissionId": "sub-006",
+  "code": "def es_par(n):\n    return n % 2 == 0\n\nn = int(input())\nif es_par(n):\n    print('par')\nelse:\n    print('impar')",
+  "language": "python",
+  "testCases": [
+    {
+      "id": "tc-1",
+      "input": "4",
+      "expectedOutput": "par",
+      "timeLimit": 5,
+      "memoryLimit": 256,
+      "isHidden": false
+    },
+    {
+      "id": "tc-2",
+      "input": "7",
+      "expectedOutput": "impar",
+      "timeLimit": 5,
+      "memoryLimit": 256,
+      "isHidden": false
+    },
+    {
+      "id": "tc-3",
+      "input": "0",
+      "expectedOutput": "par",
+      "timeLimit": 5,
+      "memoryLimit": 256,
+      "isHidden": true
+    }
+  ],
+  "limits": {
+    "timeLimitSeconds": 5,
+    "memoryLimitMb": 256
+  },
+  "createdAt": "2025-12-18T11:44:00Z"
+}
+
+###############################################################################
+# 3. EXECUTION ENGINE - OTROS LENGUAJES
+###############################################################################
+
+### Test 9: Suma en JavaScript (Node.js)
+POST {{execution_engine_url}}/execute HTTP/1.1
+Content-Type: application/json
+X-Api-Key: {{api_key}}
+
+{
+  "id": "exec-test-js-001",
+  "exerciseId": "ex-suma-basica",
+  "submissionId": "sub-js-001",
+  "code": "const fs = require('fs');\ntry {\n    const input = fs.readFileSync(0, 'utf-8').trim().split('\\n');\n    if(input.length >= 2) {\n        const a = parseInt(input[0]);\n        const b = parseInt(input[1]);\n        console.log(a + b);\n    }\n} catch (e) { console.error(e); }",
+  "language": "javascript",
+  "testCases": [
+    {
+      "id": "tc-1",
+      "input": "5\n10",
+      "expectedOutput": "15",
+      "timeLimit": 5,
+      "memoryLimit": 256,
+      "isHidden": false
+    },
+    {
+      "id": "tc-2",
+      "input": "-10\n10",
+      "expectedOutput": "0",
+      "timeLimit": 5,
+      "memoryLimit": 256,
+      "isHidden": false
+    }
+  ],
+  "limits": {
+    "timeLimitSeconds": 5,
+    "memoryLimitMb": 256
+  },
+  "createdAt": "2025-12-18T12:00:00Z"
+}
+
+### Test 10: Suma en Java (Clase Solution obligatoria)
+POST {{execution_engine_url}}/execute HTTP/1.1
+Content-Type: application/json
+X-Api-Key: {{api_key}}
+
+{
+  "id": "exec-test-java-001",
+  "exerciseId": "ex-suma-basica",
+  "submissionId": "sub-java-001",
+  "code": "import java.util.Scanner;\n\npublic class Solution {\n    public static void main(String[] args) {\n        Scanner scanner = new Scanner(System.in);\n        if (scanner.hasNextInt()) {\n            int a = scanner.nextInt();\n            int b = scanner.nextInt();\n            System.out.println(a + b);\n        }\n        scanner.close();\n    }\n}",
+  "language": "java",
+  "testCases": [
+    {
+      "id": "tc-1",
+      "input": "100\n200",
+      "expectedOutput": "300",
+      "timeLimit": 5,
+      "memoryLimit": 512,
+      "isHidden": false
+    },
+    {
+      "id": "tc-2",
+      "input": "7\n7",
+      "expectedOutput": "14",
+      "timeLimit": 5,
+      "memoryLimit": 512,
+      "isHidden": false
+    }
+  ],
+  "limits": {
+    "timeLimitSeconds": 5,
+    "memoryLimitMb": 512
+  },
+  "createdAt": "2025-12-18T12:05:00Z"
+}
+
+### Test 11: Suma en C++ (G++)
+POST {{execution_engine_url}}/execute HTTP/1.1
+Content-Type: application/json
+X-Api-Key: {{api_key}}
+
+{
+  "id": "exec-test-cpp-001",
+  "exerciseId": "ex-suma-basica",
+  "submissionId": "sub-cpp-001",
+  "code": "#include <iostream>\nusing namespace std;\n\nint main() {\n    int a, b;\n    if (cin >> a >> b) {\n        cout << a + b;\n    }\n    return 0;\n}",
+  "language": "cpp",
+  "testCases": [
+    {
+      "id": "tc-1",
+      "input": "50\n50",
+      "expectedOutput": "100",
+      "timeLimit": 2,
+      "memoryLimit": 128,
+      "isHidden": false
+    },
+    {
+      "id": "tc-2",
+      "input": "1\n-1",
+      "expectedOutput": "0",
+      "timeLimit": 2,
+      "memoryLimit": 128,
+      "isHidden": false
+    }
+  ],
+  "limits": {
+    "timeLimitSeconds": 2,
+    "memoryLimitMb": 128
+  },
+  "createdAt": "2025-12-18T12:10:00Z"
+}
+
+### Test 12: Error de Compilación en Java
+POST {{execution_engine_url}}/execute HTTP/1.1
+Content-Type: application/json
+X-Api-Key: {{api_key}}
+
+{
+  "id": "exec-test-java-error",
+  "exerciseId": "ex-suma-basica",
+  "submissionId": "sub-java-err-001",
+  "code": "import java.util.Scanner;\n\npublic class Solution {\n    public static void main(String[] args) {\n        // Error: falta punto y coma\n        System.out.println(\"Hola\") \n    }\n}",
+  "language": "java",
+  "testCases": [
+    {
+      "id": "tc-1",
+      "input": "",
+      "expectedOutput": "Hola",
+      "timeLimit": 5,
+      "memoryLimit": 512,
+      "isHidden": false
+    }
+  ],
+  "limits": {
+    "timeLimitSeconds": 5,
+    "memoryLimitMb": 512
+  },
+  "createdAt": "2025-12-18T12:15:00Z"
+}
+
+###############################################################################
+# 4. BACKEND - PRUEBAS A TRAVÉS DE API
+###############################################################################
+
+### Backend - Enviar código (a través del backend)
+POST {{backend_url}}/api/submissions/ex-suma-basica HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer tu-token-jwt-aqui
+
+{
+  "code": "def suma(a, b):\n    return a + b\n\na = int(input())\nb = int(input())\nprint(suma(a, b))",
+  "language": "python",
+  "studentId": "550e8400-e29b-41d4-a716-446655440100",
+  "testCases": [
+    {
+      "id": "tc-1",
+      "input": "2\n3",
+      "expectedOutput": "5",
+      "timeLimit": 5,
+      "memoryLimit": 256,
+      "isHidden": false
+    },
+    {
+      "id": "tc-2",
+      "input": "10\n20",
+      "expectedOutput": "30",
+      "timeLimit": 5,
+      "memoryLimit": 256,
+      "isHidden": false
+    }
+  ],
+  "limits": {
+    "timeLimitSeconds": 5,
+    "memoryLimitMb": 256
+  }
+}
+
+###############################################################################
+# 5. PRUEBAS DE SEGURIDAD Y LÍMITES
+###############################################################################
+
+### Test 7: Intento de acceso a archivos (debe fallar)
+POST {{execution_engine_url}}/execute HTTP/1.1
+Content-Type: application/json
+X-Api-Key: {{api_key}}
+
+{
+  "id": "exec-test-007",
+  "exerciseId": "ex-security-test",
+  "submissionId": "sub-007",
+  "code": "import os\nprint(os.listdir('/etc'))",
+  "language": "python",
+  "testCases": [
+    {
+      "id": "tc-1",
+      "input": "",
+      "expectedOutput": "",
+      "timeLimit": 5,
+      "memoryLimit": 256,
+      "isHidden": false
+    }
+  ],
+  "limits": {
+    "timeLimitSeconds": 5,
+    "memoryLimitMb": 256
+  },
+  "createdAt": "2025-12-18T11:44:00Z"
+}
+
+### Test 8: Intento de uso excesivo de memoria
+POST {{execution_engine_url}}/execute HTTP/1.1
+Content-Type: application/json
+X-Api-Key: {{api_key}}
+
+{
+  "id": "exec-test-008",
+  "exerciseId": "ex-memory-test",
+  "submissionId": "sub-008",
+  "code": "lista = []\nwhile True:\n    lista.append([0] * 1000000)",
+  "language": "python",
+  "testCases": [
+    {
+      "id": "tc-1",
+      "input": "",
+      "expectedOutput": "",
+      "timeLimit": 5,
+      "memoryLimit": 256,
+      "isHidden": false
+    }
+  ],
+  "limits": {
+    "timeLimitSeconds": 5,
+    "memoryLimitMb": 256
+  },
+  "createdAt": "2025-12-18T11:44:00Z"
+}
+
+###############################################################################
+# 6. PRUEBAS CON ERRORES DE API KEY
+###############################################################################
+
+### Test sin API Key (debe fallar con 401)
+POST {{execution_engine_url}}/execute HTTP/1.1
+Content-Type: application/json
+
+{
+  "id": "exec-test-009",
+  "exerciseId": "ex-suma-basica",
+  "submissionId": "sub-009",
+  "code": "print('hello')",
+  "language": "python",
+  "testCases": [],
+  "limits": {
+    "timeLimitSeconds": 5,
+    "memoryLimitMb": 256
+  },
+  "createdAt": "2025-12-18T11:44:00Z"
+}
+
+### Test con API Key incorrecta (debe fallar con 401)
+POST {{execution_engine_url}}/execute HTTP/1.1
+Content-Type: application/json
+X-Api-Key: clave-incorrecta
+
+{
+  "id": "exec-test-010",
+  "exerciseId": "ex-suma-basica",
+  "submissionId": "sub-010",
+  "code": "print('hello')",
+  "language": "python",
+  "testCases": [],
+  "limits": {
+    "timeLimitSeconds": 5,
+    "memoryLimitMb": 256
+  },
+  "createdAt": "2025-12-18T11:44:00Z"
+}
