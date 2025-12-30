@@ -10,6 +10,7 @@ import { exerciseMapper } from '@mappers/exercise.mapper';
 import { NotFoundError } from '@utils/errors';
 import { syllabusModel } from '@models/syllabus/syllabus.model';
 import { auditService } from '@services/audit/audit.service';
+import { languageService } from '@services/language/language.service';
 
 export class ExerciseService {
   async createExercise(
@@ -21,6 +22,8 @@ export class ExerciseService {
     if (!exists) {
       throw new NotFoundError('Temario (Syllabus) con id: ' + input.syllabusId);
     }
+
+    await languageService.validateLanguageSupport(input.language);
 
     const newExerciseId = uuidv4() as UUID;
 

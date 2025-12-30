@@ -16,14 +16,7 @@ export const phoneSchema = z
 export const urlSchema = z.string().url('URL inválida');
 
 export const languageCodeSchema = z
-  .enum([
-    'python',
-    'java',
-    'javascript',
-    'cpp',
-    'go',
-    'rust',
-    'c',
-    'typescript',
-  ])
-  .describe('Código del lenguaje de programación');
+  .string()
+  .min(1, 'El código del lenguaje es requerido')
+  .max(20, 'Código de lenguaje demasiado largo')
+  .describe('Código del lenguaje de programación (ej: python, java, cpp)');

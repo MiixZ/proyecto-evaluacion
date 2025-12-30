@@ -19,6 +19,7 @@ import { submissionMapper } from '@mappers/submission.mapper';
 import { SubmissionDTO } from '@models/submission/submission.entity';
 import { CreateSubmissionInput } from '@validators/submission.validator';
 import { auditService } from '@services/audit/audit.service';
+import { languageService } from '@services/language/language.service';
 
 export class SubmissionService {
   private executionClient: ExecutionEngineClient;
@@ -36,6 +37,14 @@ export class SubmissionService {
     if (!exercise.isPublished) {
       throw new ValidationError('El ejercicio no está disponible o no existe.');
     }
+
+    if (exercise.language !== input.language) {
+      throw new ValidationError(
+        `Este ejercicio espera soluciones en ${exercise.language}, pero recibiste ${input.language}`
+      );
+    }
+
+    await languageService.validateLanguageSupport(input.language);
 
     const testCases = await exerciseModel.getTestCases(exercise.id);
     const limits = await exerciseModel.getExecutionLimits(
