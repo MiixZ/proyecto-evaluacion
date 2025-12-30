@@ -69,6 +69,7 @@ class SubmissionMapper extends BaseMapper<
       testCaseId: row.test_case_id as UUID,
       status: row.status,
       actualOutput: row.actual_output,
+      errorId: row.error_id ? (row.error_id as UUID) : null,
       executionTimeMs: row.execution_time_ms || 0,
       memoryUsedMb: row.memory_used_mb || 0,
       efficiencyAchieved: row.efficiency_achieved as EfficiencyOrder,

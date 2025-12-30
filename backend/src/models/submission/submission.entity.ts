@@ -31,6 +31,7 @@ export interface SubmissionTestResultEntity {
   testCaseId: UUID;
   status: TestCaseStatus | string;
   actualOutput?: string | null;
+  errorId?: UUID | null; // NUEVO
   executionTimeMs: number;
   memoryUsedMb: number;
   efficiencyAchieved: EfficiencyOrder;
@@ -45,6 +46,7 @@ export interface SubmissionTestResultDTO {
   executionTimeMs: number;
   memoryUsedMb: number;
   actualOutput?: string | null;
+  error?: string | null;
 }
 
 export interface SubmissionDTO {

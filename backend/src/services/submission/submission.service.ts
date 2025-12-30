@@ -20,6 +20,7 @@ import { SubmissionDTO } from '@models/submission/submission.entity';
 import { CreateSubmissionInput } from '@validators/submission.validator';
 import { auditService } from '@services/audit/audit.service';
 import { languageService } from '@services/language/language.service';
+import { submissionErrorService } from '@services/catalog/submission-error.service';
 
 export class SubmissionService {
   private executionClient: ExecutionEngineClient;
@@ -119,26 +120,41 @@ export class SubmissionService {
     }
 
     const submissionTestResults: SubmissionTestResultEntity[] =
-      execResult.testResults.map((tr) => {
-        const limitTime = executionLimits.timeLimitSeconds;
-        const limitMem = executionLimits.memoryLimitMb;
+      await Promise.all(
+        execResult.testResults.map(async (tr) => {
+          const limitTime = executionLimits.timeLimitSeconds;
+          const limitMem = executionLimits.memoryLimitMb;
 
-        return {
-          id: uuidv4() as UUID,
-          submissionId,
-          testCaseId: tr.testCaseId as UUID,
-          status: tr.status,
-          actualOutput: tr.actualOutput,
-          executionTimeMs: tr.executionTime,
-          memoryUsedMb: tr.memoryUsed,
-          efficiencyAchieved: this.calculateEfficiency(
-            tr.executionTime,
-            limitTime,
-            tr.memoryUsed,
-            limitMem
-          ),
-        };
-      });
+          let errorId: UUID | null = null;
+
+          if (tr.status === 'timeout') {
+            errorId = await submissionErrorService.getErrorIdByType('timeout');
+          } else if (tr.status === 'error') {
+            errorId =
+              await submissionErrorService.getErrorIdByType('runtime_error');
+          } else if (tr.status !== 'passed' && tr.status !== 'failed') {
+            errorId =
+              await submissionErrorService.getErrorIdByType('system_error');
+          }
+
+          return {
+            id: uuidv4() as UUID,
+            submissionId,
+            testCaseId: tr.testCaseId as UUID,
+            status: tr.status,
+            actualOutput: tr.actualOutput,
+            errorId,
+            executionTimeMs: tr.executionTime,
+            memoryUsedMb: tr.memoryUsed,
+            efficiencyAchieved: this.calculateEfficiency(
+              tr.executionTime,
+              limitTime,
+              tr.memoryUsed,
+              limitMem
+            ),
+          };
+        })
+      );
 
     const finalVerdict = this.mapEngineVerdict(execResult.verdict);
 

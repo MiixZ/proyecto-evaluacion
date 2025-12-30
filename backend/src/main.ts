@@ -27,9 +27,12 @@ import routerAudit from '@routes/audit/audit';
 import routerDashboard from '@routes/dashboard/dashboard';
 import routerLanguages from '@routes/language/language';
 import routerHints from '@routes/hint/hint';
+import routerSubmissionErrors from '@routes/catalog/submission-error';
 
 const app = express();
 const PORT = config.port;
+
+// ... (INICIALIZACIÓN e MIDDLEWARES sin cambios) ...
 
 // ==================== INICIALIZACIÓN ====================
 
@@ -112,6 +115,7 @@ apiV1.use('/audit', routerAudit);
 apiV1.use('/dashboard', routerDashboard);
 apiV1.use('/languages', routerLanguages);
 apiV1.use('/hints', routerHints);
+apiV1.use('/submission-errors', routerSubmissionErrors);
 
 // ==================== MANEJO DE ERRORES ====================
 

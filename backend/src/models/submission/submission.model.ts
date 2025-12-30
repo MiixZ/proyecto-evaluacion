@@ -29,9 +29,6 @@ export class SubmissionModel {
     return submissionMapper.toEntity(rows[0]);
   }
 
-  /**
-   * Obtiene el siguiente número de intento
-   */
   async getNextAttemptNumber(
     studentId: UUID,
     exerciseId: UUID
@@ -45,9 +42,6 @@ export class SubmissionModel {
     return (rows[0].maxAttempt || 0) + 1;
   }
 
-  /**
-   * Crea la sumisión inicial
-   */
   async create(data: {
     id: UUID;
     exerciseId: UUID;
@@ -104,9 +98,10 @@ export class SubmissionModel {
       ]);
 
       if (testResults.length > 0) {
+        // ACTUALIZADO: Inclusión de error_id en la inserción
         const insertTestQuery = `
           INSERT INTO submission_test_results (
-            id, submission_id, test_case_id, status, actual_output, 
+            id, submission_id, test_case_id, status, actual_output, error_id,
             execution_time_ms, memory_used_mb, efficiency_achieved
           ) VALUES ?
         `;
@@ -117,6 +112,7 @@ export class SubmissionModel {
           t.testCaseId,
           t.status,
           t.actualOutput,
+          t.errorId || null,
           t.executionTimeMs,
           t.memoryUsedMb,
           t.efficiencyAchieved,

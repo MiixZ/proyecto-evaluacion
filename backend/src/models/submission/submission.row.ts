@@ -23,6 +23,7 @@ export interface SubmissionTestResultRow extends RowDataPacket {
   test_case_id: string;
   status: string;
   actual_output: string | null;
+  error_id?: string | null;
   execution_time_ms: number | null;
   memory_used_mb: number | null;
   efficiency_achieved: string;
