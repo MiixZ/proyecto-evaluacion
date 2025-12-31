@@ -1,15 +1,16 @@
 import { Pool, ResultSetHeader } from 'mysql2/promise';
-import bcrypt from 'bcrypt';
 import { randomUUID } from 'crypto';
 import { getPool } from '@config/database';
 import { logger } from '@utils/logger';
+import { PoolConnection } from 'mysql2/promise';
 import { UUID, UserRole, UserStatus } from '@CustomTypes/common.types';
 import { UserEntity } from './user.entity';
 import { CreateUserInput, UpdateUserInput } from '@validators/user.validator';
-import { NotFoundError, ValidationError } from '@utils/errors';
+import { NotFoundError } from '@utils/errors';
 import { userMapper } from '@mappers/user.mapper';
 import { UserRow } from './user.row';
 import { CountResult } from '@models/common/count.row';
+import { hashPassword } from '@utils/jwt.utils';
 
 export class UserModel {
   private pool: Pool | null = null;
@@ -23,44 +24,50 @@ export class UserModel {
 
   async create(
     input: CreateUserInput,
-    plaintextPassword: string
+    plainPassword?: string,
+    connection?: PoolConnection
   ): Promise<UserEntity> {
-    const pool = this.getPool();
-    const newId = randomUUID();
-    const hashedPassword = await bcrypt.hash(plaintextPassword, 12);
+    const id = randomUUID();
+    const passwordHash = plainPassword
+      ? await hashPassword(plainPassword)
+      : null;
 
     const query = `
       INSERT INTO users (
-        id, auth_id, email, first_name, last_name, 
-        role, status, phone, bio, profile_image_url, preferred_language,
-        created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+        id, auth_id, email, first_name, last_name, role, status, 
+        phone, bio, preferred_language, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
     `;
 
-    const values = [
-      newId,
-      hashedPassword,
+    const db = connection || this.getPool();
+
+    await db.execute(query, [
+      id,
+      passwordHash || `auth_${id}`,
       input.email,
       input.firstName,
       input.lastName,
-      input.role,
-      UserStatus.ACTIVE,
-      input.phone ?? null,
-      input.bio ?? null,
-      input.profileImageUrl ?? null,
+      input.role || UserRole.STUDENT,
+      input.status || UserStatus.ACTIVE,
+      input.phone || null,
+      input.bio || null,
       input.preferredLanguage || 'es',
-    ];
+    ]);
 
-    try {
-      await pool.execute(query, values);
-      return this.getById(newId as UUID);
-    } catch (error: any) {
-      if (error.code === 'ER_DUP_ENTRY') {
-        throw new ValidationError('El email ya existe', { field: 'email' });
-      }
-
-      throw error;
-    }
+    return {
+      id: id as any,
+      authId: passwordHash || `auth_${id}`,
+      email: input.email,
+      firstName: input.firstName,
+      lastName: input.lastName,
+      role: input.role || UserRole.STUDENT,
+      status: input.status || UserStatus.ACTIVE,
+      phone: input.phone,
+      bio: input.bio,
+      preferredLanguage: input.preferredLanguage || 'es',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
   }
 
   async getById(id: UUID): Promise<UserEntity> {

@@ -12,6 +12,7 @@ import { UserStatus, UserRole } from '@CustomTypes/common.types';
 import { auditService } from '@services/audit/audit.service';
 import crypto from 'crypto';
 import { emailService } from '@services/notification/email.service';
+import { withTransaction } from '@config/database';
 
 export class GroupService {
   async createGroup(input: CreateGroupInput) {
@@ -81,13 +82,11 @@ export class GroupService {
         groupId as UUID,
         UserRole.STUDENT
       );
-
       const lines = csvContent.trim().split(/\r?\n/);
       const newMembersCount = Math.max(0, lines.length - 1);
-
       if (currentMembers + newMembersCount > group.capacity) {
         throw new ConflictError(
-          `La importación excede la capacidad del grupo. Capacidad: ${group.capacity}, Actuales: ${currentMembers}, Intentando importar: ~${newMembersCount}`
+          `Capacidad excedida: ${group.capacity}, Actual: ${currentMembers}`
         );
       }
     }
@@ -101,49 +100,57 @@ export class GroupService {
 
     for (const studentData of students) {
       try {
-        let userId: UUID;
+        await withTransaction(async (connection) => {
+          let userId: UUID;
+          let isNewUser = false;
+          let tempPassword = '';
 
-        try {
           const existingUser = await userModel.getByEmail(studentData.email);
-          userId = existingUser.id;
-        } catch (e) {
-          const tempPassword = crypto.randomBytes(8).toString('hex');
+          if (existingUser) {
+            userId = existingUser.id;
+          } else {
+            tempPassword = crypto.randomBytes(8).toString('hex');
+            const newUser = await userModel.create(
+              {
+                email: studentData.email,
+                firstName: studentData.firstName,
+                lastName: studentData.lastName,
+                password: tempPassword,
+                role: UserRole.STUDENT,
+                status: UserStatus.ACTIVE,
+                preferredLanguage: 'es',
+              },
+              tempPassword,
+              connection
+            );
+            userId = newUser.id;
+            isNewUser = true;
+          }
 
-          const newUser = await userModel.create(
-            {
-              email: studentData.email,
-              firstName: studentData.firstName,
-              lastName: studentData.lastName,
-              password: tempPassword,
-              role: UserRole.STUDENT,
-              status: UserStatus.ACTIVE,
-              preferredLanguage: 'es',
-            },
-            tempPassword
-          );
+          const isMember = await groupModel.isMember(groupId as UUID, userId);
+          if (!isMember) {
+            await groupModel.addMember(
+              groupId as UUID,
+              userId,
+              'student',
+              connection
+            );
 
-          userId = newUser.id;
+            results.imported++;
+          }
 
-          // Usamos await para asegurar que se procesa, aunque ralentice la importación masiva.
-          // En producción idealmente esto iría a una cola de trabajos (bull/rabbitmq).
-          await emailService.sendWelcomeEmail(
-            studentData.email,
-            studentData.firstName,
-            tempPassword
-          );
-        }
-
-        const isMember = await groupModel.isMember(groupId as UUID, userId);
-
-        if (!isMember) {
-          await groupModel.addMember(groupId as UUID, userId, 'student');
-          results.imported++;
-        }
+          if (isNewUser) {
+            await emailService.sendWelcomeEmail(
+              studentData.email,
+              studentData.firstName,
+              tempPassword
+            );
+          }
+        });
       } catch (error: any) {
         results.errors.push(`Error con ${studentData.email}: ${error.message}`);
       }
     }
-
     return results;
   }
 

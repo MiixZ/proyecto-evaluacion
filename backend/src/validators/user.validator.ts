@@ -23,10 +23,7 @@ export const createUserSchema = z.object({
 
 export type CreateUserInput = z.infer<typeof createUserSchema>;
 
-export const updateUserSchema = createUserSchema
-  .partial()
-  .omit({ password: true });
-
+export const updateUserSchema = createUserSchema.partial();
 export type UpdateUserInput = z.infer<typeof updateUserSchema>;
 
 export const changeRoleSchema = z.object({

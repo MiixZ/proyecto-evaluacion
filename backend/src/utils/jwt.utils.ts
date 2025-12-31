@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import config from '@config/environment';
+import bcrypt from 'bcrypt';
 import { logger } from '@utils/logger';
 import { AuthenticationError } from '@utils/errors';
 
@@ -13,6 +14,25 @@ export interface JWTPayload {
   iat: number; // Issued at
   exp: number; // Expires at
 }
+
+/**
+ * Encripta una contraseña usando bcrypt
+ */
+export const hashPassword = async (password: string): Promise<string> => {
+  const saltRounds = 10;
+
+  return await bcrypt.hash(password, saltRounds);
+};
+
+/**
+ * Compara una contraseña plana con un hash
+ */
+export const comparePassword = async (
+  plain: string,
+  hash: string
+): Promise<boolean> => {
+  return await bcrypt.compare(plain, hash);
+};
 
 /**
  * Genera un JWT firmado para un usuario

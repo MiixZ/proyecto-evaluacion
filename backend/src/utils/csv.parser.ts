@@ -1,51 +1,42 @@
-export interface CsvUserRow {
-  dni: string;
+import { parse } from 'csv-parse/sync';
+
+export interface StudentImportRow {
+  email: string;
   firstName: string;
   lastName: string;
-  email: string;
+  dni?: string;
 }
 
-export function parseStudentCsv(csvContent: string): CsvUserRow[] {
-  const lines = csvContent.trim().split(/\r?\n/);
-  if (lines.length < 2) return [];
+export const parseStudentCsv = (csvContent: string): StudentImportRow[] => {
+  const records = parse(csvContent, {
+    columns: true,
+    skip_empty_lines: true,
+    trim: true,
+    relax_column_count: true,
+  });
 
-  const headerLine = lines[0];
-  const separator = headerLine.includes(';') ? ';' : ',';
+  return records.map((record: any) => ({
+    email: record.email || record.Email || record.correo || '',
+    firstName: record.firstName || record.Nombre || record.nombre || '',
+    lastName: record.lastName || record.Apellidos || record.apellidos || '',
+    dni: record.dni || record.DNI || undefined,
+  }));
+};
 
-  const headers = headerLine
-    .split(separator)
-    .map((h) => h.trim().toLowerCase());
-
-  const idxDni = headers.findIndex((h) => h.includes('dni'));
-  const idxName = headers.findIndex((h) => h.includes('nombre'));
-  const idxLast = headers.findIndex((h) => h.includes('apellido'));
-  const idxEmail = headers.findIndex(
-    (h) => h.includes('correo') || h.includes('email')
-  );
-
-  if (idxEmail === -1) {
-    throw new Error('Formato CSV inválido: Falta columna de correo');
+export const escapeCsvField = (field: any): string => {
+  if (field === null || field === undefined) {
+    return '';
   }
 
-  const results: CsvUserRow[] = [];
+  const stringValue = String(field);
 
-  for (let i = 1; i < lines.length; i++) {
-    const line = lines[i].trim();
-    if (!line) continue;
-
-    const cols = line
-      .split(separator)
-      .map((c) => c.trim().replace(/^"|"$/g, ''));
-
-    if (cols.length < headers.length) continue;
-
-    results.push({
-      dni: idxDni !== -1 ? cols[idxDni] : '',
-      firstName: idxName !== -1 ? cols[idxName] : 'Usuario',
-      lastName: idxLast !== -1 ? cols[idxLast] : 'Importado',
-      email: cols[idxEmail],
-    });
+  if (
+    stringValue.includes(',') ||
+    stringValue.includes('"') ||
+    stringValue.includes('\n') ||
+    stringValue.includes('\r')
+  ) {
+    return `"${stringValue.replace(/"/g, '""')}"`;
   }
-
-  return results;
-}
+  return stringValue;
+};

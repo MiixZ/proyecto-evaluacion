@@ -11,6 +11,7 @@ import { UUID } from '@CustomTypes/common.types';
 import { NotFoundError, ConflictError } from '@utils/errors';
 import { CountResult } from '@models/common/count.row';
 import { StudentProgressRow } from '@models/dashboard/dashboard.row';
+import { PoolConnection } from 'mysql2/promise';
 
 export class GroupModel {
   async create(input: CreateGroupInput): Promise<GroupEntity> {
@@ -55,13 +56,21 @@ export class GroupModel {
 
   // --- MEMBERSHIP (user_groups) ---
 
-  async addMember(groupId: UUID, userId: UUID, role: string): Promise<void> {
+  async addMember(
+    groupId: UUID,
+    userId: UUID,
+    role: string,
+    connection?: PoolConnection
+  ): Promise<void> {
     const query = `
       INSERT INTO user_groups (user_id, group_id, role, enrolled_at)
       VALUES (?, ?, ?, NOW())
     `;
+
+    const db = connection || getPool();
+
     try {
-      await getPool().execute(query, [userId, groupId, role]);
+      await db.execute(query, [userId, groupId, role]);
     } catch (error: any) {
       if (error.code === 'ER_DUP_ENTRY') {
         throw new ConflictError('El usuario ya es miembro de este grupo');
