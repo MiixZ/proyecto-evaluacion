@@ -10,7 +10,7 @@ import {
 
 export const createUserSchema = z.object({
   email: emailSchema,
-  password: passwordSchema,
+  password: passwordSchema.optional(),
   firstName: z.string().min(1).max(100),
   lastName: z.string().min(1).max(100),
   role: z.nativeEnum(UserRole).default(UserRole.STUDENT),

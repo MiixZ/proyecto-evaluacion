@@ -10,6 +10,8 @@ import { NotFoundError, ConflictError, ForbiddenError } from '@utils/errors';
 import { parseStudentCsv } from '@utils/csv.parser';
 import { UserStatus, UserRole } from '@CustomTypes/common.types';
 import { auditService } from '@services/audit/audit.service';
+import crypto from 'crypto';
+import { emailService } from '@services/notification/email.service';
 
 export class GroupService {
   async createGroup(input: CreateGroupInput) {
@@ -105,7 +107,7 @@ export class GroupService {
           const existingUser = await userModel.getByEmail(studentData.email);
           userId = existingUser.id;
         } catch (e) {
-          const tempPassword = `csv_import_${studentData.email}`;
+          const tempPassword = crypto.randomBytes(8).toString('hex');
 
           const newUser = await userModel.create(
             {
@@ -121,6 +123,14 @@ export class GroupService {
           );
 
           userId = newUser.id;
+
+          // Usamos await para asegurar que se procesa, aunque ralentice la importación masiva.
+          // En producción idealmente esto iría a una cola de trabajos (bull/rabbitmq).
+          await emailService.sendWelcomeEmail(
+            studentData.email,
+            studentData.firstName,
+            tempPassword
+          );
         }
 
         const isMember = await groupModel.isMember(groupId as UUID, userId);

@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { userMapper } from '@mappers/user.mapper';
 import { userService } from '@services/user/user.service';
 import { AuthRequest } from '@CustomTypes/request.types';
-import { UserRole } from '@CustomTypes/common.types';
+import { UserRole, UserStatus } from '@CustomTypes/common.types';
 import { AppError } from '@utils/errors';
 import { catchAsync } from '@utils/async.handler';
 import { ApiResponse } from '@utils/response.handler';
@@ -11,9 +11,9 @@ export class UserController {
   createUser = catchAsync(async (req: AuthRequest, res: Response) => {
     this.validateAdmin(req);
 
-    const newUser = await userService.createUser(req.body);
+    const newUser = await userService.createUser(req.body, req.user?.id);
 
-    return ApiResponse.created(res, userMapper.toDTO(newUser));
+    return ApiResponse.created(res, newUser);
   });
 
   getProfile = catchAsync(async (req: AuthRequest, res: Response) => {
@@ -21,14 +21,14 @@ export class UserController {
 
     const user = await userService.getUserById(userId);
 
-    return ApiResponse.success(res, userMapper.toDTO(user));
+    return ApiResponse.success(res, user);
   });
 
   getUserById = catchAsync(async (req: Request, res: Response) => {
     const { id } = req.params;
     const user = await userService.getUserById(id);
 
-    return ApiResponse.success(res, userMapper.toDTO(user));
+    return ApiResponse.success(res, user);
   });
 
   listUsers = catchAsync(async (req: Request, res: Response) => {
@@ -36,8 +36,8 @@ export class UserController {
     const limit = parseInt(req.query.limit as string) || 10;
 
     const result = await userService.listUsers(page, limit, {
-      role: req.query.role as any,
-      status: req.query.status as any,
+      role: req.query.role as UserRole,
+      status: req.query.status as UserStatus,
       search: req.query.search as string,
     });
 
@@ -54,9 +54,9 @@ export class UserController {
 
     this.validateUserOrAdmin(req, id);
 
-    const user = await userService.updateUser(id, req.body);
+    const user = await userService.updateUser(id, req.body, req.user?.id);
 
-    return ApiResponse.success(res, userMapper.toDTO(user));
+    return ApiResponse.success(res, user);
   });
 
   changeRole = catchAsync(async (req: AuthRequest, res: Response) => {
@@ -129,6 +129,7 @@ export class UserController {
     if (!userId) {
       throw new AppError('UNAUTHORIZED', 401, 'Usuario no autenticado');
     }
+
     return userId;
   }
 }
