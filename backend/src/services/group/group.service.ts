@@ -6,9 +6,10 @@ import {
 import { UUID } from '@CustomTypes/common.types';
 import { courseModel } from '@models/course/course.model';
 import { userModel } from '@models/user/user.model';
-import { NotFoundError, ConflictError } from '@utils/errors';
+import { NotFoundError, ConflictError, ForbiddenError } from '@utils/errors';
 import { parseStudentCsv } from '@utils/csv.parser';
 import { UserStatus, UserRole } from '@CustomTypes/common.types';
+import { auditService } from '@services/audit/audit.service';
 
 export class GroupService {
   async createGroup(input: CreateGroupInput) {
@@ -134,6 +135,61 @@ export class GroupService {
     }
 
     return results;
+  }
+
+  async generateGroupExport(
+    groupId: string,
+    requesterId: string,
+    role: UserRole
+  ): Promise<string> {
+    const group = await groupModel.getById(groupId as UUID);
+
+    if (role === UserRole.STUDENT) {
+      throw new ForbiddenError(
+        'Solo profesores pueden exportar datos del grupo'
+      );
+    }
+
+    if (role === UserRole.TEACHER) {
+      const isMember = await groupModel.isMember(group.id, requesterId as UUID);
+
+      if (!isMember) throw new ForbiddenError('No perteneces a este grupo');
+    }
+
+    const progressData = await groupModel.getGroupProgressData(group.id);
+
+    // Generar CSV
+    // Encabezados
+    let csv =
+      'Apellido,Nombre,Asignatura,Ejercicio,Estado,Intentos,Mejor Puntuacion,Ultimo Intento\n';
+
+    // Filas
+    for (const row of progressData) {
+      const lastAttemptStr = row.last_attempt
+        ? row.last_attempt.toISOString().split('T')[0]
+        : 'N/A';
+
+      const status = row.is_completed ? 'Completado' : 'Pendiente';
+
+      const cleanName = `${row.last_name}, ${row.first_name}`.replace(
+        /"/g,
+        '""'
+      );
+      const cleanSubject = row.subject_name.replace(/"/g, '""');
+      const cleanExercise = row.exercise_title.replace(/"/g, '""');
+
+      csv += `"${cleanName}","${cleanSubject}","${cleanExercise}","${status}",${row.attempts},${row.best_score},${lastAttemptStr}\n`;
+    }
+
+    await auditService.log(
+      'EXPORT_GROUP_DATA',
+      'group',
+      group.id,
+      { format: 'csv', rows: progressData.length },
+      requesterId as UUID
+    );
+
+    return csv;
   }
 }
 

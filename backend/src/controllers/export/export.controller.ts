@@ -13,21 +13,35 @@ export class ExportController {
       throw new AppError('FORBIDDEN', 403, 'No autorizado para exportar datos');
     }
 
-    const result = await exportService.createExport(req.body, req.user!.id);
+    const { content, mimeType, filename } = await exportService.generateExport(
+      req.body,
+      req.user!.id
+    );
 
-    return ApiResponse.created(
+    res.setHeader('Content-Type', mimeType);
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+
+    return ApiResponse.success(
       res,
-      exportMapper.toDTO(result),
-      'Exportación generada'
+      content,
+      201,
+      'Exportación generada exitosamente'
     );
   });
 
-  getById = catchAsync(async (req: AuthRequest, res: Response) => {
-    const result = await exportService.getExportById(
-      req.params.id,
-      req.user!.role
+  download = catchAsync(async (req: AuthRequest, res: Response) => {
+    const { content, mimeType, filename } =
+      await exportService.regenerateExport(req.params.id, req.user!.role);
+
+    res.setHeader('Content-Type', mimeType);
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+
+    return ApiResponse.success(
+      res,
+      content,
+      200,
+      'Archivo descargado exitosamente'
     );
-    return ApiResponse.success(res, exportMapper.toDTO(result));
   });
 
   list = catchAsync(async (req: AuthRequest, res: Response) => {

@@ -10,6 +10,7 @@ import {
 import { UUID } from '@CustomTypes/common.types';
 import { NotFoundError, ConflictError } from '@utils/errors';
 import { CountResult } from '@models/common/count.row';
+import { StudentProgressRow } from '@models/dashboard/dashboard.row';
 
 export class GroupModel {
   async create(input: CreateGroupInput): Promise<GroupEntity> {
@@ -190,6 +191,21 @@ export class GroupModel {
     await getPool().execute(query, params);
 
     return this.getById(id);
+  }
+
+  async getGroupProgressData(groupId: UUID): Promise<StudentProgressRow[]> {
+    const query = `
+      SELECT v.* FROM v_student_progress v
+      INNER JOIN user_groups ug ON v.student_id = ug.user_id
+      WHERE ug.group_id = ? AND ug.role = 'student'
+      ORDER BY v.last_name, v.first_name, v.exercise_title
+    `;
+
+    const [rows] = await getPool().execute<StudentProgressRow[]>(query, [
+      groupId,
+    ]);
+
+    return rows;
   }
 }
 

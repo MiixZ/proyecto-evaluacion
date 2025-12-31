@@ -4,58 +4,59 @@ import { UUID, UserRole } from '@CustomTypes/common.types';
 import { submissionModel } from '@models/submission/submission.model';
 import { ForbiddenError } from '@utils/errors';
 import { ExportFormat } from '@models/export/export.entity';
-// import path from 'path';
-// import fs from 'fs/promises';
 
 export class ExportService {
-  async createExport(input: CreateExportInput, userId: UUID) {
+  async generateExport(input: CreateExportInput, userId: UUID) {
     const submission = await submissionModel.getById(
       input.submissionId as UUID
     );
 
-    let content = '';
-    const timestamp = Date.now();
+    const { content, mimeType, extension } = this.buildExportContent(
+      submission,
+      input.format
+    );
 
-    if (input.format === ExportFormat.JSON) {
-      content = JSON.stringify(
-        {
-          meta: {
-            generatedAt: new Date(),
-            requestedBy: userId,
-          },
-          data: submission,
-        },
-        null,
-        2
-      );
-    } else if (input.format === ExportFormat.CSV) {
-      const headers =
-        'id,studentId,exerciseId,language,verdict,score,createdAt,code\n';
+    const fileSizeBytes = Buffer.byteLength(content, 'utf8');
 
-      const safeCode = submission.code.replace(/"/g, '""');
-      const row = `${submission.id},${submission.studentId},${submission.exerciseId},${submission.language},${submission.verdict},${submission.score},${submission.createdAt},"${safeCode}"`;
-      content = headers + row;
-    } else {
-      content = submission.code;
-    }
+    const virtualPath = `virtual://${input.format}/${submission.id}.${extension}`;
 
-    const fileName = `export_${submission.id}_${timestamp}.${input.format}`;
-    const virtualPath = `/exports/${fileName}`;
-    const fileSize = Buffer.byteLength(content, 'utf8');
+    const exportEntity = await exportModel.create(
+      input,
+      virtualPath,
+      fileSizeBytes,
+      userId
+    );
 
-    return await exportModel.create(input, virtualPath, fileSize, userId);
+    return {
+      entity: exportEntity,
+      content,
+      mimeType,
+      filename: `export_sub_${submission.attemptNumber}_${submission.studentId}.${extension}`,
+    };
   }
 
-  async getExportById(id: string, userRole: UserRole) {
-    const exportEntity = await exportModel.getById(id as UUID);
+  async regenerateExport(exportId: string, userRole: UserRole) {
+    const exportEntity = await exportModel.getById(exportId as UUID);
 
     if (userRole === UserRole.STUDENT) {
       throw new ForbiddenError(
-        'No tienes permisos para acceder a esta exportación'
+        'No autorizado para acceder al historial de exportaciones'
       );
     }
 
-    return exportEntity;
+    const submission = await submissionModel.getById(exportEntity.submissionId);
+
+    const { content, mimeType, extension } = this.buildExportContent(
+      submission,
+      exportEntity.exportFormat
+    );
+
+    return {
+      entity: exportEntity,
+      content,
+      mimeType,
+      filename: `export_sub_${submission.attemptNumber}_${submission.studentId}.${extension}`,
+    };
   }
 
   async listExports(
@@ -64,6 +65,65 @@ export class ExportService {
     filters: { purpose?: string; format?: string }
   ) {
     return await exportModel.list(page, limit, filters);
+  }
+
+  private buildExportContent(submission: any, format: ExportFormat) {
+    let content = '';
+    let mimeType = 'text/plain';
+    let extension = 'txt';
+
+    if (format === ExportFormat.JSON) {
+      content = JSON.stringify(
+        {
+          meta: {
+            generatedAt: new Date(),
+            studentId: submission.studentId,
+            exerciseId: submission.exerciseId,
+          },
+          submission: {
+            id: submission.id,
+            code: submission.code,
+            language: submission.language,
+            verdict: submission.verdict,
+            score: submission.score,
+            createdAt: submission.createdAt,
+          },
+        },
+        null,
+        2
+      );
+
+      mimeType = 'application/json';
+      extension = 'json';
+    } else if (format === ExportFormat.CSV) {
+      const headers = 'SubmissionID,Student,Language,Verdict,Score,Date,Code\n';
+      const safeCode = submission.code
+        ? submission.code.replace(/"/g, '""')
+        : '';
+
+      const row = `"${submission.id}","${submission.studentId}","${submission.language}","${submission.verdict}",${submission.score},"${submission.createdAt}","${safeCode}"`;
+
+      content = headers + row;
+      mimeType = 'text/csv';
+      extension = 'csv';
+    } else {
+      content = submission.code;
+      mimeType = 'text/plain';
+
+      const extMap: Record<string, string> = {
+        python: 'py',
+        javascript: 'js',
+        java: 'java',
+        cpp: 'cpp',
+        c: 'c',
+        go: 'go',
+        rust: 'rs',
+      };
+
+      extension = extMap[submission.language] || 'txt';
+    }
+
+    return { content, mimeType, extension };
   }
 }
 
