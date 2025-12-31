@@ -35,8 +35,8 @@ export class UserModel {
     const query = `
       INSERT INTO users (
         id, auth_id, email, first_name, last_name, role, status, 
-        phone, bio, preferred_language, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+        phone, bio, preferred_language, profile_image_url, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
     `;
 
     const db = connection || this.getPool();
@@ -52,6 +52,7 @@ export class UserModel {
       input.phone || null,
       input.bio || null,
       input.preferredLanguage || 'es',
+      input.profileImageUrl || null,
     ]);
 
     return {
@@ -64,6 +65,7 @@ export class UserModel {
       status: input.status || UserStatus.ACTIVE,
       phone: input.phone,
       bio: input.bio,
+      profileImageUrl: input.profileImageUrl || null,
       preferredLanguage: input.preferredLanguage || 'es',
       createdAt: new Date(),
       updatedAt: new Date(),

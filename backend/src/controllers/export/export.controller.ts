@@ -19,6 +19,15 @@ export class ExportController {
     res.status(201).send(content);
   });
 
+  getById = catchAsync(async (req: AuthRequest, res: Response) => {
+    const result = await exportService.getExportById(
+      req.params.id,
+      req.user!.role
+    );
+
+    return ApiResponse.success(res, exportMapper.toDTO(result));
+  });
+
   download = catchAsync(async (req: AuthRequest, res: Response) => {
     const { content, mimeType, filename } =
       await exportService.regenerateExport(req.params.id, req.user!.role);
