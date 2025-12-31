@@ -37,6 +37,7 @@ export class GroupController {
     }
 
     const { id } = req.params;
+
     await groupService.enrollMember(id, req.body);
 
     return ApiResponse.success(
@@ -80,6 +81,7 @@ export class GroupController {
     }
 
     const { id, userId } = req.params;
+
     await groupService.removeMember(id, userId);
 
     return ApiResponse.success(res, null, 200, 'Miembro eliminado del grupo');
@@ -99,7 +101,7 @@ export class GroupController {
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
 
-    return ApiResponse.success(res, csvData, 200);
+    res.status(200).send(csvData);
   });
 }
 

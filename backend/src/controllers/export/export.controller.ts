@@ -16,12 +16,7 @@ export class ExportController {
     res.setHeader('Content-Type', mimeType);
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
 
-    return ApiResponse.success(
-      res,
-      content,
-      201,
-      'Exportación generada exitosamente'
-    );
+    res.status(201).send(content);
   });
 
   download = catchAsync(async (req: AuthRequest, res: Response) => {
@@ -31,12 +26,7 @@ export class ExportController {
     res.setHeader('Content-Type', mimeType);
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
 
-    return ApiResponse.success(
-      res,
-      content,
-      200,
-      'Archivo descargado exitosamente'
-    );
+    res.status(200).send(content);
   });
 
   list = catchAsync(async (req: AuthRequest, res: Response) => {

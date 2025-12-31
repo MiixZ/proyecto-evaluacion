@@ -7,7 +7,7 @@ import { UUID } from '@CustomTypes/common.types';
 import { courseModel } from '@models/course/course.model';
 import { userModel } from '@models/user/user.model';
 import { NotFoundError, ConflictError, ForbiddenError } from '@utils/errors';
-import { parseStudentCsv } from '@utils/csv.parser';
+import { parseStudentCsv, escapeCsvField } from '@utils/csv.parser';
 import { UserStatus, UserRole } from '@CustomTypes/common.types';
 import { auditService } from '@services/audit/audit.service';
 import crypto from 'crypto';
@@ -105,7 +105,14 @@ export class GroupService {
           let isNewUser = false;
           let tempPassword = '';
 
-          const existingUser = await userModel.getByEmail(studentData.email);
+          let existingUser;
+
+          try {
+            existingUser = await userModel.getByEmail(studentData.email);
+          } catch {
+            existingUser = null;
+          }
+
           if (existingUser) {
             userId = existingUser.id;
           } else {
@@ -135,7 +142,6 @@ export class GroupService {
               'student',
               connection
             );
-
             results.imported++;
           }
 
@@ -169,18 +175,14 @@ export class GroupService {
 
     if (role === UserRole.TEACHER) {
       const isMember = await groupModel.isMember(group.id, requesterId as UUID);
-
       if (!isMember) throw new ForbiddenError('No perteneces a este grupo');
     }
 
     const progressData = await groupModel.getGroupProgressData(group.id);
 
-    // Generar CSV
-    // Encabezados
     let csv =
       'Apellido,Nombre,Asignatura,Ejercicio,Estado,Intentos,Mejor Puntuacion,Ultimo Intento\n';
 
-    // Filas
     for (const row of progressData) {
       const lastAttemptStr = row.last_attempt
         ? row.last_attempt.toISOString().split('T')[0]
@@ -188,14 +190,17 @@ export class GroupService {
 
       const status = row.is_completed ? 'Completado' : 'Pendiente';
 
-      const cleanName = `${row.last_name}, ${row.first_name}`.replace(
-        /"/g,
-        '""'
-      );
-      const cleanSubject = row.subject_name.replace(/"/g, '""');
-      const cleanExercise = row.exercise_title.replace(/"/g, '""');
+      const fields = [
+        `${row.last_name}, ${row.first_name}`,
+        row.subject_name,
+        row.exercise_title,
+        status,
+        row.attempts,
+        row.best_score,
+        lastAttemptStr,
+      ];
 
-      csv += `"${cleanName}","${cleanSubject}","${cleanExercise}","${status}",${row.attempts},${row.best_score},${lastAttemptStr}\n`;
+      csv += fields.map(escapeCsvField).join(',') + '\n';
     }
 
     await auditService.log(
