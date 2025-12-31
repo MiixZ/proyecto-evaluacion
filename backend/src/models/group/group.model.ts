@@ -9,6 +9,7 @@ import {
 } from '@validators/group.validator';
 import { UUID } from '@CustomTypes/common.types';
 import { NotFoundError, ConflictError } from '@utils/errors';
+import { CountResult } from '@models/common/count.row';
 
 export class GroupModel {
   async create(input: CreateGroupInput): Promise<GroupEntity> {
@@ -66,6 +67,16 @@ export class GroupModel {
       }
       throw error;
     }
+  }
+
+  async countMembers(groupId: UUID, role: string = 'student'): Promise<number> {
+    const query = `SELECT COUNT(*) as count FROM user_groups WHERE group_id = ? AND role = ?`;
+    const [rows] = await getPool().execute<CountResult[]>(query, [
+      groupId,
+      role,
+    ]);
+
+    return rows[0].count;
   }
 
   async isUserEnrolledInCourse(userId: UUID, courseId: UUID): Promise<boolean> {

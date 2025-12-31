@@ -6,7 +6,7 @@ import {
 import { UUID } from '@CustomTypes/common.types';
 import { courseModel } from '@models/course/course.model';
 import { userModel } from '@models/user/user.model';
-import { NotFoundError } from '@utils/errors';
+import { NotFoundError, ConflictError } from '@utils/errors';
 import { parseStudentCsv } from '@utils/csv.parser';
 import { UserStatus, UserRole } from '@CustomTypes/common.types';
 
@@ -28,7 +28,19 @@ export class GroupService {
   }
 
   async enrollMember(groupId: string, input: EnrollMemberInput) {
-    await groupModel.getById(groupId as UUID);
+    const group = await groupModel.getById(groupId as UUID);
+
+    if (input.role === UserRole.STUDENT && group.capacity) {
+      const currentMembers = await groupModel.countMembers(
+        groupId as UUID,
+        UserRole.STUDENT
+      );
+      if (currentMembers >= group.capacity) {
+        throw new ConflictError(
+          `El grupo ha alcanzado su capacidad máxima (${group.capacity} estudiantes).`
+        );
+      }
+    }
 
     let userId = input.userId;
 
@@ -59,7 +71,23 @@ export class GroupService {
   }
 
   async importStudentsFromCsv(groupId: string, csvContent: string) {
-    await groupModel.getById(groupId as UUID);
+    const group = await groupModel.getById(groupId as UUID);
+
+    if (group.capacity) {
+      const currentMembers = await groupModel.countMembers(
+        groupId as UUID,
+        UserRole.STUDENT
+      );
+
+      const lines = csvContent.trim().split(/\r?\n/);
+      const newMembersCount = Math.max(0, lines.length - 1);
+
+      if (currentMembers + newMembersCount > group.capacity) {
+        throw new ConflictError(
+          `La importación excede la capacidad del grupo. Capacidad: ${group.capacity}, Actuales: ${currentMembers}, Intentando importar: ~${newMembersCount}`
+        );
+      }
+    }
 
     const students = parseStudentCsv(csvContent);
     const results = {
