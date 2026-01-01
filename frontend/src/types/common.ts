@@ -18,7 +18,7 @@ export enum DifficultyLevel {
   ADVANCED = "advanced",
 }
 
-export enum SubmissionVeredict {
+export enum SubmissionVerdict {
   ACCEPTED = "accepted",
   WRONG_ANSWER = "wrong_answer",
   RUNTIME_ERROR = "runtime_error",

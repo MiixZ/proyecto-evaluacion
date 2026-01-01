@@ -1,4 +1,4 @@
-import { type UUID, SubmissionStatus, SubmissionVeredict } from "./common";
+import { type UUID, SubmissionStatus, SubmissionVerdict } from "./common";
 
 export interface TestResult {
   id: UUID;
@@ -18,7 +18,7 @@ export interface Submission {
   language: string;
   attemptNumber: number;
   status: SubmissionStatus;
-  verdict: SubmissionVeredict;
+  verdict: SubmissionVerdict;
   score: number;
   isLate: boolean;
   createdAt: string;
