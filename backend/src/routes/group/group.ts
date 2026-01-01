@@ -2,11 +2,11 @@ import { Router } from 'express';
 import { groupController } from '@controllers/group/group.controller';
 import { authMiddleware } from '@middleware/auth.middleware';
 import { validateRequest } from '@middleware/validator.middleware';
-import { importGroupMembersRequest } from '@validators/group.validator';
 import {
   createGroupRequest,
   enrollMemberRequest,
   getGroupRequest,
+  importGroupMembersRequest,
 } from '@validators/group.validator';
 import { uuidSchema } from '@validators/common.validator';
 import { z } from 'zod';
@@ -44,6 +44,12 @@ router.post(
   '/:id/import',
   validateRequest(importGroupMembersRequest),
   groupController.importMembers
+);
+
+router.get(
+  '/:id/export',
+  validateRequest(getGroupRequest),
+  groupController.exportData
 );
 
 export default router;

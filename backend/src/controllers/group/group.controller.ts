@@ -37,6 +37,7 @@ export class GroupController {
     }
 
     const { id } = req.params;
+
     await groupService.enrollMember(id, req.body);
 
     return ApiResponse.success(
@@ -80,9 +81,27 @@ export class GroupController {
     }
 
     const { id, userId } = req.params;
+
     await groupService.removeMember(id, userId);
 
     return ApiResponse.success(res, null, 200, 'Miembro eliminado del grupo');
+  });
+
+  exportData = catchAsync(async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+
+    const csvData = await groupService.generateGroupExport(
+      id,
+      req.user!.id,
+      req.user!.role
+    );
+
+    const filename = `grupo_${id}_reporte.csv`;
+
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+
+    res.status(200).send(csvData);
   });
 }
 

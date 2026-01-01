@@ -12,7 +12,7 @@ import {
   ExecutionResult,
   Veredict as EngineVerdict,
 } from '@CustomTypes/submission.types';
-import { ValidationError } from '@utils/errors';
+import { ValidationError, ForbiddenError } from '@utils/errors';
 import { logger } from '@utils/logger';
 import { SubmissionTestResultEntity } from '@models/submission/submission.entity';
 import { submissionMapper } from '@mappers/submission.mapper';
@@ -37,6 +37,18 @@ export class SubmissionService {
 
     if (!exercise.isPublished) {
       throw new ValidationError('El ejercicio no está disponible o no existe.');
+    }
+
+    if (exercise.maxAttempts > 0) {
+      const attemptsCount = await submissionModel.countAttempts(
+        userId,
+        exercise.id
+      );
+      if (attemptsCount >= exercise.maxAttempts) {
+        throw new ForbiddenError(
+          `Has alcanzado el número máximo de intentos permitidos (${exercise.maxAttempts}) para este ejercicio.`
+        );
+      }
     }
 
     if (exercise.language !== input.language) {

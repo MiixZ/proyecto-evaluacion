@@ -10,7 +10,7 @@ import {
 
 export const createUserSchema = z.object({
   email: emailSchema,
-  password: passwordSchema,
+  password: passwordSchema.optional(),
   firstName: z.string().min(1).max(100),
   lastName: z.string().min(1).max(100),
   role: z.nativeEnum(UserRole).default(UserRole.STUDENT),
@@ -23,10 +23,7 @@ export const createUserSchema = z.object({
 
 export type CreateUserInput = z.infer<typeof createUserSchema>;
 
-export const updateUserSchema = createUserSchema
-  .partial()
-  .omit({ password: true });
-
+export const updateUserSchema = createUserSchema.partial();
 export type UpdateUserInput = z.infer<typeof updateUserSchema>;
 
 export const changeRoleSchema = z.object({

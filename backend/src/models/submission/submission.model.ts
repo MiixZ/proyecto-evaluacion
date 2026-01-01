@@ -13,6 +13,7 @@ import {
 import { logger } from '@utils/logger';
 import { submissionMapper } from '@mappers/submission.mapper';
 import { NotFoundError } from '@utils/errors';
+import { CountResult } from '@models/common/count.row';
 
 export class SubmissionModel {
   /**
@@ -40,6 +41,16 @@ export class SubmissionModel {
     ]);
 
     return (rows[0].maxAttempt || 0) + 1;
+  }
+
+  async countAttempts(studentId: UUID, exerciseId: UUID): Promise<number> {
+    const query = `SELECT COUNT(*) as count FROM submissions WHERE student_id = ? AND exercise_id = ?`;
+    const [rows] = await getPool().execute<CountResult[]>(query, [
+      studentId,
+      exerciseId,
+    ]);
+
+    return rows[0].count;
   }
 
   async create(data: {
@@ -98,7 +109,6 @@ export class SubmissionModel {
       ]);
 
       if (testResults.length > 0) {
-        // ACTUALIZADO: Inclusión de error_id en la inserción
         const insertTestQuery = `
           INSERT INTO submission_test_results (
             id, submission_id, test_case_id, status, actual_output, error_id,

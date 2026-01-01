@@ -9,6 +9,9 @@ import {
 } from '@validators/group.validator';
 import { UUID } from '@CustomTypes/common.types';
 import { NotFoundError, ConflictError } from '@utils/errors';
+import { CountResult } from '@models/common/count.row';
+import { StudentProgressRow } from '@models/dashboard/dashboard.row';
+import { PoolConnection } from 'mysql2/promise';
 
 export class GroupModel {
   async create(input: CreateGroupInput): Promise<GroupEntity> {
@@ -53,19 +56,37 @@ export class GroupModel {
 
   // --- MEMBERSHIP (user_groups) ---
 
-  async addMember(groupId: UUID, userId: UUID, role: string): Promise<void> {
+  async addMember(
+    groupId: UUID,
+    userId: UUID,
+    role: string,
+    connection?: PoolConnection
+  ): Promise<void> {
     const query = `
       INSERT INTO user_groups (user_id, group_id, role, enrolled_at)
       VALUES (?, ?, ?, NOW())
     `;
+
+    const db = connection || getPool();
+
     try {
-      await getPool().execute(query, [userId, groupId, role]);
+      await db.execute(query, [userId, groupId, role]);
     } catch (error: any) {
       if (error.code === 'ER_DUP_ENTRY') {
         throw new ConflictError('El usuario ya es miembro de este grupo');
       }
       throw error;
     }
+  }
+
+  async countMembers(groupId: UUID, role: string = 'student'): Promise<number> {
+    const query = `SELECT COUNT(*) as count FROM user_groups WHERE group_id = ? AND role = ?`;
+    const [rows] = await getPool().execute<CountResult[]>(query, [
+      groupId,
+      role,
+    ]);
+
+    return rows[0].count;
   }
 
   async isUserEnrolledInCourse(userId: UUID, courseId: UUID): Promise<boolean> {
@@ -179,6 +200,21 @@ export class GroupModel {
     await getPool().execute(query, params);
 
     return this.getById(id);
+  }
+
+  async getGroupProgressData(groupId: UUID): Promise<StudentProgressRow[]> {
+    const query = `
+      SELECT v.* FROM v_student_progress v
+      INNER JOIN user_groups ug ON v.student_id = ug.user_id
+      WHERE ug.group_id = ? AND ug.role = 'student'
+      ORDER BY v.last_name, v.first_name, v.exercise_title
+    `;
+
+    const [rows] = await getPool().execute<StudentProgressRow[]>(query, [
+      groupId,
+    ]);
+
+    return rows;
   }
 }
 

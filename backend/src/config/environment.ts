@@ -55,6 +55,13 @@ const envSchema = z.object({
 
   EXECUTION_ENGINE_URL: z.string().url().default('http://localhost:3001'),
   EXECUTION_ENGINE_API_KEY: z.string().optional(),
+
+  // SMTP (Email)
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.coerce.number().int().default(587),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
+  SMTP_FROM: z.string().default('"Plataforma Evaluación" <noreply@ugr.es>'),
 });
 
 export type EnvConfig = z.infer<typeof envSchema>;
@@ -93,6 +100,14 @@ export interface AppConfig {
   executionEngine: {
     url: string;
     apiKey?: string;
+  };
+  // NUEVO
+  smtp: {
+    host?: string;
+    port: number;
+    user?: string;
+    pass?: string;
+    from: string;
   };
   isDevelopment: boolean;
   isProduction: boolean;
@@ -185,6 +200,13 @@ function loadConfig(): AppConfig {
     logging: {
       level: env.LOG_LEVEL,
     },
+    smtp: {
+      host: env.SMTP_HOST,
+      port: env.SMTP_PORT,
+      user: env.SMTP_USER,
+      pass: env.SMTP_PASS,
+      from: env.SMTP_FROM,
+    },
     isDevelopment: env.NODE_ENV === 'development',
     isProduction: env.NODE_ENV === 'production',
     isTest: env.NODE_ENV === 'test',
@@ -209,6 +231,10 @@ if (config.isDevelopment) {
     jwt: {
       secret: '***',
       expiresIn: config.jwt.expiresIn,
+    },
+    smtp: {
+      host: config.smtp.host,
+      user: config.smtp.user ? '***' : undefined,
     },
   });
 }
