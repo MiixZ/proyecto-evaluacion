@@ -16,7 +16,8 @@ import crypto from 'crypto';
 
 export class UserService {
   async createUser(input: CreateUserInput, creatorId?: UUID): Promise<UserDTO> {
-    const existingUser = await userModel.getByEmail(input.email);
+    const existingUser = await userModel.existsByEmail(input.email);
+
     if (existingUser) {
       throw new ConflictError('El email ya está registrado');
     }

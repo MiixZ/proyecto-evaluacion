@@ -2,7 +2,7 @@ import { exportModel } from '@models/export/export.model';
 import { CreateExportInput } from '@validators/export.validator';
 import { UUID, UserRole } from '@CustomTypes/common.types';
 import { submissionModel } from '@models/submission/submission.model';
-import { ForbiddenError } from '@utils/errors';
+import { ForbiddenError, NotFoundError } from '@utils/errors';
 import { ExportFormat } from '@models/export/export.entity';
 import { escapeCsvField } from '@utils/csv.parser';
 
@@ -39,6 +39,20 @@ export class ExportService {
       mimeType,
       filename: `export_sub_${submission.attemptNumber}_${submission.studentId}.${extension}`,
     };
+  }
+
+  async getExportById(exportId: string, userRole: UserRole) {
+    if (userRole === UserRole.STUDENT) {
+      throw new ForbiddenError('No autorizado');
+    }
+
+    const exportEntity = await exportModel.getById(exportId as UUID);
+
+    if (!exportEntity) {
+      throw new NotFoundError('Exportación no encontrada');
+    }
+
+    return exportEntity;
   }
 
   async regenerateExport(exportId: string, userRole: UserRole) {
