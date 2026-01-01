@@ -67,3 +67,18 @@ export interface PaginatedResponse<T> {
   hasMore: boolean;
   totalPages: number;
 }
+
+export enum EfficiencyOrder {
+  BEST = "best",
+  GOOD = "good",
+  ACCEPTABLE = "acceptable",
+  ANY = "any",
+}
+
+export enum PlagiarismType {
+  INTERNAL = "internal",
+  EXTERNAL = "external",
+  AI_GENERATED = "ai_generated",
+}
+
+export const LanguageTypes = ["es", "en"] as const;

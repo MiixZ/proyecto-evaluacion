@@ -1,4 +1,4 @@
-import { type UUID, DifficultyLevel } from "./common";
+import { type UUID, DifficultyLevel, EfficiencyOrder } from "./common";
 
 export interface Syllabus {
   id: UUID;
@@ -34,7 +34,9 @@ export interface Exercise {
   templateCode?: string | null;
   isPublished: boolean;
   maxAttempts?: number;
-
+  efficiencyOrder?: EfficiencyOrder;
+  deadline?: string | null;
+  lateSubmissionPenaltyPercent?: number;
   limits?: ExecutionLimit;
   testCases?: TestCase[];
 }
