@@ -50,26 +50,55 @@
     "start": "Get Started"
   },
   "landing": {
-    "navbar": {
-      "login": "Sign In"
+    "hero": {
+      "badge": "v1.0 Available",
+      "title_start": "Learn to code with",
+      "title_highlight": "instant feedback",
+      "description": "Comprehensive educational platform for automatic exercise evaluation. Submit your code, receive detailed analysis, and improve your skills.",
+      "cta_primary": "Get Started",
+      "cta_secondary": "View Demo"
     },
-    "cta": {
+    "stats": {
+      "languages": "Languages",
+      "uptime": "Uptime",
+      "latency": "Avg Latency",
+      "access": "Access"
+    },
+    "features": {
+      "title": "Everything you need",
+      "subtitle": "A complete suite designed specifically for the academic environment.",
+      "items": {
+        "evaluation": {
+          "title": "Instant Evaluation",
+          "desc": "Immediate feedback on your code through static and dynamic analysis."
+        },
+        "security": {
+          "title": "Secure Execution",
+          "desc": "Isolated environments (Sandboxing) ensuring server security."
+        },
+        "metrics": {
+          "title": "Progress Metrics",
+          "desc": "Visualize your evolution with detailed statistics by language and topic."
+        },
+        "teaching": {
+          "title": "Teaching Management",
+          "desc": "Tools for professors: course creation, groups, and tracking."
+        },
+        "multilang": {
+          "title": "Multi-language",
+          "desc": "Native support for Python, Java, C++, C, and JavaScript."
+        },
+        "curriculum": {
+          "title": "Curriculum",
+          "desc": "Hierarchical academic organization: Degree > Subject > Topic."
+        }
+      }
+    },
+    "cta_footer": {
       "title": "Ready to improve your skills?",
-      "subtitle": "Join the platform used by computer science departments.",
-      "button": "Access the platform"
-    },
-    "footer": {
-      "privacy": "Privacy",
-      "terms": "Terms",
-      "contact": "Contact"
-    },
-    "login_features": {
-      "evaluation": "Instant evaluation of your code",
-      "feedback": "Detailed feedback",
-      "tracking": "Personalized progress tracking",
-      "languages": "Multiple programming languages"
-    },
-    "login_description": "Automatic evaluation platform for programming exercises"
+      "subtitle": "Join the platform used by computer engineering departments.",
+      "button": "Access Platform"
+    }
   },
   "errors": {
     "not_found": {

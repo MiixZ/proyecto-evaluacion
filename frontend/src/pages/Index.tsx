@@ -1,11 +1,11 @@
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 import { Navbar } from "@/components/layout/Navbar";
 import { Hero } from "@/components/landing/Hero";
 import { Features } from "@/components/landing/Features";
 import { Stats } from "@/components/landing/Stats";
-import { Link } from "react-router-dom";
-import { CheckCircle2, Code2 } from "lucide-react";
 import { Button } from "@/components/ui/forms/button";
+import { CheckCircle2, Code2 } from "lucide-react";
 
 const Index = () => {
   const { t } = useTranslation();
@@ -19,16 +19,16 @@ const Index = () => {
         <Stats />
         <Features />
 
-        {/* CTA Section - Mantenido aquí por simplicidad o puede extraerse también */}
+        {/* CTA Section */}
         <section className="py-24 relative overflow-hidden">
           <div className="absolute inset-0 bg-primary/5 -skew-y-3 transform origin-left scale-110" />
           <div className="container relative px-4 text-center">
             <div className="max-w-3xl mx-auto space-y-8">
               <h2 className="text-3xl md:text-4xl font-bold">
-                {t("landing.cta.title")}
+                {t("landing.cta_footer.title")}
               </h2>
               <p className="text-lg text-muted-foreground">
-                {t("landing.cta.subtitle")}
+                {t("landing.cta_footer.subtitle")}
               </p>
               <div className="flex justify-center">
                 <Button
@@ -37,7 +37,7 @@ const Index = () => {
                   asChild>
                   <Link to="/login">
                     <CheckCircle2 className="mr-2 h-5 w-5" />
-                    {t("landing.cta.button")}
+                    {t("landing.cta_footer.button")}
                   </Link>
                 </Button>
               </div>
@@ -53,7 +53,6 @@ const Index = () => {
 
 const Footer = () => {
   const { t } = useTranslation();
-
   return (
     <footer className="py-12 border-t border-border bg-card/20">
       <div className="container px-4">
@@ -65,18 +64,19 @@ const Footer = () => {
             <span>{t("app.name")}</span>
           </div>
           <div className="flex items-center gap-6 text-sm text-muted-foreground">
+            {/* Links pendientes de traducción, por ahora estáticos o genéricos */}
             <Link to="#" className="hover:text-primary transition-colors">
-              {t("landing.footer.privacy")}
+              Privacidad
             </Link>
             <Link to="#" className="hover:text-primary transition-colors">
-              {t("landing.footer.terms")}
+              Términos
             </Link>
             <Link to="#" className="hover:text-primary transition-colors">
-              {t("landing.footer.contact")}
+              Contacto
             </Link>
           </div>
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} {t("app.name")} Project.
+            © {new Date().getFullYear()} {t("app.name")}. {t("app.copyright")}
           </p>
         </div>
       </div>

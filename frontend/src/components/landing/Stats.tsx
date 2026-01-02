@@ -1,11 +1,15 @@
-const stats = [
-  { value: "5+", label: "Lenguajes" },
-  { value: "99.9%", label: "Uptime" },
-  { value: "< 1s", label: "Latencia media" },
-  { value: "24/7", label: "Acceso" },
-];
+import { useTranslation } from "react-i18next";
 
 export const Stats = () => {
+  const { t } = useTranslation();
+
+  const stats = [
+    { value: "5+", label: t("landing.stats.languages") },
+    { value: "99.9%", label: t("landing.stats.uptime") },
+    { value: "< 1s", label: t("landing.stats.latency") },
+    { value: "24/7", label: t("landing.stats.access") },
+  ];
+
   return (
     <section className="py-12 border-y border-border bg-card/30">
       <div className="container px-4">
