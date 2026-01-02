@@ -42,6 +42,13 @@
     },
     "logout": "Cerrar Sesión"
   },
+  "navbar": {
+    "home": "Inicio",
+    "features": "Características",
+    "about": "Acerca de",
+    "login": "Iniciar Sesión",
+    "start": "Comenzar"
+  },
   "landing": {
     "navbar": {
       "login": "Iniciar Sesión"
