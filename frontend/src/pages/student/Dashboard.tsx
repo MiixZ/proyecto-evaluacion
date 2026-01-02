@@ -68,7 +68,7 @@ const subjectProgress = [
 
 const StudentDashboard = () => {
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="space-y-6 p-5 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Welcome Section */}
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold tracking-tight">
