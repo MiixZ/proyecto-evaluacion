@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Navbar } from "@/components/layout/Navbar";
 import { Hero } from "@/components/landing/Hero";
 import { Features } from "@/components/landing/Features";
@@ -7,6 +8,8 @@ import { CheckCircle2, Code2 } from "lucide-react";
 import { Button } from "@/components/ui/forms/button";
 
 const Index = () => {
+  const { t } = useTranslation();
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Navbar />
@@ -22,11 +25,10 @@ const Index = () => {
           <div className="container relative px-4 text-center">
             <div className="max-w-3xl mx-auto space-y-8">
               <h2 className="text-3xl md:text-4xl font-bold">
-                ¿Listo para mejorar tus habilidades?
+                {t("landing.cta.title")}
               </h2>
               <p className="text-lg text-muted-foreground">
-                Únete a la plataforma utilizada por departamentos de ingeniería
-                informática.
+                {t("landing.cta.subtitle")}
               </p>
               <div className="flex justify-center">
                 <Button
@@ -35,7 +37,7 @@ const Index = () => {
                   asChild>
                   <Link to="/login">
                     <CheckCircle2 className="mr-2 h-5 w-5" />
-                    Acceder a la plataforma
+                    {t("landing.cta.button")}
                   </Link>
                 </Button>
               </div>
@@ -49,33 +51,37 @@ const Index = () => {
   );
 };
 
-const Footer = () => (
-  <footer className="py-12 border-t border-border bg-card/20">
-    <div className="container px-4">
-      <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-        <div className="flex items-center gap-2 text-xl font-bold text-foreground">
-          <div className="p-2 bg-primary/10 rounded-lg">
-            <Code2 className="h-6 w-6 text-primary" />
+const Footer = () => {
+  const { t } = useTranslation();
+
+  return (
+    <footer className="py-12 border-t border-border bg-card/20">
+      <div className="container px-4">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-2 text-xl font-bold text-foreground">
+            <div className="p-2 bg-primary/10 rounded-lg">
+              <Code2 className="h-6 w-6 text-primary" />
+            </div>
+            <span>{t("app.name")}</span>
           </div>
-          <span>CodeEval</span>
+          <div className="flex items-center gap-6 text-sm text-muted-foreground">
+            <Link to="#" className="hover:text-primary transition-colors">
+              {t("landing.footer.privacy")}
+            </Link>
+            <Link to="#" className="hover:text-primary transition-colors">
+              {t("landing.footer.terms")}
+            </Link>
+            <Link to="#" className="hover:text-primary transition-colors">
+              {t("landing.footer.contact")}
+            </Link>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            © {new Date().getFullYear()} {t("app.name")} Project.
+          </p>
         </div>
-        <div className="flex items-center gap-6 text-sm text-muted-foreground">
-          <Link to="#" className="hover:text-primary transition-colors">
-            Privacidad
-          </Link>
-          <Link to="#" className="hover:text-primary transition-colors">
-            Términos
-          </Link>
-          <Link to="#" className="hover:text-primary transition-colors">
-            Contacto
-          </Link>
-        </div>
-        <p className="text-sm text-muted-foreground">
-          © {new Date().getFullYear()} CodeEval Project.
-        </p>
       </div>
-    </div>
-  </footer>
-);
+    </footer>
+  );
+};
 
 export default Index;
