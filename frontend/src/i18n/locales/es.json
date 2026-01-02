@@ -25,6 +25,7 @@
     }
   },
   "sidebar": {
+    "header": "Plataforma Educativa",
     "menu": {
       "dashboard": "Dashboard",
       "exercises": "Ejercicios",
@@ -40,5 +41,27 @@
       "professor": "Profesor"
     },
     "logout": "Cerrar Sesión"
+  },
+  "landing": {
+    "navbar": {
+      "login": "Iniciar Sesión"
+    },
+    "cta": {
+      "title": "¿Listo para mejorar tus habilidades?",
+      "subtitle": "Únete a la plataforma utilizada por departamentos de ingeniería informática.",
+      "button": "Acceder a la plataforma"
+    },
+    "footer": {
+      "privacy": "Privacidad",
+      "terms": "Términos",
+      "contact": "Contacto"
+    },
+    "login_features": {
+      "evaluation": "Evaluación instantánea de tu código",
+      "feedback": "Retroalimentación detallada",
+      "tracking": "Seguimiento de progreso personalizado",
+      "languages": "Múltiples lenguajes de programación"
+    },
+    "login_description": "Plataforma de evaluación automática de ejercicios de programación"
   }
 }
