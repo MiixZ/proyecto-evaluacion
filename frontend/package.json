@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@astrojs/react": "^4.4.2",
+    "@fontsource-variable/nunito-sans": "^5.2.7",
     "@nanostores/persistent": "^1.2.0",
     "@nanostores/react": "^1.0.0",
     "@radix-ui/react-avatar": "^1.1.11",
