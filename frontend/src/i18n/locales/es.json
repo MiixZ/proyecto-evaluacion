@@ -9,6 +9,7 @@
       "title": "Iniciar Sesión",
       "subtitle": "Accede a tu cuenta para continuar aprendiendo",
       "email": "Correo electrónico",
+      "email_placeholder": "tu@universidad.edu",
       "password": "Contraseña",
       "forgot_password": "¿Olvidaste tu contraseña?",
       "submit": "Iniciar Sesión",
@@ -98,6 +99,13 @@
       "title": "¿Listo para mejorar tus habilidades?",
       "subtitle": "Únete a la plataforma utilizada por departamentos de ingeniería informática.",
       "button": "Acceder a la plataforma"
+    },
+    "login_description": "Plataforma de evaluación automática de ejercicios de programación",
+    "login_features": {
+      "evaluation": "Evaluación automática y en tiempo real",
+      "feedback": "Retroalimentación detallada de errores",
+      "tracking": "Seguimiento de progreso y estadísticas",
+      "languages": "Soporte para múltiples lenguajes"
     }
   },
   "errors": {

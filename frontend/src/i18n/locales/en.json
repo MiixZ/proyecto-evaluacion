@@ -9,6 +9,7 @@
       "title": "Sign In",
       "subtitle": "Access your account to continue learning",
       "email": "Email address",
+      "email_placeholder": "you@university.edu",
       "password": "Password",
       "forgot_password": "Forgot your password?",
       "submit": "Sign In",
@@ -98,6 +99,13 @@
       "title": "Ready to improve your skills?",
       "subtitle": "Join the platform used by computer engineering departments.",
       "button": "Access Platform"
+    },
+    "login_description": "Automatic programming exercise evaluation platform",
+    "login_features": {
+      "evaluation": "Automatic and real-time evaluation",
+      "feedback": "Detailed error feedback",
+      "tracking": "Progress tracking and statistics",
+      "languages": "Support for multiple languages"
     }
   },
   "errors": {
