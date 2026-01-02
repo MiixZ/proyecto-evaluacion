@@ -63,5 +63,12 @@
       "languages": "Múltiples lenguajes de programación"
     },
     "login_description": "Plataforma de evaluación automática de ejercicios de programación"
+  },
+  "errors": {
+    "not_found": {
+      "title": "404",
+      "message": "¡Oops! Página no encontrada",
+      "back_home": "Volver al Inicio"
+    }
   }
 }
