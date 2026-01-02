@@ -63,5 +63,12 @@
       "languages": "Multiple programming languages"
     },
     "login_description": "Automatic evaluation platform for programming exercises"
+  },
+  "errors": {
+    "not_found": {
+      "title": "404",
+      "message": "Oops! Page not found",
+      "back_home": "Back to Home"
+    }
   }
 }
