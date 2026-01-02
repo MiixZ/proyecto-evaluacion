@@ -7,8 +7,9 @@ import {
   SelectValue,
   SelectContent,
   SelectItem,
-} from "@radix-ui/react-select";
-import { Button } from "../ui/forms/button";
+} from "@/components/ui/forms/select";
+import { Button } from "@/components/ui/forms/button";
+import { cn } from "@/lib/utils";
 
 interface CodeEditorProps {
   initialCode?: string;
@@ -72,15 +73,15 @@ export const CodeEditor = ({
   const lineNumbers = code.split("\n").map((_, i) => i + 1);
 
   return (
-    <div className="rounded-xl border border-border overflow-hidden bg-card">
+    <div className="rounded-xl border border-border overflow-hidden bg-card flex flex-col h-full shadow-sm">
       {/* Toolbar */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30">
+      <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-muted/40 backdrop-blur-sm">
         <div className="flex items-center gap-3">
           <Select
             value={selectedLanguage}
             onValueChange={setSelectedLanguage}
             disabled={readOnly}>
-            <SelectTrigger className="w-36 h-9">
+            <SelectTrigger className="w-[140px] h-8 text-xs bg-background">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -91,26 +92,38 @@ export const CodeEditor = ({
               ))}
             </SelectContent>
           </Select>
-          <span className="text-sm text-muted-foreground">
+          <span className="text-xs text-muted-foreground font-mono">
             {code.split("\n").length} líneas
           </span>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={handleCopy}>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            onClick={handleCopy}
+            title="Copiar código">
             {copied ? (
-              <Check className="h-4 w-4" />
+              <Check className="h-4 w-4 text-green-500" />
             ) : (
               <Copy className="h-4 w-4" />
             )}
           </Button>
           {!readOnly && (
             <>
-              <Button variant="ghost" size="sm" onClick={handleReset}>
-                <RotateCcw className="h-4 w-4 mr-1" />
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 text-xs"
+                onClick={handleReset}>
+                <RotateCcw className="h-3 w-3 mr-1.5" />
                 Reiniciar
               </Button>
-              <Button size="sm" onClick={handleSubmit}>
-                <Upload className="h-4 w-4 mr-1" />
+              <Button
+                size="sm"
+                className="h-8 text-xs px-4"
+                onClick={handleSubmit}>
+                <Upload className="h-3 w-3 mr-1.5" />
                 Enviar
               </Button>
             </>
@@ -119,11 +132,11 @@ export const CodeEditor = ({
       </div>
 
       {/* Editor Area */}
-      <div className="flex bg-card min-h-[400px] max-h-[600px] overflow-auto font-mono text-sm">
+      <div className="flex flex-1 relative min-h-[400px] overflow-hidden bg-[#1e1e1e] text-zinc-100 font-mono text-sm">
         {/* Line Numbers */}
-        <div className="px-4 py-4 bg-muted/20 text-muted-foreground select-none border-r border-border text-right min-w-[3rem]">
+        <div className="px-3 py-4 bg-[#1e1e1e] text-zinc-500 select-none text-right min-w-[3rem] border-r border-zinc-800">
           {lineNumbers.map((num) => (
-            <div key={num} className="leading-6">
+            <div key={num} className="leading-6 text-xs">
               {num}
             </div>
           ))}
@@ -134,17 +147,20 @@ export const CodeEditor = ({
           value={code}
           onChange={(e) => setCode(e.target.value)}
           readOnly={readOnly}
-          className="flex-1 p-4 bg-transparent resize-none outline-none leading-6 text-foreground placeholder:text-muted-foreground"
+          className={cn(
+            "flex-1 p-4 bg-transparent resize-none outline-none leading-6 w-full h-full custom-scrollbar",
+            "focus:ring-0 focus:outline-none placeholder:text-zinc-600"
+          )}
           placeholder="Escribe tu código aquí..."
           spellCheck={false}
         />
       </div>
 
       {/* Status Bar */}
-      <div className="flex items-center justify-between px-4 py-2 border-t border-border bg-muted/30 text-sm text-muted-foreground">
-        <span>Editor de código</span>
+      <div className="flex items-center justify-between px-4 py-1.5 border-t border-border bg-muted/40 text-xs text-muted-foreground">
+        <span>UTF-8</span>
         <span className="flex items-center gap-2">
-          <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
           Listo
         </span>
       </div>
