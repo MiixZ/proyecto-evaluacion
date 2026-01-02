@@ -25,6 +25,7 @@
     }
   },
   "sidebar": {
+    "header": "Educational Platform",
     "menu": {
       "dashboard": "Dashboard",
       "exercises": "Exercises",
@@ -40,5 +41,27 @@
       "professor": "Professor"
     },
     "logout": "Log Out"
+  },
+  "landing": {
+    "navbar": {
+      "login": "Sign In"
+    },
+    "cta": {
+      "title": "Ready to improve your skills?",
+      "subtitle": "Join the platform used by computer science departments.",
+      "button": "Access the platform"
+    },
+    "footer": {
+      "privacy": "Privacy",
+      "terms": "Terms",
+      "contact": "Contact"
+    },
+    "login_features": {
+      "evaluation": "Instant evaluation of your code",
+      "feedback": "Detailed feedback",
+      "tracking": "Personalized progress tracking",
+      "languages": "Multiple programming languages"
+    },
+    "login_description": "Automatic evaluation platform for programming exercises"
   }
 }
