@@ -1,0 +1,44 @@
+{
+  "app": {
+    "name": "CodeEval",
+    "description": "Educational Platform",
+    "copyright": "All rights reserved."
+  },
+  "auth": {
+    "login": {
+      "title": "Sign In",
+      "subtitle": "Access your account to continue learning",
+      "email": "Email address",
+      "password": "Password",
+      "forgot_password": "Forgot your password?",
+      "submit": "Sign In",
+      "submitting": "Signing in...",
+      "success_title": "Login successful",
+      "success_desc": "Welcome to CodeEval as {{role}}",
+      "no_account": "First time? Contact your professor or admin to get access.",
+      "back_home": "Back to home"
+    },
+    "roles": {
+      "student": "Student",
+      "professor": "Professor",
+      "admin": "Admin"
+    }
+  },
+  "sidebar": {
+    "menu": {
+      "dashboard": "Dashboard",
+      "exercises": "Exercises",
+      "submissions": "My Submissions",
+      "professor_panel": "Professor Panel",
+      "groups": "Group Management",
+      "create_exercise": "Create Exercise",
+      "admin_panel": "Administration",
+      "users": "Users"
+    },
+    "labels": {
+      "student": "Student",
+      "professor": "Professor"
+    },
+    "logout": "Log Out"
+  }
+}
