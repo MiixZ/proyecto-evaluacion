@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import {
   Sidebar,
   SidebarContent,
@@ -38,43 +39,56 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/overlay/dropdown-menu";
 
-// Estructura de navegación
-const navItems = {
-  student: [
-    {
-      title: "Dashboard",
-      url: "/dashboard",
-      icon: LayoutDashboard,
-      exact: true,
-    },
-    { title: "Ejercicios", url: "/dashboard/exercises", icon: FileCode },
-    { title: "Mis Envíos", url: "/dashboard/submissions", icon: Send },
-  ],
-  professor: [
-    {
-      title: "Panel Docente",
-      url: "/dashboard/professor",
-      icon: GraduationCap,
-    },
-    {
-      title: "Gestión de Grupos",
-      url: "/dashboard/professor/groups",
-      icon: Users,
-    },
-    {
-      title: "Crear Ejercicio",
-      url: "/dashboard/professor/create",
-      icon: BookOpen,
-    },
-  ],
-  admin: [
-    { title: "Administración", url: "/dashboard/admin", icon: ShieldAlert },
-    { title: "Usuarios", url: "/dashboard/admin/users", icon: Users },
-  ],
-};
-
 export function AppSidebar() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
+
+  // Estructura de navegación con traducción dinámica
+  const navItems = {
+    student: [
+      {
+        title: t("sidebar.menu.dashboard"),
+        url: "/dashboard",
+        icon: LayoutDashboard,
+        exact: true,
+      },
+      {
+        title: t("sidebar.menu.exercises"),
+        url: "/dashboard/exercises",
+        icon: FileCode,
+      },
+      {
+        title: t("sidebar.menu.submissions"),
+        url: "/dashboard/submissions",
+        icon: Send,
+      },
+    ],
+    professor: [
+      {
+        title: t("sidebar.menu.professor_panel"),
+        url: "/dashboard/professor",
+        icon: GraduationCap,
+      },
+      {
+        title: t("sidebar.menu.groups"),
+        url: "/dashboard/professor/groups",
+        icon: Users,
+      },
+      {
+        title: t("sidebar.menu.create_exercise"),
+        url: "/dashboard/professor/create",
+        icon: BookOpen,
+      },
+    ],
+    admin: [
+      {
+        title: t("sidebar.menu.admin_panel"),
+        url: "/dashboard/admin",
+        icon: ShieldAlert,
+      },
+      { title: t("sidebar.menu.users"), url: "/dashboard/admin/users", icon: Users },
+    ],
+  };
 
   const user = {
     name: "Ismael Díaz",
@@ -98,9 +112,9 @@ export function AppSidebar() {
                 <Code2 className="size-5" />
               </div>
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-semibold">CodeEval</span>
+                <span className="truncate font-semibold">{t("app.name")}</span>
                 <span className="truncate text-xs text-muted-foreground">
-                  Plataforma Educativa
+                  {t("sidebar.header")}
                 </span>
               </div>
             </div>
@@ -114,7 +128,7 @@ export function AppSidebar() {
       <SidebarContent>
         {/* Menú Estudiante - Siempre visible o condicional */}
         <SidebarGroup>
-          <SidebarGroupLabel>Estudiante</SidebarGroupLabel>
+          <SidebarGroupLabel>{t("sidebar.labels.student")}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {navItems.student.map((item) => (
@@ -140,7 +154,7 @@ export function AppSidebar() {
 
         {/* Menú Profesor */}
         <SidebarGroup>
-          <SidebarGroupLabel>Profesor</SidebarGroupLabel>
+          <SidebarGroupLabel>{t("sidebar.labels.professor")}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {navItems.professor.map((item) => (
@@ -196,7 +210,7 @@ export function AppSidebar() {
                   onClick={handleLogout}
                   className="text-destructive focus:text-destructive">
                   <LogOut className="mr-2 h-4 w-4" />
-                  Cerrar Sesión
+                  {t("sidebar.logout")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
