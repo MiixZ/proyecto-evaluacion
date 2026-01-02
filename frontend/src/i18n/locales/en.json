@@ -42,6 +42,13 @@
     },
     "logout": "Log Out"
   },
+  "navbar": {
+    "home": "Home",
+    "features": "Features",
+    "about": "About",
+    "login": "Sign In",
+    "start": "Get Started"
+  },
   "landing": {
     "navbar": {
       "login": "Sign In"
