@@ -1,146 +1,150 @@
-import { PoolConnection } from 'mysql2/promise';
-import { getPool, withTransaction } from '@config/database';
+import { RowDataPacket } from 'mysql2';
 import {
-  SubmissionDTO,
   SubmissionEntity,
   SubmissionTestResultEntity,
+  SubmissionDTO,
 } from './submission.entity';
-import { SubmissionJoinRow, SubmissionRow } from './submission.row';
-import {
-  UUID,
-  SubmissionStatus,
-  SubmissionVerdict,
-} from '@CustomTypes/common.types';
-import { logger } from '@utils/logger';
+import { SubmissionVerdict } from '@CustomTypes/common.types';
 import { submissionMapper } from '@mappers/submission.mapper';
-import { NotFoundError } from '@utils/errors';
-import { CountResult } from '@models/common/count.row';
+import { getPool } from '@config/database';
+
+interface SubmissionRow extends RowDataPacket {
+  id: string;
+  exercise_id: string;
+  student_id: string;
+  course_id: string;
+  attempt_number: number;
+  code: string;
+  language: string;
+  status: string;
+  verdict: string;
+  score: number;
+  is_late: number;
+  used_hint: number;
+  created_at: Date;
+  updated_at: Date;
+}
+
+interface SubmissionJoinRow extends RowDataPacket {
+  s_id: string;
+  s_exercise_id: string;
+  s_student_id: string;
+  s_course_id: string;
+  s_attempt_number: number;
+  s_code: string;
+  s_language: string;
+  s_status: string;
+  s_verdict: string;
+  s_score: number;
+  s_is_late: number;
+  s_created_at: Date;
+
+  tr_id: string | null;
+  tr_test_case_id: string | null;
+  tr_status: string | null;
+  tr_actual_output: string | null;
+  tr_execution_time_ms: number | null;
+  tr_memory_used_mb: number | null;
+  tr_hint_text: string | null;
+}
 
 export class SubmissionModel {
-  /**
-   * Obtiene una sumisión por ID
-   */
-  async getById(id: UUID): Promise<SubmissionEntity> {
-    const query = `SELECT * FROM submissions WHERE id = ? LIMIT 1`;
-    const [rows] = await getPool().execute<SubmissionRow[]>(query, [id]);
+  async getById(id: string): Promise<SubmissionEntity | null> {
+    const [rows] = await getPool().query<SubmissionRow[]>(
+      'SELECT * FROM submissions WHERE id = ?',
+      [id]
+    );
 
-    if (rows.length === 0) {
-      throw new NotFoundError(`Envío con id: ${id}`);
-    }
+    if (rows.length === 0) return null;
 
     return submissionMapper.toEntity(rows[0]);
   }
 
-  async getNextAttemptNumber(
-    studentId: UUID,
-    exerciseId: UUID
-  ): Promise<number> {
-    const query = `SELECT MAX(attempt_number) as maxAttempt FROM submissions WHERE student_id = ? AND exercise_id = ?`;
-    const [rows] = await getPool().execute<any[]>(query, [
-      studentId,
-      exerciseId,
-    ]);
-
-    return (rows[0].maxAttempt || 0) + 1;
+  async create(submission: SubmissionEntity): Promise<void> {
+    await getPool().query(
+      `INSERT INTO submissions (id, exercise_id, student_id, course_id, attempt_number, code, language, status, is_late)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        submission.id,
+        submission.exerciseId,
+        submission.studentId,
+        submission.courseId,
+        submission.attemptNumber,
+        submission.code,
+        submission.language,
+        'pending',
+        submission.isLate,
+      ]
+    );
   }
 
-  async countAttempts(studentId: UUID, exerciseId: UUID): Promise<number> {
-    const query = `SELECT COUNT(*) as count FROM submissions WHERE student_id = ? AND exercise_id = ?`;
-    const [rows] = await getPool().execute<CountResult[]>(query, [
-      studentId,
-      exerciseId,
-    ]);
-
-    return rows[0].count;
-  }
-
-  async create(data: {
-    id: UUID;
-    exerciseId: UUID;
-    studentId: UUID;
-    courseId: UUID;
-    code: string;
-    language: string;
-    attemptNumber: number;
-    isLate: boolean;
-  }): Promise<SubmissionEntity> {
-    const query = `
-      INSERT INTO submissions (
-        id, exercise_id, student_id, course_id, attempt_number, code, language,
-        status, verdict, score, is_late, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, NOW(), NOW())
-    `;
-
-    await getPool().execute(query, [
-      data.id,
-      data.exerciseId,
-      data.studentId,
-      data.courseId,
-      data.attemptNumber,
-      data.code,
-      data.language,
-      SubmissionStatus.PENDING,
-      SubmissionVerdict.PENDING,
-      data.isLate,
-    ]);
-
-    return this.getById(data.id);
-  }
-
-  /**
-   * Actualiza el resultado de una sumisión y guarda resultados de tests
-   */
   async updateResult(
-    submissionId: UUID,
+    id: string,
     verdict: SubmissionVerdict,
     score: number,
     testResults: SubmissionTestResultEntity[]
   ): Promise<SubmissionEntity> {
-    await withTransaction(async (connection: PoolConnection) => {
-      const updateQuery = `
-        UPDATE submissions 
-        SET status = ?, verdict = ?, score = ?, updated_at = NOW() 
-        WHERE id = ?
-      `;
-      await connection.execute(updateQuery, [
-        SubmissionStatus.COMPLETED,
-        verdict,
-        score,
-        submissionId,
-      ]);
+    const connection = await getPool().getConnection();
+    try {
+      await connection.beginTransaction();
+
+      await connection.query(
+        `UPDATE submissions SET verdict = ?, score = ?, status = 'completed' WHERE id = ?`,
+        [verdict, score, id]
+      );
 
       if (testResults.length > 0) {
-        const insertTestQuery = `
-          INSERT INTO submission_test_results (
-            id, submission_id, test_case_id, status, actual_output, error_id,
-            execution_time_ms, memory_used_mb, efficiency_achieved
-          ) VALUES ?
-        `;
-
-        const values = testResults.map((t) => [
-          t.id,
-          t.submissionId,
-          t.testCaseId,
-          t.status,
-          t.actualOutput,
-          t.errorId || null,
-          t.executionTimeMs,
-          t.memoryUsedMb,
-          t.efficiencyAchieved,
+        const values = testResults.map((tr) => [
+          tr.id,
+          id,
+          tr.testCaseId,
+          tr.status,
+          tr.actualOutput,
+          tr.errorId,
+          tr.executionTimeMs,
+          tr.memoryUsedMb,
+          tr.efficiencyAchieved || 'any',
         ]);
 
-        await connection.query(insertTestQuery, [values]);
+        await connection.query(
+          `INSERT INTO submission_test_results 
+           (id, submission_id, test_case_id, status, actual_output, error_id, execution_time_ms, memory_used_mb, efficiency_achieved)
+           VALUES ?`,
+          [values]
+        );
       }
-    });
 
-    logger.info(
-      `Submission actualizada: ${submissionId} (Verdict: ${verdict})`
+      await connection.commit();
+
+      const [rows] = await connection.query<SubmissionRow[]>(
+        'SELECT * FROM submissions WHERE id = ?',
+        [id]
+      );
+
+      return submissionMapper.toEntity(rows[0]);
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
+    }
+  }
+
+  async countAttempts(userId: string, exerciseId: string): Promise<number> {
+    const [rows] = await getPool().query<RowDataPacket[]>(
+      'SELECT COUNT(*) as count FROM submissions WHERE student_id = ? AND exercise_id = ?',
+      [userId, exerciseId]
     );
+    return rows[0].count;
+  }
 
-    const updatedEntity = await this.getById(submissionId);
-    updatedEntity.testResults = testResults;
+  async getNextAttemptNumber(
+    userId: string,
+    exerciseId: string
+  ): Promise<number> {
+    const count = await this.countAttempts(userId, exerciseId);
 
-    return updatedEntity;
+    return count + 1;
   }
 
   async findByUserAndExercise(
@@ -156,14 +160,17 @@ export class SubmissionModel {
         
         str.id as tr_id, str.test_case_id as tr_test_case_id, str.status as tr_status, 
         str.actual_output as tr_actual_output, str.execution_time_ms as tr_execution_time_ms, 
-        str.memory_used_mb as tr_memory_used_mb
+        str.memory_used_mb as tr_memory_used_mb,
+        hu.hint_text as tr_hint_text
       FROM submissions s
       LEFT JOIN submission_test_results str ON s.id = str.submission_id
+      LEFT JOIN hint_usage hu ON s.id = hu.submission_id AND str.test_case_id = hu.test_case_id
       WHERE s.student_id = ? AND s.exercise_id = ?
       ORDER BY s.attempt_number DESC, str.created_at ASC`,
       [userId, exerciseId]
     );
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const submissionsMap = new Map<string, any>();
 
     rows.forEach((row) => {
@@ -193,6 +200,7 @@ export class SubmissionModel {
           actualOutput: row.tr_actual_output,
           executionTimeMs: row.tr_execution_time_ms,
           memoryUsedMb: row.tr_memory_used_mb,
+          hintText: row.tr_hint_text,
         });
       }
     });

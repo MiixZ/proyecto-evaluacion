@@ -1,10 +1,10 @@
+import { SubmissionRow } from '@models/submission/submission.row';
 import {
   SubmissionEntity,
   SubmissionTestResultEntity,
   SubmissionDTO,
   SubmissionTestResultDTO,
-} from '../models/submission/submission.entity';
-import { SubmissionRow } from '@models/submission/submission.row';
+} from '@models/submission/submission.entity';
 
 class SubmissionMapper {
   toDTO(
@@ -47,9 +47,6 @@ class SubmissionMapper {
       usedHint: !!row.used_hint,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
-      constructor: {
-        name: 'RowDataPacket',
-      },
     } as SubmissionEntity;
   }
 
@@ -64,6 +61,7 @@ class SubmissionMapper {
       executionTimeMs: entity.executionTimeMs,
       memoryUsedMb: entity.memoryUsedMb,
       error: null,
+      hintText: entity.hintText || null,
     };
   }
 }

@@ -32,9 +32,9 @@ export interface SubmissionTestResultEntity {
   executionTimeMs: number;
   memoryUsedMb: number;
   efficiencyAchieved: EfficiencyOrder;
+  hintText?: string | null;
 }
 
-// DTOs para respuesta API
 export interface SubmissionTestResultDTO {
   id: string;
   testCaseId: string;
@@ -45,6 +45,7 @@ export interface SubmissionTestResultDTO {
   executionTimeMs: number;
   memoryUsedMb: number;
   error?: string | null;
+  hintText?: string | null;
 }
 
 export interface SubmissionDTO {

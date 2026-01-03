@@ -7,6 +7,7 @@ import { TestResults } from "@/components/code/TestResults";
 import { SubmissionHistory } from "@/components/exercise/SubmissionHistory";
 import { HintPanel } from "@/components/exercise/HintPanel";
 import { Badge } from "@/components/ui/data/badge";
+import { AxiosError } from "axios";
 import {
   Card,
   CardContent,
@@ -118,10 +119,19 @@ export default function ExerciseView() {
         });
       }
     },
-    onError: (err) => {
+    onError: (err: Error | AxiosError) => {
+      let errorMessage = t("exercise.submission.error_desc");
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const responseData = (err as any).response?.data;
+
+      if (responseData && responseData.message) {
+        errorMessage = responseData.message;
+      }
+
       toast({
         title: t("exercise.submission.error_title"),
-        description: t("exercise.submission.error_desc"),
+        description: errorMessage,
         variant: "destructive",
       });
       console.error(err);

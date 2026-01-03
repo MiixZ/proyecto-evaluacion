@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { Lock, Unlock, HelpCircle, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/forms/button";
@@ -23,6 +23,20 @@ export const HintPanel = ({ lastSubmission }: HintPanelProps) => {
   const [revealedHints, setRevealedHints] = useState<Record<string, string>>(
     {}
   );
+
+  useEffect(() => {
+    if (lastSubmission?.testResults) {
+      const hintsFromBackend: Record<string, string> = {};
+      lastSubmission.testResults.forEach((result) => {
+        if (result.hintText) {
+          hintsFromBackend[result.testCaseId] = result.hintText;
+        }
+      });
+      setRevealedHints(hintsFromBackend);
+    } else {
+      setRevealedHints({});
+    }
+  }, [lastSubmission]);
 
   const hintMutation = useMutation({
     mutationFn: (vars: { submissionId: string; testCaseId: string }) =>

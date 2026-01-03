@@ -23,6 +23,7 @@ export interface TestResult {
   actualOutput?: string | null;
   executionTimeMs: number;
   memoryUsedMb: number;
+  hintText?: string | null;
 }
 
 export interface SubmissionResponse {
