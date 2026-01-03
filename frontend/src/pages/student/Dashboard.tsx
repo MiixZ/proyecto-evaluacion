@@ -107,6 +107,7 @@ export default function StudentDashboard() {
     .slice(0, 3)
     .map((ex) => ({
       id: ex.exerciseId,
+      courseId: ex.courseId,
       title: ex.exerciseTitle,
       description: ex.subjectName,
       difficulty: mapDifficulty(ex.difficulty),

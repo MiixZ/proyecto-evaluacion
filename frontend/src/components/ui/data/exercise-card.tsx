@@ -17,6 +17,7 @@ interface ExerciseCardProps {
   id: string;
   title: string;
   description: string;
+  courseId?: string;
   difficulty: ExerciseDifficulty;
   status: ExerciseStatus;
   timeLimit?: number;
@@ -52,6 +53,7 @@ export const ExerciseCard = ({
   title,
   description,
   difficulty,
+  courseId,
   status,
   timeLimit,
   attempts = 0,
@@ -61,6 +63,10 @@ export const ExerciseCard = ({
   const diffConfig = difficultyConfig[difficulty];
   const statConfig = statusConfig[status];
   const StatusIcon = statConfig.icon;
+
+  const targetUrl = `/dashboard/exercise/${id}${
+    courseId ? `?courseId=${courseId}` : ""
+  }`;
 
   return (
     <Card className="group hover:shadow-lg transition-all duration-300 border-border/50 hover:border-primary/30">
@@ -112,7 +118,7 @@ export const ExerciseCard = ({
             className="group-hover:bg-primary group-hover:text-primary-foreground"
             asChild
             disabled={status === "locked"}>
-            <Link to={`/dashboard/exercise/${id}`}>
+            <Link to={targetUrl}>
               {status === "locked" ? "Bloqueado" : "Ver ejercicio"}
               <ChevronRight className="h-4 w-4 ml-1" />
             </Link>

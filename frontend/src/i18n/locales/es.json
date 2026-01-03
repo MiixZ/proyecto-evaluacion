@@ -29,6 +29,9 @@
       "password_required": "La contraseña es obligatoria"
     }
   },
+  "dashboard": {
+    "welcome": "¡Bienvenido/a, {{name}}!"
+  },
   "sidebar": {
     "header": "Plataforma Educativa",
     "menu": {

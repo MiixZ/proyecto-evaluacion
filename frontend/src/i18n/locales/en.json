@@ -29,6 +29,9 @@
       "password_required": "Password is required"
     }
   },
+  "dashboard": {
+    "welcome": "Welcome, {{name}}!"
+  },
   "sidebar": {
     "header": "Educational Platform",
     "menu": {
