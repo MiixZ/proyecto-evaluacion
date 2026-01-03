@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { CodeEditor } from "@/components/code/CodeEditor";
 import { TestResults } from "@/components/code/TestResults";
 import { Badge } from "@/components/ui/data/badge";
@@ -17,13 +18,13 @@ import {
   TabsTrigger,
 } from "@/components/ui/layout/tabs";
 import {
-  Clock,
   FileCode,
   History,
   Lightbulb,
   BookOpen,
   Loader2,
   AlertCircle,
+  Trophy,
 } from "lucide-react";
 import {
   Alert,
@@ -38,6 +39,7 @@ export default function ExerciseView() {
   const [searchParams] = useSearchParams();
   const courseId = searchParams.get("courseId");
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const [activeTab, setActiveTab] = useState("statement");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -53,21 +55,20 @@ export default function ExerciseView() {
     enabled: !!id,
   });
 
-  // 2. Mutación para enviar código
   const submitMutation = useMutation({
     mutationFn: exerciseService.submitSolution,
     onSuccess: (data) => {
       setSubmissionResult(data);
       toast({
-        title: "Código enviado",
-        description: `Veredicto: ${data.verdict}`,
+        title: t("exercise.submission.success_title"),
+        description: `${t("exercise.submission.verdict")}: ${data.verdict}`,
         variant: data.verdict === "accepted" ? "default" : "destructive",
       });
     },
     onError: (err) => {
       toast({
-        title: "Error al enviar",
-        description: "No se pudo procesar tu solución.",
+        title: t("exercise.submission.error_title"),
+        description: t("exercise.submission.error_desc"),
         variant: "destructive",
       });
       console.error(err);
@@ -77,14 +78,13 @@ export default function ExerciseView() {
   const handleSubmit = (code: string, language: string) => {
     if (!id || !courseId) {
       toast({
-        title: "Error",
-        description: "Faltan datos del curso o ejercicio",
+        title: t("exercise.status.error_title"),
+        description: t("exercise.status.missing_data"),
         variant: "destructive",
       });
       return;
     }
 
-    // Limpiamos resultado anterior
     setSubmissionResult(null);
 
     submitMutation.mutate({
@@ -95,7 +95,6 @@ export default function ExerciseView() {
     });
   };
 
-  // Mapeo visual de dificultad
   const getDifficultyColor = (diff: string) => {
     switch (diff) {
       case "beginner":
@@ -110,19 +109,19 @@ export default function ExerciseView() {
   };
 
   const getDifficultyLabel = (diff: string) => {
-    const map: Record<string, string> = {
-      beginner: "Fácil",
-      intermediate: "Media",
-      advanced: "Difícil",
-    };
-
-    return map[diff] || diff;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return t(`exercise.difficulty.${diff}` as any) || diff;
   };
 
   if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <div className="flex flex-col items-center gap-2">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">
+            {t("exercise.status.loading")}
+          </p>
+        </div>
       </div>
     );
   }
@@ -132,8 +131,8 @@ export default function ExerciseView() {
       <div className="p-6">
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>No se pudo cargar el ejercicio.</AlertDescription>
+          <AlertTitle>{t("exercise.status.error_title")}</AlertTitle>
+          <AlertDescription>{t("exercise.status.error_desc")}</AlertDescription>
         </Alert>
       </div>
     );
@@ -150,25 +149,30 @@ export default function ExerciseView() {
               className={getDifficultyColor(exercise.difficulty)}>
               {getDifficultyLabel(exercise.difficulty)}
             </Badge>
-            {/* Si el backend devolviera tema/asignatura en el detalle del ejercicio, iría aquí. 
-                Si no, lo dejamos vacío o usamos datos pasados por estado */}
+            {/* Nota: Eliminado placeholder de Asignatura/Tema porque el backend no lo provee en este endpoint */}
           </div>
           <h1 className="text-2xl font-bold">{exercise.title}</h1>
         </div>
 
         <div className="flex items-center gap-4 text-sm text-muted-foreground">
-          {/* Suponiendo que el backend devuelva timeLimit en algún lado, si no, hardcode o quitar */}
-          {/* <div className="flex items-center gap-1">
-            <Clock className="h-4 w-4" />
-            <span>45 min</span> 
-          </div> */}
+          <div className="flex items-center gap-1">
+            <Trophy className="h-4 w-4" />
+            <span>
+              {t("exercise.info.points")}: {exercise.points}
+            </span>
+          </div>
+
           <div className="flex items-center gap-1">
             <FileCode className="h-4 w-4" />
-            <span>Max Intentos: {exercise.maxAttempts}</span>
+            <span>
+              {t("exercise.info.max_attempts")}: {exercise.maxAttempts}
+            </span>
           </div>
+
           {exercise.deadline && (
             <Badge variant="secondary">
-              Entrega: {new Date(exercise.deadline).toLocaleDateString()}
+              {t("exercise.info.deadline")}:{" "}
+              {new Date(exercise.deadline).toLocaleDateString()}
             </Badge>
           )}
         </div>
@@ -184,16 +188,15 @@ export default function ExerciseView() {
             <TabsList className="w-full justify-start">
               <TabsTrigger value="statement">
                 <BookOpen className="h-4 w-4 mr-2" />
-                Enunciado
+                {t("exercise.tabs.statement")}
               </TabsTrigger>
-              {/* Solo mostrar si hay pistas disponibles (lógica futura) */}
               <TabsTrigger value="hints">
                 <Lightbulb className="h-4 w-4 mr-2" />
-                Pistas
+                {t("exercise.tabs.hints")}
               </TabsTrigger>
               <TabsTrigger value="history">
                 <History className="h-4 w-4 mr-2" />
-                Historial
+                {t("exercise.tabs.history")}
               </TabsTrigger>
             </TabsList>
 
@@ -201,7 +204,6 @@ export default function ExerciseView() {
               <Card className="h-full flex flex-col">
                 <CardContent className="p-6 flex-1 overflow-y-auto custom-scrollbar">
                   <div className="prose prose-sm dark:prose-invert max-w-none">
-                    {/* Renderizado simple de saltos de línea. Para Markdown real usar react-markdown */}
                     {exercise.description.split("\n").map((line, i) => (
                       <p key={i} className="min-h-[1rem]">
                         {line}
@@ -217,7 +219,7 @@ export default function ExerciseView() {
                 <CardContent className="p-6">
                   <div className="text-center py-8 text-muted-foreground">
                     <Lightbulb className="h-12 w-12 mx-auto mb-4 text-chart-4" />
-                    <p>No hay pistas disponibles para este ejercicio.</p>
+                    <p>{t("exercise.hints.empty")}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -227,12 +229,12 @@ export default function ExerciseView() {
               <Card className="h-full">
                 <CardHeader>
                   <CardTitle className="text-base">
-                    Historial de Envíos
+                    {t("exercise.tabs.history")}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-center py-8 text-muted-foreground">
-                    Funcionalidad de historial detallado próximamente.
+                    {t("exercise.history.empty")}
                   </p>
                 </CardContent>
               </Card>
@@ -246,15 +248,15 @@ export default function ExerciseView() {
             <CodeEditor
               initialCode={
                 exercise.templateCode ||
-                `# Escribe tu solución en ${exercise.language || "python"}`
+                `# Write your solution in ${exercise.language || "python"}`
               }
               onSubmit={handleSubmit}
+              isSubmitting={submitMutation.isPending}
             />
           </div>
           <div className="min-h-[200px]">
-            {/* Pasamos los resultados reales del backend al componente visual */}
             <TestResults
-              testCases={submissionResult?.testResults || []} // Adaptar según lo que devuelva tu backend
+              testCases={submissionResult?.testResults || []}
               isRunning={submitMutation.isPending}
               verdict={submissionResult?.verdict}
             />

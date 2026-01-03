@@ -57,6 +57,41 @@
     "login": "Iniciar Sesión",
     "start": "Comenzar"
   },
+  "exercise": {
+    "difficulty": {
+      "beginner": "Fácil",
+      "intermediate": "Media",
+      "advanced": "Difícil"
+    },
+    "info": {
+      "max_attempts": "Intentos Máx",
+      "deadline": "Entrega",
+      "points": "Puntos"
+    },
+    "tabs": {
+      "statement": "Enunciado",
+      "hints": "Pistas",
+      "history": "Historial"
+    },
+    "hints": {
+      "empty": "No hay pistas disponibles para este ejercicio."
+    },
+    "history": {
+      "empty": "Funcionalidad de historial detallado próximamente."
+    },
+    "status": {
+      "loading": "Cargando ejercicio...",
+      "error_title": "Error",
+      "error_desc": "No se pudo cargar el ejercicio.",
+      "missing_data": "Faltan datos del curso o ejercicio"
+    },
+    "submission": {
+      "success_title": "Código enviado",
+      "error_title": "Error al enviar",
+      "error_desc": "No se pudo procesar tu solución.",
+      "verdict": "Veredicto"
+    }
+  },
   "landing": {
     "hero": {
       "badge": "v1.0 Disponible",
