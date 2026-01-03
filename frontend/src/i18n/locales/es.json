@@ -128,6 +128,57 @@
       "view": "Ver Detalles"
     }
   },
+  "profile_page": {
+    "title": "Mi Perfil",
+    "subtitle": "Gestiona tu información personal y preferencias de la cuenta.",
+    "sections": {
+      "personal_info": "Información Personal",
+      "personal_info_desc": "Actualiza tu información personal y preferencias.",
+      "account_info": "Información de la Cuenta"
+    },
+    "fields": {
+      "first_name": "Nombre",
+      "last_name": "Apellidos",
+      "email": "Correo Electrónico",
+      "email_readonly": "El correo electrónico no se puede modificar",
+      "phone": "Teléfono",
+      "bio": "Biografía",
+      "language": "Idioma",
+      "role": "Rol de Usuario"
+    },
+    "placeholders": {
+      "phone": "+34 600 000 000",
+      "bio": "Cuéntanos un poco sobre ti...",
+      "language": "Selecciona un idioma"
+    },
+    "buttons": {
+      "save": "Guardar Cambios",
+      "saving": "Guardando...",
+      "cancel": "Cancelar"
+    },
+    "notifications": {
+      "success_title": "Perfil actualizado",
+      "success_desc": "Tus datos se han guardado correctamente.",
+      "error_title": "Error al actualizar",
+      "error_desc": "No se pudo guardar los cambios. Inténtalo de nuevo."
+    },
+    "validations": {
+      "first_name_short": "El nombre debe tener al menos 2 caracteres",
+      "last_name_short": "Los apellidos deben tener al menos 2 caracteres",
+      "bio_max": "La biografía no puede superar los 500 caracteres"
+    },
+    "languages": {
+      "es": "Español",
+      "en": "Inglés"
+    },
+    "roles": {
+      "student": "Estudiante",
+      "teacher": "Profesor",
+      "admin": "Administrador"
+    },
+    "user_id": "ID de usuario",
+    "error_loading": "No se pudo cargar la información del perfil. Por favor, intenta de nuevo."
+  },
   "exercises_page": {
     "title": "Mis Ejercicios",
     "subtitle": "Explora y resuelve los ejercicios asignados en tus asignaturas.",

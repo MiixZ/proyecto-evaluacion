@@ -16,6 +16,7 @@ import StudentSubmissionsPage from "./pages/student/Submissions";
 import AdminDashboard from "./pages/admin/Dashboard";
 import { AuthProvider } from "./context/AuthProvider";
 import DashboardLayout from "./components/layout/DashboardLayout";
+import ProfilePage from "./pages/student/Profile";
 
 const queryClient = new QueryClient();
 
@@ -38,8 +39,8 @@ const App = () => (
                 path="/dashboard/exercises"
                 element={<StudentExercises />}
               />
-              {/* NUEVAS RUTAS AÑADIDAS */}
               <Route path="/dashboard/subjects" element={<StudentSubjects />} />
+              <Route path="/dashboard/profile" element={<ProfilePage />} />
               <Route
                 path="/dashboard/progress"
                 element={<StudentProgressPage />}

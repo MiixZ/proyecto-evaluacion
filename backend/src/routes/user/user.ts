@@ -32,11 +32,13 @@ router.get('/students', userController.getStudents);
 router.get('/:id', authMiddleware, userController.getUserById);
 
 router.patch(
-  '/:id',
+  '/me',
   authMiddleware,
   validateRequest(updateUserRequest),
-  userController.updateUser
+  userController.updateMe
 );
+
+router.get('/me', userController.getMe);
 
 router.patch(
   '/:id/role',

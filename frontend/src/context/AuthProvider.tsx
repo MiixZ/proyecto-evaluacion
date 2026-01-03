@@ -58,6 +58,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     navigate("/login");
   };
 
+  const refreshUser = async () => {
+    try {
+      const currentToken = token || localStorage.getItem("token");
+      if (!currentToken) return;
+
+      const updatedUser = await authService.getCurrentUserFromAPI();
+
+      setUser(updatedUser);
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+    } catch (error) {
+      console.error("Error reloading user:", error);
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -67,6 +81,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         isLoading,
         login,
         logout,
+        refreshUser,
       }}>
       {children}
     </AuthContext.Provider>

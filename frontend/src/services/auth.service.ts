@@ -1,5 +1,5 @@
 import api from "@/lib/api";
-import { LoginResponse } from "@/types/auth.types";
+import { LoginResponse, User } from "@/types/auth.types";
 import { LoginFormValues } from "@/schemas/auth.schema";
 
 export const authService = {
@@ -24,5 +24,11 @@ export const authService = {
     } catch {
       return null;
     }
+  },
+
+  getCurrentUserFromAPI: async (): Promise<User> => {
+    const response = await api.get<{ data: User }>("/auth/me");
+
+    return response.data.data;
   },
 };

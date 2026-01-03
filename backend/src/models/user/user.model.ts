@@ -5,7 +5,7 @@ import { logger } from '@utils/logger';
 import { PoolConnection } from 'mysql2/promise';
 import { UUID, UserRole, UserStatus } from '@CustomTypes/common.types';
 import { UserEntity } from './user.entity';
-import { CreateUserInput, UpdateUserInput } from '@validators/user.validator';
+import { CreateUserInput } from '@validators/user.validator';
 import { NotFoundError } from '@utils/errors';
 import { userMapper } from '@mappers/user.mapper';
 import { UserRow } from './user.row';
@@ -102,56 +102,45 @@ export class UserModel {
     return rows[0].count > 0;
   }
 
-  async update(id: UUID, input: UpdateUserInput): Promise<UserEntity> {
-    const updates: string[] = [];
+  async update(
+    id: string,
+    data: Partial<UserEntity>
+  ): Promise<UserEntity | null> {
+    const fields: string[] = [];
     const values: any[] = [];
 
-    if (input.firstName !== undefined) {
-      updates.push('first_name = ?');
-      values.push(input.firstName);
+    if (data.firstName !== undefined) {
+      fields.push('first_name = ?');
+      values.push(data.firstName);
     }
-    if (input.lastName !== undefined) {
-      updates.push('last_name = ?');
-      values.push(input.lastName);
+    if (data.lastName !== undefined) {
+      fields.push('last_name = ?');
+      values.push(data.lastName);
     }
-    if (input.phone !== undefined) {
-      updates.push('phone = ?');
-      values.push(input.phone);
+    if (data.phone !== undefined) {
+      fields.push('phone = ?');
+      values.push(data.phone);
     }
-    if (input.bio !== undefined) {
-      updates.push('bio = ?');
-      values.push(input.bio);
+    if (data.bio !== undefined) {
+      fields.push('bio = ?');
+      values.push(data.bio);
     }
-    if (input.profileImageUrl !== undefined) {
-      updates.push('profile_image_url = ?');
-      values.push(input.profileImageUrl);
-    }
-    if (input.preferredLanguage !== undefined) {
-      updates.push('preferred_language = ?');
-      values.push(input.preferredLanguage);
+    if (data.preferredLanguage !== undefined) {
+      fields.push('preferred_language = ?');
+      values.push(data.preferredLanguage);
     }
 
-    if (updates.length === 0) {
-      return this.getById(id);
-    }
+    if (fields.length === 0) return this.getById(id as UUID);
 
-    updates.push('updated_at = NOW()');
+    fields.push('updated_at = NOW()');
+
     values.push(id);
 
-    const query = `UPDATE users SET ${updates.join(', ')} WHERE id = ? AND deleted_at IS NULL`;
+    const query = `UPDATE users SET ${fields.join(', ')} WHERE id = ?`;
 
-    const [result] = await this.getPool().execute<ResultSetHeader>(
-      query,
-      values
-    );
+    await this.getPool().query(query, values);
 
-    if (result.affectedRows === 0) {
-      throw new NotFoundError(`Usuario con id: ${id}`);
-    }
-
-    logger.info(`Usuario actualizado: ${id}`);
-
-    return this.getById(id);
+    return this.getById(id as UUID);
   }
 
   async softDelete(id: UUID): Promise<void> {

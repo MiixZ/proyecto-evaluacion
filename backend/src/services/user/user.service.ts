@@ -75,26 +75,44 @@ export class UserService {
     return await userModel.list(page, limit, filters);
   }
 
-  async updateUser(
-    id: string,
-    input: UpdateUserInput,
-    modifierId?: UUID
-  ): Promise<UserDTO> {
-    const user = await userModel.getById(id as UUID);
+  async getProfile(userId: string): Promise<UserDTO> {
+    const user = await userModel.getById(userId as UUID);
 
-    if (!user) throw new NotFoundError('Usuario no encontrado');
-
-    const updatedUser = await userModel.update(id as UUID, input);
-
-    if (modifierId) {
-      await auditService.log(
-        'UPDATE_USER',
-        'user',
-        id as UUID,
-        { changes: Object.keys(input) },
-        modifierId
-      );
+    if (!user) {
+      throw new NotFoundError('Usuario no encontrado');
     }
+
+    return userMapper.toDTO(user);
+  }
+
+  async updateProfile(
+    userId: string,
+    input: UpdateUserInput
+  ): Promise<UserDTO> {
+    const user = await userModel.getById(userId as UUID);
+    if (!user) {
+      throw new NotFoundError('Usuario no encontrado');
+    }
+
+    const updatedUser = await userModel.update(userId as UUID, {
+      firstName: input.firstName,
+      lastName: input.lastName,
+      phone: input.phone,
+      bio: input.bio,
+      preferredLanguage: input.preferredLanguage,
+    });
+
+    if (!updatedUser) {
+      throw new Error('Error al actualizar el perfil');
+    }
+
+    await auditService.log(
+      'UPDATE_PROFILE',
+      'user',
+      userId as UUID,
+      input,
+      userId as UUID
+    );
 
     return userMapper.toDTO(updatedUser);
   }

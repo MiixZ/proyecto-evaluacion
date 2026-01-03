@@ -6,6 +6,7 @@ import { UserRole, UserStatus } from '@CustomTypes/common.types';
 import { AppError } from '@utils/errors';
 import { catchAsync } from '@utils/async.handler';
 import { ApiResponse } from '@utils/response.handler';
+import { UpdateUserInput } from '@validators/user.validator';
 
 export class UserController {
   createUser = catchAsync(async (req: AuthRequest, res: Response) => {
@@ -49,14 +50,30 @@ export class UserController {
     });
   });
 
-  updateUser = catchAsync(async (req: AuthRequest, res: Response) => {
-    const { id } = req.params;
+  getMe = catchAsync(async (req: AuthRequest, res: Response) => {
+    const userId = req.user!.id;
+    const profile = await userService.getProfile(userId);
 
-    this.validateUserOrAdmin(req, id);
+    return ApiResponse.success(
+      res,
+      profile,
+      200,
+      'Perfil recuperado correctamente'
+    );
+  });
 
-    const user = await userService.updateUser(id, req.body, req.user?.id);
+  updateMe = catchAsync(async (req: AuthRequest, res: Response) => {
+    const userId = req.user!.id;
+    const input = req.body as UpdateUserInput;
 
-    return ApiResponse.success(res, user);
+    const updatedProfile = await userService.updateProfile(userId, input);
+
+    return ApiResponse.success(
+      res,
+      updatedProfile,
+      200,
+      'Perfil actualizado correctamente'
+    );
   });
 
   changeRole = catchAsync(async (req: AuthRequest, res: Response) => {

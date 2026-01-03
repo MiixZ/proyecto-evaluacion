@@ -255,6 +255,14 @@ export function AppSidebar() {
                 side="bottom"
                 align="end"
                 sideOffset={4}>
+                <DropdownMenuItem asChild>
+                  <Link
+                    to="/dashboard/profile"
+                    className="flex items-center cursor-pointer">
+                    <Users className="mr-2 h-4 w-4" />
+                    <span>{t("profile_page.title")}</span>
+                  </Link>
+                </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={handleLogout}
                   className="text-destructive focus:text-destructive cursor-pointer">
