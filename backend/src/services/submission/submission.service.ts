@@ -14,9 +14,11 @@ import {
 } from '@CustomTypes/submission.types';
 import { ValidationError, ForbiddenError } from '@utils/errors';
 import { logger } from '@utils/logger';
-import { SubmissionTestResultEntity } from '@models/submission/submission.entity';
+import {
+  SubmissionTestResultEntity,
+  SubmissionDTO,
+} from '@models/submission/submission.entity';
 import { submissionMapper } from '@mappers/submission.mapper';
-import { SubmissionDTO } from '@models/submission/submission.entity';
 import { CreateSubmissionInput } from '@validators/submission.validator';
 import { auditService } from '@services/audit/audit.service';
 import { languageService } from '@services/language/language.service';
@@ -36,7 +38,6 @@ export class SubmissionService {
     if (!exerciseId) {
       throw new ValidationError('Exercise ID is required');
     }
-
     return await submissionModel.findByUserAndExercise(userId, exerciseId);
   }
 
@@ -71,6 +72,13 @@ export class SubmissionService {
     await languageService.validateLanguageSupport(input.language);
 
     const testCases = await exerciseModel.getTestCases(exercise.id);
+
+    if (!testCases || testCases.length === 0) {
+      throw new ValidationError(
+        'Este ejercicio no tiene casos de prueba configurados. Contacta con el profesor.'
+      );
+    }
+
     const limits = await exerciseModel.getExecutionLimits(
       exercise.id,
       input.language
@@ -98,6 +106,13 @@ export class SubmissionService {
       language: input.language,
       attemptNumber,
       isLate,
+      status: 'pending',
+      verdict: SubmissionVerdict.PENDING,
+      score: 0,
+      usedHint: false,
+      createdAt: now,
+      updatedAt: now,
+      constructor: { name: 'RowDataPacket' },
     });
 
     const execRequest: ExecutionRequest = {
@@ -131,7 +146,8 @@ export class SubmissionService {
         0,
         []
       );
-      throw error;
+
+      throw new Error('Error interno al comunicar con el motor de ejecución.');
     }
 
     let finalScore = execResult.score;
