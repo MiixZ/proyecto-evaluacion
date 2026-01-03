@@ -24,34 +24,32 @@ export const createUserSchema = z.object({
 export type CreateUserInput = z.infer<typeof createUserSchema>;
 
 export const updateUserSchema = z.object({
-  body: z.object({
-    firstName: z
-      .string()
-      .min(2, 'El nombre debe tener al menos 2 caracteres')
-      .optional(),
-    lastName: z
-      .string()
-      .min(2, 'Los apellidos deben tener al menos 2 caracteres')
-      .optional(),
-    phone: z
-      .string()
-      .regex(/^\+?[0-9]{7,15}$/, 'Número de teléfono inválido')
-      .optional()
-      .or(z.literal('')),
-    bio: z
-      .string()
-      .max(500, 'La biografía no puede exceder los 500 caracteres')
-      .optional()
-      .or(z.literal('')),
-    preferredLanguage: z
-      .enum(['es', 'en'], {
-        errorMap: () => ({ message: 'Idioma no soportado (es, en)' }),
-      })
-      .optional(),
-  }),
+  firstName: z
+    .string()
+    .min(2, 'El nombre debe tener al menos 2 caracteres')
+    .optional(),
+  lastName: z
+    .string()
+    .min(2, 'Los apellidos deben tener al menos 2 caracteres')
+    .optional(),
+  phone: z
+    .string()
+    .regex(/^\+?[0-9]{7,15}$/, 'Número de teléfono inválido')
+    .optional()
+    .or(z.literal('')),
+  bio: z
+    .string()
+    .max(500, 'La biografía no puede exceder los 500 caracteres')
+    .optional()
+    .or(z.literal('')),
+  preferredLanguage: z
+    .enum(['es', 'en'], {
+      errorMap: () => ({ message: 'Idioma no soportado (es, en)' }),
+    })
+    .optional(),
 });
 
-export type UpdateUserInput = z.infer<typeof updateUserSchema>['body'];
+export type UpdateUserInput = z.infer<typeof updateUserSchema>;
 
 export const changeRoleSchema = z.object({
   role: z.nativeEnum(UserRole, {
@@ -78,7 +76,6 @@ export const listUsersRequest = z.object({
 export const createUserRequest = z.object({ body: createUserSchema });
 
 export const updateUserRequest = z.object({
-  params: z.object({ id: z.string().uuid() }),
   body: updateUserSchema,
 });
 
