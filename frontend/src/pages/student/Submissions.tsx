@@ -53,7 +53,6 @@ export default function StudentSubmissionsPage() {
     queryFn: studentService.getAllSubmissions,
   });
 
-  // Filtrado en cliente
   const filteredSubmissions = submissions.filter((sub) => {
     const matchesSearch =
       sub.exerciseTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -92,7 +91,7 @@ export default function StudentSubmissionsPage() {
             {t(`submissions_page.verdict.pending`)}
           </Badge>
         );
-      default: // wrong_answer y otros fallos
+      default:
         return (
           <Badge
             variant="destructive"
@@ -224,7 +223,7 @@ export default function StudentSubmissionsPage() {
                       asChild
                       className="opacity-0 group-hover:opacity-100 transition-opacity">
                       <Link
-                        to={`/dashboard/exercise/${item.exerciseId}?courseId=${item.courseId}`}>
+                        to={`/dashboard/exercise/${item.exerciseId}?courseId=${item.courseId}&submissionId=${item.id}&tab=history`}>
                         {t("submissions_page.actions.view")}
                         <Eye className="ml-2 h-3 w-3" />
                       </Link>

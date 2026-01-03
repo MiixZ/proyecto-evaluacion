@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { AxiosError } from "axios";
+import axios from "axios";
 import { CodeEditor } from "@/components/code/CodeEditor";
 import { TestResults } from "@/components/code/TestResults";
 import { SubmissionHistory } from "@/components/exercise/SubmissionHistory";
@@ -43,13 +43,17 @@ import {
 
 export default function ExerciseView() {
   const { id } = useParams<{ id: string }>();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const courseId = searchParams.get("courseId");
+
+  const initialTab = searchParams.get("tab") || "statement";
+  const requestedSubmissionId = searchParams.get("submissionId");
+
   const { toast } = useToast();
   const { t } = useTranslation();
   const queryClient = useQueryClient();
 
-  const [activeTab, setActiveTab] = useState("statement");
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [submissionResult, setSubmissionResult] =
     useState<SubmissionResponse | null>(null);
   const [currentCode, setCurrentCode] = useState<string | undefined>(undefined);
@@ -71,26 +75,48 @@ export default function ExerciseView() {
   });
 
   useEffect(() => {
-    if (history && history.length > 0 && !submissionResult && !currentCode) {
-      const latestSubmission = history[0];
-      setSubmissionResult(latestSubmission as unknown as SubmissionResponse);
-
-      if (latestSubmission.code) {
-        setCurrentCode(latestSubmission.code);
+    if (!history || history.length === 0) {
+      if (exercise && !currentCode) {
+        setCurrentCode(
+          exercise.templateCode ||
+            `# Write your solution in ${exercise.language || "python"}`
+        );
       }
-    } else if (exercise && !currentCode && history.length === 0) {
-      setCurrentCode(
-        exercise.templateCode ||
-          `# Write your solution in ${exercise.language || "python"}`
-      );
+      return;
     }
-  }, [history, exercise, submissionResult, currentCode]);
+
+    let targetSubmission = history[0];
+
+    if (requestedSubmissionId) {
+      const found = history.find((s) => s.id === requestedSubmissionId);
+      if (found) targetSubmission = found;
+    }
+
+    const isDifferent = submissionResult?.id !== targetSubmission.id;
+
+    if (!submissionResult || (requestedSubmissionId && isDifferent)) {
+      setSubmissionResult(targetSubmission as unknown as SubmissionResponse);
+      if (targetSubmission.code) {
+        setCurrentCode(targetSubmission.code);
+      }
+    }
+  }, [history, exercise, requestedSubmissionId, submissionResult, currentCode]);
+
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+    if (tab) setActiveTab(tab);
+  }, [searchParams]);
 
   const handleSelectSubmission = (sub: SubmissionHistoryItem) => {
     if (sub.code) setCurrentCode(sub.code);
     setSubmissionResult(sub as unknown as SubmissionResponse);
+
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set("submissionId", sub.id);
+    setSearchParams(newParams);
+
     toast({
-      description: "Versión cargada del historial.",
+      description: "Visualizando envío seleccionado del historial.",
     });
   };
 
@@ -105,43 +131,40 @@ export default function ExerciseView() {
         description: `${t("exercise.submission.verdict")}: ${data.verdict}`,
         variant: data.verdict === "accepted" ? "default" : "destructive",
       });
+
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete("submissionId");
+      setSearchParams(newParams);
     },
     onError: (err) => {
-      console.log("Error completo:", err);
+      let description = t("exercise.submission.error_desc");
 
-      const errorTitle = t("exercise.submission.error_title");
-      let errorDescription = t("exercise.submission.error_desc");
-
-      if (err instanceof AxiosError && err.response?.data) {
+      if (axios.isAxiosError(err) && err.response?.data) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const data = err.response.data as any;
-
-        if (data.error && typeof data.error === "object") {
-          if (data.error.message) {
-            errorDescription = data.error.message;
-          }
+        if (
+          data.error &&
+          typeof data.error === "object" &&
+          data.error.message
+        ) {
+          description = data.error.message;
         } else if (data.message) {
-          errorDescription = data.message;
+          description = data.message;
+        } else if (typeof data.error === "string") {
+          description = data.error;
         }
       }
 
       toast({
-        title: errorTitle,
-        description: errorDescription,
+        title: t("exercise.submission.error_title"),
+        description: description,
         variant: "destructive",
       });
     },
   });
 
   const handleSubmit = (code: string, language: string) => {
-    if (!id || !courseId) {
-      toast({
-        title: t("exercise.status.error_title"),
-        description: t("exercise.status.missing_data"),
-        variant: "destructive",
-      });
-      return;
-    }
+    if (!id || !courseId) return;
 
     submitMutation.mutate({
       exerciseId: id,
@@ -172,12 +195,7 @@ export default function ExerciseView() {
   if (isLoadingExercise) {
     return (
       <div className="flex h-full items-center justify-center">
-        <div className="flex flex-col items-center gap-2">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">
-            {t("exercise.status.loading")}
-          </p>
-        </div>
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -196,7 +214,6 @@ export default function ExerciseView() {
 
   return (
     <div className="space-y-6 p-5 h-full flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500">
-      {/* Header Info */}
       <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
         <div>
           <div className="flex items-center gap-3 mb-2">
@@ -297,7 +314,7 @@ export default function ExerciseView() {
         <div className="space-y-4 flex flex-col h-full">
           <div className="flex-1 min-h-[400px]">
             <CodeEditor
-              key={currentCode ? "with-content" : "default"}
+              key={currentCode ? `loaded-${currentCode.length}` : "default"}
               initialCode={currentCode}
               language={exercise.language}
               onSubmit={handleSubmit}
