@@ -129,7 +129,9 @@
       "accepted": "Aprobado",
       "failed": "Fallido",
       "pending": "Pendiente",
-      "wrong_answer": "Respuesta Incorrecta"
+      "wrong_answer": "Respuesta Incorrecta",
+      "compilation_error": "Error de Compilación",
+      "runtime_error": "Error en Tiempo de Ejecución"
     },
     "toasts": {
       "reset_title": "Código reiniciado",

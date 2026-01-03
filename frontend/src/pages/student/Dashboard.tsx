@@ -104,7 +104,7 @@ export default function StudentDashboard() {
       const dateB = b.lastAttempt ? new Date(b.lastAttempt).getTime() : 0;
       return dateB - dateA;
     })
-    .slice(0, 3)
+    .slice(0, 4)
     .map((ex) => ({
       id: ex.exerciseId,
       courseId: ex.courseId,
