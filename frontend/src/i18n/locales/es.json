@@ -32,6 +32,38 @@
   "dashboard": {
     "welcome": "¡Bienvenido/a, {{name}}!"
   },
+  "subjects_page": {
+    "title": "Mis Asignaturas",
+    "subtitle": "Resumen de tu avance académico por materia.",
+    "view_exercises": "Ver ejercicios",
+    "empty": "No estás matriculado en ninguna asignatura activa.",
+    "stats": {
+      "progress": "Progreso del curso",
+      "completed": "Completados",
+      "score": "Nota media"
+    }
+  },
+  "progress_page": {
+    "title": "Mi Progreso",
+    "subtitle": "Historial detallado de rendimiento y calificaciones.",
+    "search_placeholder": "Buscar por ejercicio o asignatura...",
+    "table": {
+      "exercise": "Ejercicio",
+      "subject": "Asignatura",
+      "difficulty": "Dificultad",
+      "attempts": "Intentos",
+      "score": "Mejor Nota",
+      "last_attempt": "Último Intento",
+      "status": "Estado",
+      "actions": "Acciones"
+    },
+    "status": {
+      "completed": "Aprobado",
+      "pending": "Pendiente",
+      "failed": "Fallido"
+    },
+    "empty": "No se encontraron registros."
+  },
   "exercises_page": {
     "title": "Mis Ejercicios",
     "subtitle": "Explora y resuelve los ejercicios asignados en tus asignaturas.",
@@ -57,6 +89,8 @@
     "menu": {
       "dashboard": "Dashboard",
       "exercises": "Ejercicios",
+      "subjects": "Mis Asignaturas",
+      "progress": "Mi Progreso",
       "submissions": "Mis Envíos",
       "professor_panel": "Panel Docente",
       "groups": "Gestión de Grupos",

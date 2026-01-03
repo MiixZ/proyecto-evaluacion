@@ -17,13 +17,14 @@ import {
   Code2,
   LayoutDashboard,
   BookOpen,
-  Send,
   Users,
   Settings,
   LogOut,
   ShieldAlert,
   GraduationCap,
   FileCode,
+  Library,
+  BarChart3,
 } from "lucide-react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
@@ -55,14 +56,19 @@ export function AppSidebar() {
         exact: true,
       },
       {
+        title: t("sidebar.menu.subjects"),
+        url: "/dashboard/subjects",
+        icon: Library,
+      },
+      {
         title: t("sidebar.menu.exercises"),
         url: "/dashboard/exercises",
         icon: FileCode,
       },
       {
-        title: t("sidebar.menu.submissions"),
-        url: "/dashboard/submissions",
-        icon: Send,
+        title: t("sidebar.menu.progress"),
+        url: "/dashboard/progress",
+        icon: BarChart3,
       },
     ],
     professor: [
@@ -110,7 +116,6 @@ export function AppSidebar() {
 
   const isActiveLink = (url: string, exact: boolean = false) => {
     if (exact) return pathname === url;
-
     return pathname.startsWith(url);
   };
 

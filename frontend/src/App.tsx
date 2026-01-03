@@ -2,12 +2,14 @@ import { Toaster } from "@/components/ui/feedback/toaster";
 import { Toaster as Sonner } from "@/components/ui/feedback/sonner";
 import { TooltipProvider } from "@/components/ui/overlay/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 import StudentDashboard from "./pages/student/Dashboard";
 import StudentExercises from "./pages/student/Exercises";
+import StudentSubjects from "./pages/student/Subjects";
+import StudentProgressPage from "./pages/student/Progress";
 import StudentExerciseView from "./pages/student/ExerciseView";
 import ProfessorDashboard from "./pages/professor/Dashboard";
 import AdminDashboard from "./pages/admin/Dashboard";
@@ -35,14 +37,20 @@ const App = () => (
                 path="/dashboard/exercises"
                 element={<StudentExercises />}
               />
+              {/* NUEVAS RUTAS AÑADIDAS */}
+              <Route path="/dashboard/subjects" element={<StudentSubjects />} />
+              <Route
+                path="/dashboard/progress"
+                element={<StudentProgressPage />}
+              />
+              <Route
+                path="/dashboard/submissions"
+                element={<StudentProgressPage />}
+              />{" "}
+              {/* Alias por compatibilidad */}
               <Route
                 path="/dashboard/exercise/:id"
                 element={<StudentExerciseView />}
-              />
-              {/* Ruta para ver submissions */}
-              <Route
-                path="/dashboard/submissions"
-                element={<Navigate to="/dashboard" replace />}
               />
               {/* Rutas de Profesor */}
               <Route path="/professor" element={<ProfessorDashboard />} />
