@@ -70,6 +70,11 @@ export function AppSidebar() {
         url: "/dashboard/progress",
         icon: BarChart3,
       },
+      {
+        title: t("sidebar.menu.submissions"),
+        url: "/dashboard/submissions",
+        icon: BookOpen,
+      },
     ],
     professor: [
       {

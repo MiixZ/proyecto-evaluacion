@@ -7,23 +7,7 @@ import {
 import { SubmissionVerdict } from '@CustomTypes/common.types';
 import { submissionMapper } from '@mappers/submission.mapper';
 import { getPool } from '@config/database';
-
-interface SubmissionRow extends RowDataPacket {
-  id: string;
-  exercise_id: string;
-  student_id: string;
-  course_id: string;
-  attempt_number: number;
-  code: string;
-  language: string;
-  status: string;
-  verdict: string;
-  score: number;
-  is_late: number;
-  used_hint: number;
-  created_at: Date;
-  updated_at: Date;
-}
+import { SubmissionRow } from './submission.row';
 
 interface SubmissionJoinRow extends RowDataPacket {
   s_id: string;
@@ -48,6 +32,18 @@ interface SubmissionJoinRow extends RowDataPacket {
   tr_hint_text: string | null;
 }
 
+interface SubmissionListRow extends RowDataPacket {
+  id: string;
+  exercise_id: string;
+  exercise_title: string;
+  subject_name: string;
+  verdict: string;
+  score: number;
+  created_at: Date;
+  language: string;
+  execution_time_ms: number;
+}
+
 export class SubmissionModel {
   async getById(id: string): Promise<SubmissionEntity | null> {
     const [rows] = await getPool().query<SubmissionRow[]>(
@@ -56,7 +52,6 @@ export class SubmissionModel {
     );
 
     if (rows.length === 0) return null;
-
     return submissionMapper.toEntity(rows[0]);
   }
 
@@ -135,6 +130,7 @@ export class SubmissionModel {
       'SELECT COUNT(*) as count FROM submissions WHERE student_id = ? AND exercise_id = ?',
       [userId, exerciseId]
     );
+
     return rows[0].count;
   }
 
@@ -143,7 +139,6 @@ export class SubmissionModel {
     exerciseId: string
   ): Promise<number> {
     const count = await this.countAttempts(userId, exerciseId);
-
     return count + 1;
   }
 
@@ -208,6 +203,35 @@ export class SubmissionModel {
     return Array.from(submissionsMap.values()).map((entity) =>
       submissionMapper.toDTO(entity)
     );
+  }
+
+  async findAllByUser(userId: string): Promise<any[]> {
+    const [rows] = await getPool().query<SubmissionListRow[]>(
+      `SELECT 
+        s.id, s.exercise_id, s.verdict, s.score, s.created_at, s.language,
+        e.title as exercise_title,
+        subj.name as subject_name,
+        c.id as course_id
+      FROM submissions s
+      JOIN exercises e ON s.exercise_id = e.id
+      JOIN courses c ON s.course_id = c.id
+      JOIN subjects subj ON c.subject_id = subj.id
+      WHERE s.student_id = ?
+      ORDER BY s.created_at DESC`,
+      [userId]
+    );
+
+    return rows.map((row) => ({
+      id: row.id,
+      exerciseId: row.exercise_id,
+      exerciseTitle: row.exercise_title,
+      subjectName: row.subject_name,
+      courseId: row.course_id,
+      verdict: row.verdict,
+      score: row.score,
+      createdAt: row.created_at,
+      language: row.language,
+    }));
   }
 }
 

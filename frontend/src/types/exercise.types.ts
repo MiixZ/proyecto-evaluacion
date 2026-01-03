@@ -26,6 +26,18 @@ export interface TestResult {
   hintText?: string | null;
 }
 
+export interface StudentSubmission {
+  id: string;
+  exerciseId: string;
+  exerciseTitle: string;
+  subjectName: string;
+  courseId: string;
+  verdict: string;
+  score: number;
+  createdAt: string;
+  language: string;
+}
+
 export interface SubmissionResponse {
   id: string;
   status: string;

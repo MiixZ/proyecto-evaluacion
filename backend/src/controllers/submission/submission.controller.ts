@@ -33,7 +33,7 @@ export class SubmissionController {
 
     const history = await submissionService.getStudentHistory(
       userId as UUID,
-      exerciseId as UUID
+      exerciseId ? (exerciseId as UUID) : undefined
     );
 
     return ApiResponse.success(res, history, 200, 'Historial recuperado');

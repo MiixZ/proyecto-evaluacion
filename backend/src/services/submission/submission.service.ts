@@ -31,14 +31,12 @@ export class SubmissionService {
     this.executionClient = new ExecutionEngineClient();
   }
 
-  async getStudentHistory(
-    userId: UUID,
-    exerciseId: UUID
-  ): Promise<SubmissionDTO[]> {
-    if (!exerciseId) {
-      throw new ValidationError('Exercise ID is required');
+  async getStudentHistory(userId: UUID, exerciseId?: UUID): Promise<any[]> {
+    if (exerciseId) {
+      return await submissionModel.findByUserAndExercise(userId, exerciseId);
+    } else {
+      return await submissionModel.findAllByUser(userId);
     }
-    return await submissionModel.findByUserAndExercise(userId, exerciseId);
   }
 
   async processSubmission(

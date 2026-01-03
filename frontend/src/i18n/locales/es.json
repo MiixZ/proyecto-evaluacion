@@ -94,6 +94,40 @@
     },
     "empty": "No se encontraron registros."
   },
+  "submissions_page": {
+    "title": "Mis Envíos",
+    "subtitle": "Registro histórico completo de todas tus soluciones enviadas.",
+    "search_placeholder": "Buscar por ejercicio, asignatura o lenguaje...",
+    "filter_placeholder": "Filtrar por veredicto",
+    "table": {
+      "exercise": "Ejercicio",
+      "subject": "Asignatura",
+      "date": "Fecha y Hora",
+      "language": "Lenguaje",
+      "verdict": "Veredicto",
+      "score": "Nota",
+      "actions": "Acciones"
+    },
+    "verdict": {
+      "accepted": "Aceptado",
+      "wrong_answer": "Respuesta Incorrecta",
+      "compilation_error": "Error de Compilación",
+      "runtime_error": "Error de Ejecución",
+      "time_limit": "Tiempo Excedido",
+      "pending": "Procesando"
+    },
+    "filter": {
+      "all": "Todos los veredictos",
+      "accepted": "Aceptados",
+      "wrong_answer": "Respuesta Incorrecta",
+      "compilation_error": "Error de Compilación"
+    },
+    "empty": "No se encontraron envíos que coincidan con tu búsqueda.",
+    "clear_filters": "Limpiar filtros",
+    "actions": {
+      "view": "Ver Detalles"
+    }
+  },
   "exercises_page": {
     "title": "Mis Ejercicios",
     "subtitle": "Explora y resuelve los ejercicios asignados en tus asignaturas.",

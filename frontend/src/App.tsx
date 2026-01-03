@@ -12,6 +12,7 @@ import StudentSubjects from "./pages/student/Subjects";
 import StudentProgressPage from "./pages/student/Progress";
 import StudentExerciseView from "./pages/student/ExerciseView";
 import ProfessorDashboard from "./pages/professor/Dashboard";
+import StudentSubmissionsPage from "./pages/student/Submissions";
 import AdminDashboard from "./pages/admin/Dashboard";
 import { AuthProvider } from "./context/AuthProvider";
 import DashboardLayout from "./components/layout/DashboardLayout";
@@ -45,8 +46,8 @@ const App = () => (
               />
               <Route
                 path="/dashboard/submissions"
-                element={<StudentProgressPage />}
-              />{" "}
+                element={<StudentSubmissionsPage />}
+              />
               {/* Alias por compatibilidad */}
               <Route
                 path="/dashboard/exercise/:id"
