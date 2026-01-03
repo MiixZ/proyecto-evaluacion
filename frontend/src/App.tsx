@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 import StudentDashboard from "./pages/student/Dashboard";
+import StudentExercises from "./pages/student/Exercises";
 import StudentExerciseView from "./pages/student/ExerciseView";
 import ProfessorDashboard from "./pages/professor/Dashboard";
 import AdminDashboard from "./pages/admin/Dashboard";
@@ -26,17 +27,22 @@ const App = () => (
             {/* Rutas Públicas */}
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
-            {/* Rutas Protegidas (Dashboard) */}
+
+            {/* Rutas Protegidas */}
             <Route element={<DashboardLayout />}>
               <Route path="/dashboard" element={<StudentDashboard />} />
               <Route
                 path="/dashboard/exercises"
-                element={<Navigate to="/dashboard" replace />}
-              />{" "}
-              {/* Ejemplo redirección */}
+                element={<StudentExercises />}
+              />
               <Route
                 path="/dashboard/exercise/:id"
                 element={<StudentExerciseView />}
+              />
+              {/* Ruta para ver submissions */}
+              <Route
+                path="/dashboard/submissions"
+                element={<Navigate to="/dashboard" replace />}
               />
               {/* Rutas de Profesor */}
               <Route path="/professor" element={<ProfessorDashboard />} />

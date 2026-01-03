@@ -141,11 +141,24 @@
     "submit": "Enviar",
     "submitting": "Enviando...",
     "placeholder": "Escribe o pega tu código aquí...",
+    "run_code_to_see_results": "Ejecuta tu código para ver los resultados aquí.",
+    "test_results": "Resultados de las pruebas",
+    "test_case": "Caso de prueba",
+    "ms": "ms",
     "toasts": {
       "reset_title": "Código reiniciado",
       "reset_desc": "El editor ha sido restaurado al código inicial.",
       "upload_title": "Archivo cargado",
       "upload_desc": "El contenido del archivo ha reemplazado el código actual."
+    },
+    "verdict": {
+      "accepted": "Aceptado",
+      "wrong_answer": "Respuesta Incorrecta",
+      "compilation_error": "Error de Compilación",
+      "runtime_error": "Error en tiempo de ejecución",
+      "time_limit": "Tiempo Excedido",
+      "memory_limit": "Memoria Excedida",
+      "pending": "Pendiente"
     }
   },
   "landing": {
