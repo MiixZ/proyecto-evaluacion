@@ -29,6 +29,7 @@ router.get(
 router.get('/teachers', userController.getTeachers);
 router.get('/students', userController.getStudents);
 
+router.get('/profile/me', userController.getMe);
 router.get('/:id', authMiddleware, userController.getUserById);
 
 router.patch(
@@ -37,8 +38,6 @@ router.patch(
   validateRequest(updateUserRequest),
   userController.updateMe
 );
-
-router.get('/me', userController.getMe);
 
 router.patch(
   '/:id/role',

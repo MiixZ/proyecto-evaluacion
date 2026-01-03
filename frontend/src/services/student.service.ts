@@ -25,7 +25,7 @@ export const studentService = {
   },
 
   getMe: async (): Promise<UserProfile> => {
-    const { data } = await api.get("/v1/users/me");
+    const { data } = await api.get("/v1/users/profile/me");
 
     return data.data;
   },
