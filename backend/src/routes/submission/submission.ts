@@ -17,4 +17,9 @@ router.post(
   submissionController.submitCode
 );
 
+/**
+ * GET /api/v1/submissions
+ */
+router.get('/', submissionController.getHistory);
+
 export default router;

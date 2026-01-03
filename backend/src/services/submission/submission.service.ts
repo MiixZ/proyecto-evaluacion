@@ -29,6 +29,17 @@ export class SubmissionService {
     this.executionClient = new ExecutionEngineClient();
   }
 
+  async getStudentHistory(
+    userId: UUID,
+    exerciseId: UUID
+  ): Promise<SubmissionDTO[]> {
+    if (!exerciseId) {
+      throw new ValidationError('Exercise ID is required');
+    }
+
+    return await submissionModel.findByUserAndExercise(userId, exerciseId);
+  }
+
   async processSubmission(
     userId: UUID,
     input: CreateSubmissionInput & { courseId: UUID }

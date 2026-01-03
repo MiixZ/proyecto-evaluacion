@@ -26,6 +26,18 @@ export class SubmissionController {
       'Solución enviada y evaluada correctamente'
     );
   });
+
+  getHistory = catchAsync(async (req: AuthRequest, res: Response) => {
+    const userId = req.user!.id;
+    const { exerciseId } = req.query;
+
+    const history = await submissionService.getStudentHistory(
+      userId as UUID,
+      exerciseId as UUID
+    );
+
+    return ApiResponse.success(res, history, 200, 'Historial recuperado');
+  });
 }
 
 export const submissionController = new SubmissionController();

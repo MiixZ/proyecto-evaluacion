@@ -1,10 +1,11 @@
 import { PoolConnection } from 'mysql2/promise';
 import { getPool, withTransaction } from '@config/database';
 import {
+  SubmissionDTO,
   SubmissionEntity,
   SubmissionTestResultEntity,
 } from './submission.entity';
-import { SubmissionRow } from './submission.row';
+import { SubmissionJoinRow, SubmissionRow } from './submission.row';
 import {
   UUID,
   SubmissionStatus,
@@ -140,6 +141,65 @@ export class SubmissionModel {
     updatedEntity.testResults = testResults;
 
     return updatedEntity;
+  }
+
+  async findByUserAndExercise(
+    userId: string,
+    exerciseId: string
+  ): Promise<SubmissionDTO[]> {
+    const [rows] = await getPool().query<SubmissionJoinRow[]>(
+      `SELECT 
+        s.id as s_id, s.exercise_id as s_exercise_id, s.student_id as s_student_id, 
+        s.course_id as s_course_id, s.attempt_number as s_attempt_number, s.code as s_code, 
+        s.language as s_language, s.status as s_status, s.verdict as s_verdict, 
+        s.score as s_score, s.is_late as s_is_late, s.created_at as s_created_at,
+        
+        str.id as tr_id, str.test_case_id as tr_test_case_id, str.status as tr_status, 
+        str.actual_output as tr_actual_output, str.execution_time_ms as tr_execution_time_ms, 
+        str.memory_used_mb as tr_memory_used_mb
+      FROM submissions s
+      LEFT JOIN submission_test_results str ON s.id = str.submission_id
+      WHERE s.student_id = ? AND s.exercise_id = ?
+      ORDER BY s.attempt_number DESC, str.created_at ASC`,
+      [userId, exerciseId]
+    );
+
+    const submissionsMap = new Map<string, any>();
+
+    rows.forEach((row) => {
+      if (!submissionsMap.has(row.s_id)) {
+        submissionsMap.set(row.s_id, {
+          id: row.s_id,
+          exerciseId: row.s_exercise_id,
+          studentId: row.s_student_id,
+          courseId: row.s_course_id,
+          attemptNumber: row.s_attempt_number,
+          code: row.s_code,
+          language: row.s_language,
+          status: row.s_status,
+          verdict: row.s_verdict,
+          score: row.s_score,
+          isLate: !!row.s_is_late,
+          createdAt: row.s_created_at,
+          testResults: [],
+        });
+      }
+
+      if (row.tr_id) {
+        submissionsMap.get(row.s_id).testResults.push({
+          id: row.tr_id,
+          testCaseId: row.tr_test_case_id,
+          status: row.tr_status,
+          actualOutput: row.tr_actual_output,
+          executionTimeMs: row.tr_execution_time_ms,
+          memoryUsedMb: row.tr_memory_used_mb,
+        });
+      }
+    });
+
+    return Array.from(submissionsMap.values()).map((entity) =>
+      submissionMapper.toDTO(entity)
+    );
   }
 }
 

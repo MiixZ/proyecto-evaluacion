@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -49,9 +49,11 @@ export default function ExerciseView() {
   const [submissionResult, setSubmissionResult] =
     useState<SubmissionResponse | null>(null);
 
+  const [currentCode, setCurrentCode] = useState<string | undefined>(undefined);
+
   const {
     data: exercise,
-    isLoading,
+    isLoading: isLoadingExercise,
     error,
   } = useQuery({
     queryKey: ["exercise", id],
@@ -59,11 +61,32 @@ export default function ExerciseView() {
     enabled: !!id,
   });
 
-  const { data: history = [] } = useQuery({
+  const { data: history = [], isLoading: isLoadingHistory } = useQuery({
     queryKey: ["exerciseHistory", id],
     queryFn: () => exerciseService.getHistory(id!),
     enabled: !!id,
   });
+
+  useEffect(() => {
+    if (history && history.length > 0 && !submissionResult) {
+      const latestSubmission = history[0];
+
+      setSubmissionResult(latestSubmission as unknown as SubmissionResponse);
+
+      if (latestSubmission.code) {
+        setCurrentCode(latestSubmission.code);
+      }
+    }
+  }, [history, submissionResult]);
+
+  useEffect(() => {
+    if (exercise && !currentCode) {
+      setCurrentCode(
+        exercise.templateCode ||
+          `# Write your solution in ${exercise.language || "python"}`
+      );
+    }
+  }, [currentCode, exercise]);
 
   const submitMutation = useMutation({
     mutationFn: exerciseService.submitSolution,
@@ -80,10 +103,12 @@ export default function ExerciseView() {
 
       if (data.verdict !== "accepted" && activeTab !== "hints") {
         toast({
-          title: t("exercise.submission.hint_suggestion_title"),
-          description: t("exercise.submission.hint_suggestion_desc"),
+          title: t("exercise.hints.suggestion_title"),
+          description: t("exercise.hints.suggestion_desc"),
           variant: "default",
         });
+
+        setActiveTab("hints");
       }
     },
     onError: (err) => {
@@ -103,10 +128,9 @@ export default function ExerciseView() {
         description: t("exercise.status.missing_data"),
         variant: "destructive",
       });
+
       return;
     }
-
-    setSubmissionResult(null);
 
     submitMutation.mutate({
       exerciseId: id,
@@ -134,7 +158,7 @@ export default function ExerciseView() {
     return t(`exercise.difficulty.${diff}` as any) || diff;
   };
 
-  if (isLoading) {
+  if (isLoadingExercise || isLoadingHistory) {
     return (
       <div className="flex h-full items-center justify-center">
         <div className="flex flex-col items-center gap-2">
@@ -220,7 +244,6 @@ export default function ExerciseView() {
               </TabsTrigger>
             </TabsList>
 
-            {/* Pestaña: Enunciado */}
             <TabsContent value="statement" className="flex-1 mt-4 min-h-0">
               <Card className="h-full flex flex-col">
                 <CardContent className="p-6 flex-1 overflow-y-auto custom-scrollbar">
@@ -235,7 +258,6 @@ export default function ExerciseView() {
               </Card>
             </TabsContent>
 
-            {/* Pestaña: Pistas */}
             <TabsContent value="hints" className="flex-1 mt-4 min-h-0">
               <Card className="h-full flex flex-col">
                 <CardContent className="p-6 flex-1 overflow-y-auto custom-scrollbar">
@@ -244,7 +266,6 @@ export default function ExerciseView() {
               </Card>
             </TabsContent>
 
-            {/* Pestaña: Historial */}
             <TabsContent value="history" className="flex-1 mt-4 min-h-0">
               <Card className="h-full flex flex-col">
                 <CardHeader>
@@ -264,10 +285,9 @@ export default function ExerciseView() {
         <div className="space-y-4 flex flex-col h-full">
           <div className="flex-1 min-h-[400px]">
             <CodeEditor
-              initialCode={
-                exercise.templateCode ||
-                `# Write your solution in ${exercise.language || "python"}`
-              }
+              key={currentCode ? "with-history" : "default"}
+              initialCode={currentCode}
+              language={exercise.language}
               onSubmit={handleSubmit}
               isSubmitting={submitMutation.isPending}
             />

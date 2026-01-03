@@ -41,6 +41,7 @@ export interface SubmissionHistoryItem {
   createdAt: string;
   language: string;
   executionTimeMs?: number;
+  code: string;
 }
 
 export interface HintResponse {

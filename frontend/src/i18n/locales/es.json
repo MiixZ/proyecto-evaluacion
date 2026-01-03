@@ -128,7 +128,8 @@
     "verdict": {
       "accepted": "Aprobado",
       "failed": "Fallido",
-      "pending": "Pendiente"
+      "pending": "Pendiente",
+      "wrong_answer": "Respuesta Incorrecta"
     },
     "toasts": {
       "reset_title": "Código reiniciado",
