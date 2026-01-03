@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { CodeEditor } from "@/components/code/CodeEditor";
 import { TestResults } from "@/components/code/TestResults";
+import { SubmissionHistory } from "@/components/exercise/SubmissionHistory";
+import { HintPanel } from "@/components/exercise/HintPanel";
 import { Badge } from "@/components/ui/data/badge";
 import {
   Card,
@@ -33,6 +35,7 @@ import {
 } from "@/components/ui/feedback/alert";
 import { exerciseService } from "@/services/exercise.service";
 import { useToast } from "@/hooks/use-toast";
+import { SubmissionResponse } from "@/types/exercise.types";
 
 export default function ExerciseView() {
   const { id } = useParams<{ id: string }>();
@@ -40,10 +43,11 @@ export default function ExerciseView() {
   const courseId = searchParams.get("courseId");
   const { toast } = useToast();
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
 
   const [activeTab, setActiveTab] = useState("statement");
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [submissionResult, setSubmissionResult] = useState<any>(null);
+  const [submissionResult, setSubmissionResult] =
+    useState<SubmissionResponse | null>(null);
 
   const {
     data: exercise,
@@ -55,15 +59,32 @@ export default function ExerciseView() {
     enabled: !!id,
   });
 
+  const { data: history = [] } = useQuery({
+    queryKey: ["exerciseHistory", id],
+    queryFn: () => exerciseService.getHistory(id!),
+    enabled: !!id,
+  });
+
   const submitMutation = useMutation({
     mutationFn: exerciseService.submitSolution,
     onSuccess: (data) => {
       setSubmissionResult(data);
+
+      queryClient.invalidateQueries({ queryKey: ["exerciseHistory", id] });
+
       toast({
         title: t("exercise.submission.success_title"),
         description: `${t("exercise.submission.verdict")}: ${data.verdict}`,
         variant: data.verdict === "accepted" ? "default" : "destructive",
       });
+
+      if (data.verdict !== "accepted" && activeTab !== "hints") {
+        toast({
+          title: t("exercise.submission.hint_suggestion_title"),
+          description: t("exercise.submission.hint_suggestion_desc"),
+          variant: "default",
+        });
+      }
     },
     onError: (err) => {
       toast({
@@ -149,7 +170,6 @@ export default function ExerciseView() {
               className={getDifficultyColor(exercise.difficulty)}>
               {getDifficultyLabel(exercise.difficulty)}
             </Badge>
-            {/* Nota: Eliminado placeholder de Asignatura/Tema porque el backend no lo provee en este endpoint */}
           </div>
           <h1 className="text-2xl font-bold">{exercise.title}</h1>
         </div>
@@ -179,7 +199,7 @@ export default function ExerciseView() {
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6 flex-1 min-h-0">
-        {/* Left Column - Problem Statement */}
+        {/* Left Column - Tabs Area */}
         <div className="flex flex-col h-full min-h-[500px]">
           <Tabs
             value={activeTab}
@@ -200,6 +220,7 @@ export default function ExerciseView() {
               </TabsTrigger>
             </TabsList>
 
+            {/* Pestaña: Enunciado */}
             <TabsContent value="statement" className="flex-1 mt-4 min-h-0">
               <Card className="h-full flex flex-col">
                 <CardContent className="p-6 flex-1 overflow-y-auto custom-scrollbar">
@@ -214,28 +235,25 @@ export default function ExerciseView() {
               </Card>
             </TabsContent>
 
-            <TabsContent value="hints" className="flex-1 mt-4">
-              <Card className="h-full">
-                <CardContent className="p-6">
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Lightbulb className="h-12 w-12 mx-auto mb-4 text-chart-4" />
-                    <p>{t("exercise.hints.empty")}</p>
-                  </div>
+            {/* Pestaña: Pistas */}
+            <TabsContent value="hints" className="flex-1 mt-4 min-h-0">
+              <Card className="h-full flex flex-col">
+                <CardContent className="p-6 flex-1 overflow-y-auto custom-scrollbar">
+                  <HintPanel lastSubmission={submissionResult} />
                 </CardContent>
               </Card>
             </TabsContent>
 
-            <TabsContent value="history" className="flex-1 mt-4">
-              <Card className="h-full">
+            {/* Pestaña: Historial */}
+            <TabsContent value="history" className="flex-1 mt-4 min-h-0">
+              <Card className="h-full flex flex-col">
                 <CardHeader>
                   <CardTitle className="text-base">
                     {t("exercise.tabs.history")}
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <p className="text-center py-8 text-muted-foreground">
-                    {t("exercise.history.empty")}
-                  </p>
+                <CardContent className="p-0 flex-1 overflow-hidden">
+                  <SubmissionHistory history={history} />
                 </CardContent>
               </Card>
             </TabsContent>

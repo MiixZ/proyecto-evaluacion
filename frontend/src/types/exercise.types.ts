@@ -3,6 +3,7 @@ export type DifficultyLevel = "beginner" | "intermediate" | "advanced";
 export interface Exercise {
   id: string;
   syllabusId: string;
+  courseId?: string;
   title: string;
   description: string;
   difficulty: DifficultyLevel;
@@ -13,6 +14,17 @@ export interface Exercise {
   deadline?: string;
 }
 
+export interface TestResult {
+  id: string;
+  testCaseId: string;
+  status: "passed" | "failed" | "error";
+  input?: string;
+  expectedOutput?: string;
+  actualOutput?: string | null;
+  executionTimeMs: number;
+  memoryUsedMb: number;
+}
+
 export interface SubmissionResponse {
   id: string;
   status: string;
@@ -21,12 +33,17 @@ export interface SubmissionResponse {
   testResults: TestResult[];
 }
 
-export interface TestResult {
+export interface SubmissionHistoryItem {
   id: string;
-  status: "passed" | "failed" | "error";
-  input?: string;
-  expectedOutput?: string;
-  actualOutput?: string | null;
-  executionTimeMs: number;
-  memoryUsedMb: number;
+  status: "pending" | "running" | "completed" | "failed";
+  verdict: string;
+  score: number;
+  createdAt: string;
+  language: string;
+  executionTimeMs?: number;
+}
+
+export interface HintResponse {
+  hintText: string;
+  penaltyApplied: number;
 }

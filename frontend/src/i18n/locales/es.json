@@ -74,10 +74,30 @@
       "history": "Historial"
     },
     "hints": {
-      "empty": "No hay pistas disponibles para este ejercicio."
+      "title": "Pistas Disponibles",
+      "empty_state": "No hay pistas disponibles en este momento. Realiza un envío primero; si fallas algún caso de prueba, aparecerán aquí las ayudas contextuales.",
+      "request_btn": "Revelar Pista",
+      "penalty_warning": "Esta pista aplicará una penalización del {{penalty}}% sobre la nota de este test.",
+      "test_case": "Caso de prueba #{{number}}",
+      "status_failed": "Fallido",
+      "success_unlocked": "Pista revelada correctamente",
+      "error_locking": "No se pudo desbloquear la pista",
+      "all_passed": "¡Felicidades! Tu solución ha pasado todas las pruebas. No necesitas pistas.",
+      "no_last_submission": "Aún no hay resultados de envíos recientes para analizar."
     },
     "history": {
-      "empty": "Funcionalidad de historial detallado próximamente."
+      "empty": "No hay historial de envíos para este ejercicio.",
+      "verdict": {
+        "accepted": "Aceptado",
+        "wrong_answer": "Respuesta Incorrecta",
+        "compilation_error": "Error de Compilación",
+        "runtime_error": "Error en Tiempo de Ejecución",
+        "time_limit": "Tiempo Excedido",
+        "memory_limit": "Memoria Excedida",
+        "pending": "Pendiente"
+      },
+      "time_suffix": "ms",
+      "score": "Puntuación"
     },
     "status": {
       "loading": "Cargando ejercicio...",
@@ -101,6 +121,15 @@
     "submit": "Enviar",
     "submitting": "Enviando...",
     "placeholder": "Escribe o pega tu código aquí...",
+    "run_code_to_see_results": "Envía tu código para ver los resultados de las pruebas.",
+    "test_case": "Caso de prueba",
+    "test_results": "Resultados de las pruebas",
+    "ms": "ms",
+    "verdict": {
+      "accepted": "Aprobado",
+      "failed": "Fallido",
+      "pending": "Pendiente"
+    },
     "toasts": {
       "reset_title": "Código reiniciado",
       "reset_desc": "El editor ha sido restaurado al código inicial.",
