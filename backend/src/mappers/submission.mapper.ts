@@ -4,6 +4,7 @@ import {
   SubmissionDTO,
   SubmissionTestResultDTO,
 } from '../models/submission/submission.entity';
+import { SubmissionRow } from '@models/submission/submission.row';
 
 class SubmissionMapper {
   toDTO(
@@ -28,6 +29,28 @@ class SubmissionMapper {
         ? submission.testResults.map((tr) => this.toTestResultDTO(tr))
         : [],
     };
+  }
+
+  toEntity(row: SubmissionRow): SubmissionEntity {
+    return {
+      id: row.id,
+      exerciseId: row.exercise_id,
+      studentId: row.student_id,
+      courseId: row.course_id,
+      attemptNumber: row.attempt_number,
+      code: row.code,
+      language: row.language,
+      status: row.status,
+      verdict: row.verdict,
+      score: row.score,
+      isLate: !!row.is_late,
+      usedHint: !!row.used_hint,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+      constructor: {
+        name: 'RowDataPacket',
+      },
+    } as SubmissionEntity;
   }
 
   private toTestResultDTO(
