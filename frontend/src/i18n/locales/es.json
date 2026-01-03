@@ -32,6 +32,26 @@
   "dashboard": {
     "welcome": "¡Bienvenido/a, {{name}}!"
   },
+  "exercises_page": {
+    "title": "Mis Ejercicios",
+    "subtitle": "Explora y resuelve los ejercicios asignados en tus asignaturas.",
+    "search_placeholder": "Buscar ejercicio...",
+    "filters": {
+      "subject": "Asignatura",
+      "all_subjects": "Todas las asignaturas",
+      "difficulty": "Dificultad",
+      "all_difficulties": "Todas las dificultades",
+      "status": "Estado",
+      "all_statuses": "Todos los estados",
+      "clear": "Limpiar filtros"
+    },
+    "status": {
+      "completed": "Completado",
+      "pending": "Pendiente",
+      "failed": "Intentado (Fallido)"
+    },
+    "empty": "No se encontraron ejercicios con los filtros seleccionados."
+  },
   "sidebar": {
     "header": "Plataforma Educativa",
     "menu": {
@@ -100,9 +120,9 @@
       "score": "Puntuación"
     },
     "status": {
-      "loading": "Cargando ejercicio...",
+      "loading": "Cargando...",
       "error_title": "Error",
-      "error_desc": "No se pudo cargar el ejercicio.",
+      "error_desc": "No se pudo cargar la información.",
       "missing_data": "Faltan datos del curso o ejercicio"
     },
     "submission": {
@@ -121,18 +141,6 @@
     "submit": "Enviar",
     "submitting": "Enviando...",
     "placeholder": "Escribe o pega tu código aquí...",
-    "run_code_to_see_results": "Envía tu código para ver los resultados de las pruebas.",
-    "test_case": "Caso de prueba",
-    "test_results": "Resultados de las pruebas",
-    "ms": "ms",
-    "verdict": {
-      "accepted": "Aprobado",
-      "failed": "Fallido",
-      "pending": "Pendiente",
-      "wrong_answer": "Respuesta Incorrecta",
-      "compilation_error": "Error de Compilación",
-      "runtime_error": "Error en Tiempo de Ejecución"
-    },
     "toasts": {
       "reset_title": "Código reiniciado",
       "reset_desc": "El editor ha sido restaurado al código inicial.",
