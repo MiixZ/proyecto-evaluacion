@@ -2,12 +2,12 @@ import { useState, useEffect } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { AxiosError } from "axios"; // <--- Importante para tipar el error
 import { CodeEditor } from "@/components/code/CodeEditor";
 import { TestResults } from "@/components/code/TestResults";
 import { SubmissionHistory } from "@/components/exercise/SubmissionHistory";
 import { HintPanel } from "@/components/exercise/HintPanel";
 import { Badge } from "@/components/ui/data/badge";
-import { AxiosError } from "axios";
 import {
   Card,
   CardContent,
@@ -73,7 +73,6 @@ export default function ExerciseView() {
   useEffect(() => {
     if (history && history.length > 0 && !submissionResult && !currentCode) {
       const latestSubmission = history[0];
-
       setSubmissionResult(latestSubmission as unknown as SubmissionResponse);
 
       if (latestSubmission.code) {
@@ -90,11 +89,8 @@ export default function ExerciseView() {
   const handleSelectSubmission = (sub: SubmissionHistoryItem) => {
     if (sub.code) setCurrentCode(sub.code);
     setSubmissionResult(sub as unknown as SubmissionResponse);
-
-    setActiveTab("statement");
-
     toast({
-      description: "Se ha cargado la versión seleccionada del historial.",
+      description: "Versión cargada del historial.",
     });
   };
 
@@ -109,37 +105,43 @@ export default function ExerciseView() {
         description: `${t("exercise.submission.verdict")}: ${data.verdict}`,
         variant: data.verdict === "accepted" ? "default" : "destructive",
       });
-
-      if (data.verdict !== "accepted" && activeTab !== "hints") {
-        setActiveTab("hints");
-        toast({
-          title: t("exercise.submission.hint_suggestion"),
-          description: t("exercise.submission.hint_suggestion_desc"),
-          variant: "default",
-        });
-      }
     },
-    onError: (err: Error | AxiosError) => {
-      let errorMessage = t("exercise.submission.error_desc");
+    onError: (err) => {
+      console.log("Error de envío:", err);
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const responseData = (err as any).response?.data;
+      let description = t("exercise.submission.error_desc");
 
-      if (responseData && responseData.message) {
-        errorMessage = responseData.message;
+      if (err instanceof AxiosError && err.response?.data) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const data = err.response.data as any;
+
+        if (data.message) {
+          description = data.message;
+        } else if (data.error) {
+          description =
+            typeof data.error === "string"
+              ? data.error
+              : JSON.stringify(data.error);
+        }
       }
 
       toast({
         title: t("exercise.submission.error_title"),
-        description: errorMessage,
+        description: description,
         variant: "destructive",
       });
-      console.error(err);
     },
   });
 
   const handleSubmit = (code: string, language: string) => {
-    if (!id || !courseId) return;
+    if (!id || !courseId) {
+      toast({
+        title: t("exercise.status.error_title"),
+        description: t("exercise.status.missing_data"),
+        variant: "destructive",
+      });
+      return;
+    }
 
     submitMutation.mutate({
       exerciseId: id,
@@ -170,7 +172,12 @@ export default function ExerciseView() {
   if (isLoadingExercise) {
     return (
       <div className="flex h-full items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <div className="flex flex-col items-center gap-2">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">
+            {t("exercise.status.loading")}
+          </p>
+        </div>
       </div>
     );
   }
@@ -275,7 +282,6 @@ export default function ExerciseView() {
                     {t("exercise.tabs.history")}
                   </CardTitle>
                 </CardHeader>
-                {/* Contenedor flexible para el historial */}
                 <CardContent className="p-0 flex-1 overflow-hidden flex flex-col">
                   <SubmissionHistory
                     history={history}
@@ -291,7 +297,7 @@ export default function ExerciseView() {
         <div className="space-y-4 flex flex-col h-full">
           <div className="flex-1 min-h-[400px]">
             <CodeEditor
-              key={currentCode ? "loaded" : "empty"}
+              key={currentCode ? "with-content" : "default"}
               initialCode={currentCode}
               language={exercise.language}
               onSubmit={handleSubmit}
