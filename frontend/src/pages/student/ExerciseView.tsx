@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { AxiosError } from "axios"; // <--- Importante para tipar el error
+import { AxiosError } from "axios";
 import { CodeEditor } from "@/components/code/CodeEditor";
 import { TestResults } from "@/components/code/TestResults";
 import { SubmissionHistory } from "@/components/exercise/SubmissionHistory";
@@ -107,27 +107,27 @@ export default function ExerciseView() {
       });
     },
     onError: (err) => {
-      console.log("Error de envío:", err);
+      console.log("Error completo:", err);
 
-      let description = t("exercise.submission.error_desc");
+      const errorTitle = t("exercise.submission.error_title");
+      let errorDescription = t("exercise.submission.error_desc");
 
       if (err instanceof AxiosError && err.response?.data) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const data = err.response.data as any;
 
-        if (data.message) {
-          description = data.message;
-        } else if (data.error) {
-          description =
-            typeof data.error === "string"
-              ? data.error
-              : JSON.stringify(data.error);
+        if (data.error && typeof data.error === "object") {
+          if (data.error.message) {
+            errorDescription = data.error.message;
+          }
+        } else if (data.message) {
+          errorDescription = data.message;
         }
       }
 
       toast({
-        title: t("exercise.submission.error_title"),
-        description: description,
+        title: errorTitle,
+        description: errorDescription,
         variant: "destructive",
       });
     },
