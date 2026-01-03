@@ -44,7 +44,6 @@ const Login = () => {
     t("landing.login_features.languages"),
   ];
 
-  // Obtenemos el esquema inyectando 't'
   const loginSchema = getLoginSchema(t);
 
   const form = useForm<LoginFormValues>({
