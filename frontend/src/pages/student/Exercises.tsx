@@ -1,5 +1,6 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { useSearchParams } from "react-router-dom"; // Importar hook
 import { useQuery } from "@tanstack/react-query";
 import { Search, Loader2, BookOpen, FilterX } from "lucide-react";
 import { studentService } from "@/services/student.service";
@@ -25,9 +26,13 @@ import { Button } from "@/components/ui/forms/button";
 
 export default function StudentExercises() {
   const { t } = useTranslation();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const initialSubject = searchParams.get("subject") || "all";
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedSubject, setSelectedSubject] = useState<string>("all");
+  const [selectedSubject, setSelectedSubject] =
+    useState<string>(initialSubject);
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>("all");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
 
@@ -39,6 +44,23 @@ export default function StudentExercises() {
     queryKey: ["studentProgress"],
     queryFn: studentService.getProgress,
   });
+
+  useEffect(() => {
+    const subjectParam = searchParams.get("subject");
+    if (subjectParam) {
+      setSelectedSubject(subjectParam);
+    }
+  }, [searchParams]);
+
+  const handleSubjectChange = (value: string) => {
+    setSelectedSubject(value);
+    if (value === "all") {
+      searchParams.delete("subject");
+    } else {
+      searchParams.set("subject", value);
+    }
+    setSearchParams(searchParams);
+  };
 
   const subjects = useMemo(() => {
     if (!progressData) return [];
@@ -53,10 +75,8 @@ export default function StudentExercises() {
       const matchesSearch = ex.exerciseTitle
         .toLowerCase()
         .includes(searchTerm.toLowerCase());
-
       const matchesSubject =
         selectedSubject === "all" || ex.subjectName === selectedSubject;
-
       const matchesDifficulty =
         selectedDifficulty === "all" || ex.difficulty === selectedDifficulty;
 
@@ -100,6 +120,7 @@ export default function StudentExercises() {
     setSelectedSubject("all");
     setSelectedDifficulty("all");
     setSelectedStatus("all");
+    setSearchParams({});
   };
 
   if (isLoading) {
@@ -123,7 +144,6 @@ export default function StudentExercises() {
 
   return (
     <div className="space-y-6 p-5 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      {/* Header */}
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold tracking-tight">
           {t("exercises_page.title")}
@@ -131,7 +151,6 @@ export default function StudentExercises() {
         <p className="text-muted-foreground">{t("exercises_page.subtitle")}</p>
       </div>
 
-      {/* Barra de Herramientas (Filtros) */}
       <div className="flex flex-col md:flex-row gap-4 p-4 bg-card rounded-lg border shadow-sm">
         <div className="flex-1">
           <div className="relative">
@@ -145,8 +164,9 @@ export default function StudentExercises() {
           </div>
         </div>
 
-        <Select value={selectedSubject} onValueChange={setSelectedSubject}>
-          <SelectTrigger className="w-full md:w-[200px]">
+        {/* Select de Asignatura con el manejador actualizado */}
+        <Select value={selectedSubject} onValueChange={handleSubjectChange}>
+          <SelectTrigger className="w-full md:w-[250px]">
             <SelectValue placeholder={t("exercises_page.filters.subject")} />
           </SelectTrigger>
           <SelectContent>
@@ -204,12 +224,13 @@ export default function StudentExercises() {
         </Select>
       </div>
 
-      {/* Grid de Resultados */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold flex items-center gap-2">
             <BookOpen className="h-5 w-5 text-primary" />
-            {filteredExercises.length} {t("exercises_page.title")}
+            {t("exercises_page.exercises_found", {
+              count: filteredExercises.length,
+            })}
           </h2>
         </div>
 
@@ -238,7 +259,7 @@ export default function StudentExercises() {
             <FilterX className="h-12 w-12 text-muted-foreground mb-4" />
             <h3 className="text-lg font-medium">{t("exercises_page.empty")}</h3>
             <Button variant="link" onClick={resetFilters} className="mt-2">
-              {t("exercises_page.filters.clear")}
+              {t("exercises_page.reset_filters")}
             </Button>
           </div>
         )}

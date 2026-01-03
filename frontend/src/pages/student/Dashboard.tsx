@@ -131,10 +131,8 @@ export default function StudentDashboard() {
       <div className="p-6">
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>
-            No se pudieron cargar los datos. Intenta recargar la página.
-          </AlertDescription>
+          <AlertTitle>{t("dashboard.error")}</AlertTitle>
+          <AlertDescription>{t("dashboard.errorDescription")}</AlertDescription>
         </Alert>
       </div>
     );
@@ -144,38 +142,42 @@ export default function StudentDashboard() {
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold tracking-tight">
-          {t("dashboard.welcome", { name: user?.firstName || "Estudiante" })}
+          {t("dashboard.welcome", {
+            name: user?.firstName || t("dashboard.student"),
+          })}
         </h1>
         <p className="text-muted-foreground">
           {pendingExercises > 0
-            ? `Tienes ${pendingExercises} ejercicios pendientes esta semana.`
-            : "¡Todo al día! Has completado todos tus ejercicios."}
+            ? t("dashboard.pendingExercises", { count: pendingExercises })
+            : t("dashboard.allCompleted")}
         </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          title="Ejercicios Completados"
+          title={t("dashboard.stats.completed")}
           value={completedExercises}
-          description={`de ${totalExercises} totales`}
+          description={t("dashboard.stats.completedOf", {
+            total: totalExercises,
+          })}
           icon={<CheckCircle2 className="h-5 w-5" />}
         />
         <StatCard
-          title="Tasa de Acierto"
+          title={t("dashboard.stats.accuracy")}
           value={`${averageScore}%`}
-          description="puntuación media"
+          description={t("dashboard.stats.averageScore")}
           icon={<Target className="h-5 w-5" />}
         />
         <StatCard
-          title="Pendientes"
+          title={t("dashboard.stats.pending")}
           value={pendingExercises}
-          description="por realizar"
+          description={t("dashboard.stats.toComplete")}
           icon={<Clock className="h-5 w-5" />}
         />
         <StatCard
-          title="Racha Actual"
-          value="3 días"
-          description="¡Sigue así!"
+          title={t("dashboard.stats.streak")}
+          value={t("dashboard.stats.streakValue")}
+          description={t("dashboard.stats.keepGoing")}
           icon={<TrendingUp className="h-5 w-5" />}
         />
       </div>
@@ -185,10 +187,10 @@ export default function StudentDashboard() {
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold flex items-center gap-2">
               <FileCode className="h-5 w-5 text-primary" />
-              Actividad Reciente
+              {t("dashboard.recentActivity")}
             </h2>
             <Button variant="ghost" size="sm" asChild>
-              <Link to="/dashboard/exercises">Ver todos</Link>
+              <Link to="/dashboard/exercises">{t("dashboard.viewAll")}</Link>
             </Button>
           </div>
 
@@ -201,9 +203,11 @@ export default function StudentDashboard() {
               <Card>
                 <CardContent className="flex flex-col items-center justify-center p-8 text-muted-foreground">
                   <BookOpen className="h-10 w-10 mb-4 opacity-20" />
-                  <p>Aún no tienes actividad reciente.</p>
+                  <p>{t("dashboard.noRecentActivity")}</p>
                   <Button variant="link" asChild className="mt-2">
-                    <Link to="/dashboard/exercises">Explorar ejercicios</Link>
+                    <Link to="/dashboard/exercises">
+                      {t("dashboard.exploreExercises")}
+                    </Link>
                   </Button>
                 </CardContent>
               </Card>
@@ -214,7 +218,7 @@ export default function StudentDashboard() {
         <div className="space-y-4">
           <h2 className="text-xl font-semibold flex items-center gap-2">
             <BookOpen className="h-5 w-5 text-primary" />
-            Progreso por Asignatura
+            {t("dashboard.subjectProgress")}
           </h2>
 
           <div className="space-y-4">
@@ -238,13 +242,15 @@ export default function StudentDashboard() {
 
             {subjectProgress.length === 0 && (
               <p className="text-sm text-muted-foreground">
-                No estás matriculado en asignaturas activas.
+                {t("dashboard.noActiveSubjects")}
               </p>
             )}
 
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-base">Acciones Rápidas</CardTitle>
+                <CardTitle className="text-base">
+                  {t("dashboard.quickActions")}
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
                 <Button
@@ -253,16 +259,16 @@ export default function StudentDashboard() {
                   asChild>
                   <Link to="/dashboard/exercises">
                     <FileCode className="h-4 w-4 mr-2" />
-                    Resolver Ejercicios
+                    {t("dashboard.solveExercises")}
                   </Link>
                 </Button>
                 <Button
                   variant="outline"
                   className="w-full justify-start"
                   asChild>
-                  <Link to="/dashboard/profile">
+                  <Link to="/dashboard/progress">
                     <TrendingUp className="h-4 w-4 mr-2" />
-                    Ver Perfil Completo
+                    {t("dashboard.viewProgress")}
                   </Link>
                 </Button>
               </CardContent>

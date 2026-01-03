@@ -30,7 +30,32 @@
     }
   },
   "dashboard": {
-    "welcome": "¡Bienvenido/a, {{name}}!"
+    "welcome": "¡Bienvenido/a, {{name}}!",
+    "student": "Estudiante",
+    "pendingExercises": "Tienes {{count}} ejercicios pendientes",
+    "allCompleted": "¡Felicidades! Has completado todos tus ejercicios",
+    "error": "Error al cargar datos",
+    "errorDescription": "No se pudo cargar la información del dashboard. Por favor, intenta de nuevo.",
+    "stats": {
+      "completed": "Completados",
+      "completedOf": "de {{total}} ejercicios",
+      "accuracy": "Precisión",
+      "averageScore": "Puntuación promedio",
+      "pending": "Pendientes",
+      "toComplete": "por completar",
+      "streak": "Racha",
+      "streakValue": "7 días",
+      "keepGoing": "¡Sigue así!"
+    },
+    "recentActivity": "Actividad Reciente",
+    "viewAll": "Ver todos",
+    "noRecentActivity": "No hay actividad reciente",
+    "exploreExercises": "Explorar ejercicios",
+    "subjectProgress": "Progreso por Asignatura",
+    "noActiveSubjects": "No hay asignaturas activas",
+    "quickActions": "Acciones Rápidas",
+    "solveExercises": "Resolver Ejercicios",
+    "viewProgress": "Ver Mi Progreso"
   },
   "subjects_page": {
     "title": "Mis Asignaturas",
@@ -41,6 +66,11 @@
       "progress": "Progreso del curso",
       "completed": "Completados",
       "score": "Nota media"
+    },
+    "card": {
+      "exercises_completed": "{{count}} ejercicios completados",
+      "average_score": "Nota media: {{score}}",
+      "year": "Año {{year}}"
     }
   },
   "progress_page": {
@@ -68,6 +98,8 @@
     "title": "Mis Ejercicios",
     "subtitle": "Explora y resuelve los ejercicios asignados en tus asignaturas.",
     "search_placeholder": "Buscar ejercicio...",
+    "exercises_found": "{{count}} ejercicios encontrados",
+    "reset_filters": "Limpiar filtros",
     "filters": {
       "subject": "Asignatura",
       "all_subjects": "Todas las asignaturas",

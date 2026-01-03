@@ -31,7 +31,6 @@ export default function StudentSubjects() {
     queryFn: studentService.getProgress,
   });
 
-  // Agrupar datos por asignatura
   const subjects = progressData?.reduce((acc, curr) => {
     if (!acc[curr.subjectName]) {
       acc[curr.subjectName] = {
@@ -53,7 +52,7 @@ export default function StudentSubjects() {
     }
 
     return acc;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   }, {} as Record<string, any>);
 
   const subjectList = Object.values(subjects || {});
@@ -98,7 +97,9 @@ export default function StudentSubjects() {
                 : "0.0";
 
             return (
-              <Card key={subject.name} className="flex flex-col">
+              <Card
+                key={subject.name}
+                className="flex flex-col hover:border-primary/50 transition-colors">
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
@@ -148,10 +149,10 @@ export default function StudentSubjects() {
                 </CardContent>
                 <CardFooter className="pt-2">
                   <Button className="w-full" variant="outline" asChild>
-                    {/* Al clicar, llevamos a la página de ejercicios pero "filtrando mentalmente" 
-                        o podemos implementar que la URL acepte query param ?subject=... 
-                        pero por simplicidad ahora mostramos lista general o futura implementación de filtro */}
-                    <Link to="/dashboard/exercises">
+                    <Link
+                      to={`/dashboard/exercises?subject=${encodeURIComponent(
+                        subject.name
+                      )}`}>
                       {t("subjects_page.view_exercises")}
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Link>
