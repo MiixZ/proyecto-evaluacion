@@ -8,10 +8,12 @@ export interface StudentProgressDTO {
   subjectName: string;
   exerciseId: UUID;
   exerciseTitle: string;
+  difficulty: string;
+  deadline: Date | null;
   attempts: number;
   isCompleted: boolean;
-  bestScore: number;
-  lastAttempt: Date;
+  bestScore: number | null;
+  lastAttempt: Date | null;
 }
 
 export interface GroupStatsDTO {

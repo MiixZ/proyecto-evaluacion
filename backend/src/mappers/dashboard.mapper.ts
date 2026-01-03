@@ -27,7 +27,9 @@ export const dashboardMapper = {
       attempts: row.attempts,
       isCompleted: Boolean(row.is_completed),
       bestScore: row.best_score,
-      lastAttempt: new Date(row.last_attempt),
+      lastAttempt: row.last_attempt ? new Date(row.last_attempt) : null,
+      difficulty: row.difficulty,
+      deadline: row.deadline ? new Date(row.deadline) : null,
     };
   },
 
