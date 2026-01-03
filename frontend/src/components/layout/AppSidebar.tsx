@@ -25,7 +25,7 @@ import {
   GraduationCap,
   FileCode,
 } from "lucide-react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
   Avatar,
   AvatarFallback,
@@ -43,6 +43,7 @@ import { UserRole } from "@/types/auth.types";
 export function AppSidebar() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const { user, logout } = useAuth();
 
   const navItems = {
@@ -107,9 +108,14 @@ export function AppSidebar() {
     user?.role === UserRole.PROFESSOR || user?.role === UserRole.ADMIN;
   const showAdminMenu = user?.role === UserRole.ADMIN;
 
+  const isActiveLink = (url: string, exact: boolean = false) => {
+    if (exact) return pathname === url;
+
+    return pathname.startsWith(url);
+  };
+
   return (
     <Sidebar collapsible="icon">
-      {/* Header con Logo */}
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
@@ -130,7 +136,6 @@ export function AppSidebar() {
 
       <SidebarSeparator />
 
-      {/* Contenido Principal */}
       <SidebarContent>
         {/* Menú Estudiante */}
         {showStudentMenu && (
@@ -140,19 +145,15 @@ export function AppSidebar() {
               <SidebarMenu>
                 {navItems.student.map((item) => (
                   <SidebarMenuItem key={item.url}>
-                    <NavLink to={item.url} end={item.exact}>
-                      {({ isActive }) => (
-                        <SidebarMenuButton
-                          asChild
-                          isActive={isActive}
-                          tooltip={item.title}>
-                          <a href={item.url}>
-                            <item.icon />
-                            <span>{item.title}</span>
-                          </a>
-                        </SidebarMenuButton>
-                      )}
-                    </NavLink>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActiveLink(item.url, item.exact)}
+                      tooltip={item.title}>
+                      <Link to={item.url}>
+                        <item.icon />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
               </SidebarMenu>
@@ -170,19 +171,15 @@ export function AppSidebar() {
               <SidebarMenu>
                 {navItems.professor.map((item) => (
                   <SidebarMenuItem key={item.url}>
-                    <NavLink to={item.url}>
-                      {({ isActive }) => (
-                        <SidebarMenuButton
-                          asChild
-                          isActive={isActive}
-                          tooltip={item.title}>
-                          <a href={item.url}>
-                            <item.icon />
-                            <span>{item.title}</span>
-                          </a>
-                        </SidebarMenuButton>
-                      )}
-                    </NavLink>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActiveLink(item.url)}
+                      tooltip={item.title}>
+                      <Link to={item.url}>
+                        <item.icon />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
               </SidebarMenu>
@@ -198,19 +195,15 @@ export function AppSidebar() {
               <SidebarMenu>
                 {navItems.admin.map((item) => (
                   <SidebarMenuItem key={item.url}>
-                    <NavLink to={item.url}>
-                      {({ isActive }) => (
-                        <SidebarMenuButton
-                          asChild
-                          isActive={isActive}
-                          tooltip={item.title}>
-                          <a href={item.url}>
-                            <item.icon />
-                            <span>{item.title}</span>
-                          </a>
-                        </SidebarMenuButton>
-                      )}
-                    </NavLink>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActiveLink(item.url)}
+                      tooltip={item.title}>
+                      <Link to={item.url}>
+                        <item.icon />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
               </SidebarMenu>
@@ -221,7 +214,6 @@ export function AppSidebar() {
 
       <SidebarSeparator />
 
-      {/* Footer con Usuario */}
       <SidebarFooter>
         <SidebarMenu>
           <SidebarMenuItem>

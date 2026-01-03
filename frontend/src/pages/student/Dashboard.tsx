@@ -56,8 +56,10 @@ export default function StudentDashboard() {
   const averageScore =
     attemptedExercises.length > 0
       ? Math.round(
-          attemptedExercises.reduce((acc, curr) => acc + curr.bestScore, 0) /
-            attemptedExercises.length
+          attemptedExercises.reduce(
+            (acc, curr) => acc + (curr.bestScore || 0),
+            0
+          ) / attemptedExercises.length
         )
       : 0;
 
@@ -93,7 +95,6 @@ export default function StudentDashboard() {
   const getStatus = (ex: any): ExerciseStatus => {
     if (ex.isCompleted) return "completed";
     if (ex.attempts > 0 && !ex.isCompleted) return "failed";
-
     return "pending";
   };
 
@@ -111,7 +112,9 @@ export default function StudentDashboard() {
       difficulty: mapDifficulty(ex.difficulty),
       status: getStatus(ex),
       attempts: ex.attempts,
-      dueDate: ex.deadline ? ex.deadline : undefined,
+      dueDate: ex.deadline
+        ? new Date(ex.deadline).toLocaleDateString()
+        : undefined,
     }));
 
   if (isLoading) {
@@ -138,7 +141,6 @@ export default function StudentDashboard() {
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      {/* Cabecera */}
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold tracking-tight">
           {t("dashboard.welcome", { name: user?.firstName || "Estudiante" })}
@@ -150,7 +152,6 @@ export default function StudentDashboard() {
         </p>
       </div>
 
-      {/* Tarjetas de Estadísticas */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Ejercicios Completados"
@@ -179,7 +180,6 @@ export default function StudentDashboard() {
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
-        {/* Columna Principal: Ejercicios Recientes */}
         <div className="lg:col-span-2 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold flex items-center gap-2">
@@ -210,7 +210,6 @@ export default function StudentDashboard() {
           </div>
         </div>
 
-        {/* Columna Lateral: Progreso por Asignatura */}
         <div className="space-y-4">
           <h2 className="text-xl font-semibold flex items-center gap-2">
             <BookOpen className="h-5 w-5 text-primary" />
@@ -242,7 +241,6 @@ export default function StudentDashboard() {
               </p>
             )}
 
-            {/* Acciones Rápidas */}
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-base">Acciones Rápidas</CardTitle>
