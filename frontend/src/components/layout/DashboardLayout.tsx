@@ -16,6 +16,9 @@ import {
 } from "@/components/ui/layout/breadcrumb";
 import { useTranslation } from "react-i18next";
 
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export default function DashboardLayout() {
   const location = useLocation();
   const { t } = useTranslation();
@@ -24,7 +27,6 @@ export default function DashboardLayout() {
 
   return (
     <SidebarProvider>
-      {/* El Sidebar izquierdo */}
       <AppSidebar />
 
       <SidebarInset>
@@ -40,7 +42,12 @@ export default function DashboardLayout() {
                     <Link to="/dashboard">CodeEval</Link>
                   </BreadcrumbLink>
                 </BreadcrumbItem>
+
                 {pathSegments.map((segment, index) => {
+                  if (UUID_REGEX.test(segment)) {
+                    return null;
+                  }
+
                   const isLast = index === pathSegments.length - 1;
                   const path = `/${pathSegments.slice(0, index + 1).join("/")}`;
 
@@ -73,7 +80,6 @@ export default function DashboardLayout() {
           </div>
         </div>
       </SidebarInset>
-
       <Toaster />
     </SidebarProvider>
   );
