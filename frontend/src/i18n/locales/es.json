@@ -96,12 +96,16 @@
     "lines": "líneas",
     "ready": "Listo",
     "copy": "Copiar código",
+    "upload": "Subir archivo",
     "reset": "Reiniciar",
     "submit": "Enviar",
     "submitting": "Enviando...",
+    "placeholder": "Escribe o pega tu código aquí...",
     "toasts": {
       "reset_title": "Código reiniciado",
-      "reset_desc": "El editor ha sido restaurado al código inicial."
+      "reset_desc": "El editor ha sido restaurado al código inicial.",
+      "upload_title": "Archivo cargado",
+      "upload_desc": "El contenido del archivo ha reemplazado el código actual."
     }
   },
   "landing": {

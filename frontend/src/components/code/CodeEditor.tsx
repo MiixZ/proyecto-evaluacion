@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { RotateCcw, Upload, Copy, Check, Loader2 } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { RotateCcw, Upload, Copy, Check, Loader2, FileUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -44,6 +44,9 @@ export const CodeEditor = ({
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
 
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
     setCode(initialCode);
   }, [initialCode]);
@@ -78,10 +81,62 @@ export const CodeEditor = ({
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // --- LÓGICA DE TABULADOR ---
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Tab" && !readOnly && !isSubmitting) {
+      e.preventDefault();
+
+      const textarea = e.currentTarget;
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+
+      const spaces = "  ";
+      const newCode = code.substring(0, start) + spaces + code.substring(end);
+
+      setCode(newCode);
+
+      setTimeout(() => {
+        if (textareaRef.current) {
+          textareaRef.current.selectionStart =
+            textareaRef.current.selectionEnd = start + 4;
+        }
+      }, 0);
+    }
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const content = event.target?.result as string;
+      if (typeof content === "string") {
+        setCode(content);
+        toast({
+          title: t("editor.toasts.upload_title"),
+          description: t("editor.toasts.upload_desc"),
+        });
+      }
+    };
+    reader.readAsText(file);
+
+    e.target.value = "";
+  };
+
   const lineNumbers = code.split("\n").map((_, i) => i + 1);
 
   return (
     <div className="rounded-xl border border-border overflow-hidden bg-card flex flex-col h-full shadow-sm">
+      {/* Input oculto para subida de archivos */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileUpload}
+        className="hidden"
+        accept=".txt,.py,.js,.java,.c,.cpp,.h"
+      />
+
       {/* Toolbar */}
       <div className="flex items-center justify-between px-4 py-2 border-b border-border bg-muted/40 backdrop-blur-sm">
         <div className="flex items-center gap-3">
@@ -98,7 +153,6 @@ export const CodeEditor = ({
                   {lang.name}
                 </SelectItem>
               ))}
-              {/* Fallback por si falla el fetch o no hay lenguajes */}
               {availableLanguages.length === 0 && (
                 <SelectItem value={selectedLanguage}>
                   {selectedLanguage}
@@ -111,6 +165,19 @@ export const CodeEditor = ({
           </span>
         </div>
         <div className="flex items-center gap-1">
+          {/* Botón de Subida de Archivo */}
+          {!readOnly && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isSubmitting}
+              title={t("editor.upload")}>
+              <FileUp className="h-4 w-4" />
+            </Button>
+          )}
+
           <Button
             variant="ghost"
             size="icon"
@@ -169,8 +236,10 @@ export const CodeEditor = ({
 
         {/* Code Input */}
         <textarea
+          ref={textareaRef}
           value={code}
           onChange={(e) => setCode(e.target.value)}
+          onKeyDown={handleKeyDown}
           readOnly={readOnly || isSubmitting}
           className={cn(
             "flex-1 p-4 bg-transparent resize-none outline-none leading-6 w-full h-full custom-scrollbar",
