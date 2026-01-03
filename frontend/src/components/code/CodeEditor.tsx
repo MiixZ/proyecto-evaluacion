@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { RotateCcw, Upload, Copy, Check, Loader2, FileUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
@@ -11,8 +11,14 @@ import {
   SelectItem,
 } from "@/components/ui/forms/select";
 import { Button } from "@/components/ui/forms/button";
-import { cn } from "@/lib/utils";
 import { languageService } from "@/services/language.service";
+
+import CodeMirror from "@uiw/react-codemirror";
+import { vscodeDark } from "@uiw/codemirror-theme-vscode";
+import { python } from "@codemirror/lang-python";
+import { javascript } from "@codemirror/lang-javascript";
+import { java } from "@codemirror/lang-java";
+import { cpp } from "@codemirror/lang-cpp";
 
 interface CodeEditorProps {
   initialCode?: string;
@@ -44,7 +50,6 @@ export const CodeEditor = ({
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
 
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -60,6 +65,27 @@ export const CodeEditor = ({
     queryFn: languageService.getActiveLanguages,
     staleTime: 1000 * 60 * 60,
   });
+
+  const getLanguageExtension = (langCode: string) => {
+    switch (langCode) {
+      case "python":
+        return python();
+      case "javascript":
+      case "js":
+        return javascript();
+      case "java":
+        return java();
+      case "c":
+      case "cpp":
+        return cpp();
+      default:
+        return python();
+    }
+  };
+
+  const extensions = useMemo(() => {
+    return [getLanguageExtension(selectedLanguage)];
+  }, [selectedLanguage]);
 
   const handleSubmit = () => {
     if (onSubmit) {
@@ -81,34 +107,12 @@ export const CodeEditor = ({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // --- LÓGICA DE TABULADOR ---
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Tab" && !readOnly && !isSubmitting) {
-      e.preventDefault();
-
-      const textarea = e.currentTarget;
-      const start = textarea.selectionStart;
-      const end = textarea.selectionEnd;
-
-      const spaces = "  ";
-      const newCode = code.substring(0, start) + spaces + code.substring(end);
-
-      setCode(newCode);
-
-      setTimeout(() => {
-        if (textareaRef.current) {
-          textareaRef.current.selectionStart =
-            textareaRef.current.selectionEnd = start + 4;
-        }
-      }, 0);
-    }
-  };
-
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     const reader = new FileReader();
+
     reader.onload = (event) => {
       const content = event.target?.result as string;
       if (typeof content === "string") {
@@ -119,16 +123,13 @@ export const CodeEditor = ({
         });
       }
     };
-    reader.readAsText(file);
 
+    reader.readAsText(file);
     e.target.value = "";
   };
 
-  const lineNumbers = code.split("\n").map((_, i) => i + 1);
-
   return (
     <div className="rounded-xl border border-border overflow-hidden bg-card flex flex-col h-full shadow-sm">
-      {/* Input oculto para subida de archivos */}
       <input
         type="file"
         ref={fileInputRef}
@@ -165,7 +166,6 @@ export const CodeEditor = ({
           </span>
         </div>
         <div className="flex items-center gap-1">
-          {/* Botón de Subida de Archivo */}
           {!readOnly && (
             <Button
               variant="ghost"
@@ -223,30 +223,28 @@ export const CodeEditor = ({
         </div>
       </div>
 
-      {/* Editor Area */}
-      <div className="flex flex-1 relative min-h-[400px] overflow-hidden bg-[#1e1e1e] text-zinc-100 font-mono text-sm">
-        {/* Line Numbers */}
-        <div className="px-3 py-4 bg-[#1e1e1e] text-zinc-500 select-none text-right min-w-[3rem] border-r border-zinc-800">
-          {lineNumbers.map((num) => (
-            <div key={num} className="leading-6 text-xs">
-              {num}
-            </div>
-          ))}
-        </div>
-
-        {/* Code Input */}
-        <textarea
-          ref={textareaRef}
+      {/* Editor Area usando CodeMirror */}
+      <div className="flex-1 relative min-h-[400px] overflow-hidden bg-[#1e1e1e]">
+        <CodeMirror
           value={code}
-          onChange={(e) => setCode(e.target.value)}
-          onKeyDown={handleKeyDown}
-          readOnly={readOnly || isSubmitting}
-          className={cn(
-            "flex-1 p-4 bg-transparent resize-none outline-none leading-6 w-full h-full custom-scrollbar",
-            "focus:ring-0 focus:outline-none placeholder:text-zinc-600"
-          )}
-          placeholder={t("editor.placeholder") || "Escribe tu código aquí..."}
-          spellCheck={false}
+          height="100%"
+          theme={vscodeDark}
+          extensions={extensions}
+          onChange={(value) => setCode(value)}
+          editable={!readOnly && !isSubmitting}
+          basicSetup={{
+            lineNumbers: true,
+            highlightActiveLineGutter: true,
+            foldGutter: true,
+            dropCursor: true,
+            allowMultipleSelections: true,
+            indentOnInput: true,
+            bracketMatching: true,
+            closeBrackets: true,
+            autocompletion: true,
+            highlightActiveLine: true,
+          }}
+          className="h-full text-sm font-mono"
         />
       </div>
 
