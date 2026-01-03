@@ -8,14 +8,18 @@ import { cn } from "@/lib/utils";
 
 interface SubmissionHistoryProps {
   history: SubmissionHistoryItem[];
+  onSelectSubmission?: (submission: SubmissionHistoryItem) => void;
 }
 
-export const SubmissionHistory = ({ history }: SubmissionHistoryProps) => {
+export const SubmissionHistory = ({
+  history,
+  onSelectSubmission,
+}: SubmissionHistoryProps) => {
   const { t } = useTranslation();
 
   if (!history || history.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-40 text-muted-foreground">
+      <div className="flex flex-col items-center justify-center h-full min-h-[160px] text-muted-foreground">
         <Clock className="h-8 w-8 mb-2 opacity-50" />
         <p>{t("exercise.history.empty")}</p>
       </div>
@@ -37,12 +41,16 @@ export const SubmissionHistory = ({ history }: SubmissionHistoryProps) => {
   };
 
   return (
-    <ScrollArea className="h-[400px] w-full pr-4">
-      <div className="space-y-3">
+    <ScrollArea className="h-full w-full pr-4">
+      <div className="space-y-3 pb-4">
         {history.map((item) => (
           <div
             key={item.id}
-            className="flex items-center justify-between p-3 border rounded-lg bg-card hover:bg-accent/5 transition-colors">
+            onClick={() => onSelectSubmission?.(item)}
+            className={cn(
+              "flex items-center justify-between p-3 border rounded-lg bg-card hover:bg-accent/5 transition-colors cursor-pointer",
+              "hover:border-primary/30"
+            )}>
             <div className="flex items-start gap-3">
               <div className="mt-1">{getVerdictIcon(item.verdict)}</div>
               <div>

@@ -35,7 +35,10 @@ import {
 } from "@/components/ui/feedback/alert";
 import { exerciseService } from "@/services/exercise.service";
 import { useToast } from "@/hooks/use-toast";
-import { SubmissionResponse } from "@/types/exercise.types";
+import {
+  SubmissionResponse,
+  SubmissionHistoryItem,
+} from "@/types/exercise.types";
 
 export default function ExerciseView() {
   const { id } = useParams<{ id: string }>();
@@ -48,7 +51,6 @@ export default function ExerciseView() {
   const [activeTab, setActiveTab] = useState("statement");
   const [submissionResult, setSubmissionResult] =
     useState<SubmissionResponse | null>(null);
-
   const [currentCode, setCurrentCode] = useState<string | undefined>(undefined);
 
   const {
@@ -61,14 +63,14 @@ export default function ExerciseView() {
     enabled: !!id,
   });
 
-  const { data: history = [], isLoading: isLoadingHistory } = useQuery({
+  const { data: history = [] } = useQuery({
     queryKey: ["exerciseHistory", id],
     queryFn: () => exerciseService.getHistory(id!),
     enabled: !!id,
   });
 
   useEffect(() => {
-    if (history && history.length > 0 && !submissionResult) {
+    if (history && history.length > 0 && !submissionResult && !currentCode) {
       const latestSubmission = history[0];
 
       setSubmissionResult(latestSubmission as unknown as SubmissionResponse);
@@ -76,23 +78,29 @@ export default function ExerciseView() {
       if (latestSubmission.code) {
         setCurrentCode(latestSubmission.code);
       }
-    }
-  }, [history, submissionResult]);
-
-  useEffect(() => {
-    if (exercise && !currentCode) {
+    } else if (exercise && !currentCode && history.length === 0) {
       setCurrentCode(
         exercise.templateCode ||
           `# Write your solution in ${exercise.language || "python"}`
       );
     }
-  }, [currentCode, exercise]);
+  }, [history, exercise, submissionResult, currentCode]);
+
+  const handleSelectSubmission = (sub: SubmissionHistoryItem) => {
+    if (sub.code) setCurrentCode(sub.code);
+    setSubmissionResult(sub as unknown as SubmissionResponse);
+
+    setActiveTab("statement");
+
+    toast({
+      description: "Se ha cargado la versión seleccionada del historial.",
+    });
+  };
 
   const submitMutation = useMutation({
     mutationFn: exerciseService.submitSolution,
     onSuccess: (data) => {
       setSubmissionResult(data);
-
       queryClient.invalidateQueries({ queryKey: ["exerciseHistory", id] });
 
       toast({
@@ -102,13 +110,12 @@ export default function ExerciseView() {
       });
 
       if (data.verdict !== "accepted" && activeTab !== "hints") {
+        setActiveTab("hints");
         toast({
-          title: t("exercise.hints.suggestion_title"),
-          description: t("exercise.hints.suggestion_desc"),
+          title: t("exercise.submission.hint_suggestion"),
+          description: t("exercise.submission.hint_suggestion_desc"),
           variant: "default",
         });
-
-        setActiveTab("hints");
       }
     },
     onError: (err) => {
@@ -122,15 +129,7 @@ export default function ExerciseView() {
   });
 
   const handleSubmit = (code: string, language: string) => {
-    if (!id || !courseId) {
-      toast({
-        title: t("exercise.status.error_title"),
-        description: t("exercise.status.missing_data"),
-        variant: "destructive",
-      });
-
-      return;
-    }
+    if (!id || !courseId) return;
 
     submitMutation.mutate({
       exerciseId: id,
@@ -158,15 +157,10 @@ export default function ExerciseView() {
     return t(`exercise.difficulty.${diff}` as any) || diff;
   };
 
-  if (isLoadingExercise || isLoadingHistory) {
+  if (isLoadingExercise) {
     return (
       <div className="flex h-full items-center justify-center">
-        <div className="flex flex-col items-center gap-2">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">
-            {t("exercise.status.loading")}
-          </p>
-        </div>
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -205,14 +199,12 @@ export default function ExerciseView() {
               {t("exercise.info.points")}: {exercise.points}
             </span>
           </div>
-
           <div className="flex items-center gap-1">
             <FileCode className="h-4 w-4" />
             <span>
               {t("exercise.info.max_attempts")}: {exercise.maxAttempts}
             </span>
           </div>
-
           {exercise.deadline && (
             <Badge variant="secondary">
               {t("exercise.info.deadline")}:{" "}
@@ -223,7 +215,7 @@ export default function ExerciseView() {
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6 flex-1 min-h-0">
-        {/* Left Column - Tabs Area */}
+        {/* Left Column - Tabs */}
         <div className="flex flex-col h-full min-h-[500px]">
           <Tabs
             value={activeTab}
@@ -273,19 +265,23 @@ export default function ExerciseView() {
                     {t("exercise.tabs.history")}
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="p-0 flex-1 overflow-hidden">
-                  <SubmissionHistory history={history} />
+                {/* Contenedor flexible para el historial */}
+                <CardContent className="p-0 flex-1 overflow-hidden flex flex-col">
+                  <SubmissionHistory
+                    history={history}
+                    onSelectSubmission={handleSelectSubmission}
+                  />
                 </CardContent>
               </Card>
             </TabsContent>
           </Tabs>
         </div>
 
-        {/* Right Column - Editor & Results */}
+        {/* Right Column - Editor */}
         <div className="space-y-4 flex flex-col h-full">
           <div className="flex-1 min-h-[400px]">
             <CodeEditor
-              key={currentCode ? "with-history" : "default"}
+              key={currentCode ? "loaded" : "empty"}
               initialCode={currentCode}
               language={exercise.language}
               onSubmit={handleSubmit}
