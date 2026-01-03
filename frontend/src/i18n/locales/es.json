@@ -6,23 +6,27 @@
   },
   "auth": {
     "login": {
-      "title": "Iniciar Sesión",
-      "subtitle": "Accede a tu cuenta para continuar aprendiendo",
-      "email": "Correo electrónico",
-      "email_placeholder": "tu@universidad.edu",
+      "title": "Bienvenido de nuevo",
+      "subtitle": "Ingresa tus credenciales para acceder a tu cuenta",
+      "email": "Correo Electrónico",
+      "email_placeholder": "nombre@ejemplo.com",
       "password": "Contraseña",
       "forgot_password": "¿Olvidaste tu contraseña?",
       "submit": "Iniciar Sesión",
-      "submitting": "Iniciando sesión...",
-      "success_title": "Inicio de sesión exitoso",
-      "success_desc": "Bienvenido a CodeEval como {{role}}",
-      "no_account": "¿Primera vez? Contacta con tu profesor o administrador para obtener acceso.",
+      "submitting": "Iniciando...",
+      "success_title": "¡Bienvenido!",
+      "success_desc": "Has iniciado sesión correctamente.",
+      "no_account": "¿No tienes una cuenta? Contacta con tu administrador.",
       "back_home": "Volver al inicio"
     },
     "roles": {
       "student": "Estudiante",
       "professor": "Profesor",
-      "admin": "Admin"
+      "admin": "Administrador"
+    },
+    "validation": {
+      "email_invalid": "El formato del correo electrónico no es válido",
+      "password_required": "La contraseña es obligatoria"
     }
   },
   "sidebar": {
@@ -100,12 +104,12 @@
       "subtitle": "Únete a la plataforma utilizada por departamentos de ingeniería informática.",
       "button": "Acceder a la plataforma"
     },
-    "login_description": "Plataforma de evaluación automática de ejercicios de programación",
+    "login_description": "Plataforma integral para la gestión, evaluación y seguimiento de ejercicios de programación en tiempo real.",
     "login_features": {
-      "evaluation": "Evaluación automática y en tiempo real",
-      "feedback": "Retroalimentación detallada de errores",
-      "tracking": "Seguimiento de progreso y estadísticas",
-      "languages": "Soporte para múltiples lenguajes"
+      "evaluation": "Evaluación automática de código",
+      "feedback": "Feedback instantáneo",
+      "tracking": "Seguimiento de progreso",
+      "languages": "Soporte multi-lenguaje"
     }
   },
   "errors": {

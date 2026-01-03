@@ -6,23 +6,27 @@
   },
   "auth": {
     "login": {
-      "title": "Sign In",
-      "subtitle": "Access your account to continue learning",
-      "email": "Email address",
-      "email_placeholder": "you@university.edu",
+      "title": "Welcome Back",
+      "subtitle": "Enter your credentials to access your account",
+      "email": "Email Address",
+      "email_placeholder": "name@example.com",
       "password": "Password",
       "forgot_password": "Forgot your password?",
       "submit": "Sign In",
       "submitting": "Signing in...",
-      "success_title": "Login successful",
-      "success_desc": "Welcome to CodeEval as {{role}}",
-      "no_account": "First time? Contact your professor or admin to get access.",
+      "success_title": "Welcome!",
+      "success_desc": "You have successfully signed in.",
+      "no_account": "Don't have an account? Contact your administrator.",
       "back_home": "Back to home"
     },
     "roles": {
       "student": "Student",
       "professor": "Professor",
-      "admin": "Admin"
+      "admin": "Administrator"
+    },
+    "validation": {
+      "email_invalid": "The email format is not valid",
+      "password_required": "Password is required"
     }
   },
   "sidebar": {
@@ -100,12 +104,12 @@
       "subtitle": "Join the platform used by computer engineering departments.",
       "button": "Access Platform"
     },
-    "login_description": "Automatic programming exercise evaluation platform",
+    "login_description": "Comprehensive platform for managing, evaluating, and tracking programming exercises in real-time.",
     "login_features": {
-      "evaluation": "Automatic and real-time evaluation",
-      "feedback": "Detailed error feedback",
-      "tracking": "Progress tracking and statistics",
-      "languages": "Support for multiple languages"
+      "evaluation": "Automatic code evaluation",
+      "feedback": "Instant feedback",
+      "tracking": "Progress tracking",
+      "languages": "Multi-language support"
     }
   },
   "errors": {

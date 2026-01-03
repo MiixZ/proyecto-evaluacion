@@ -1,9 +1,18 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/forms/button";
 import { Input } from "@/components/ui/forms/input";
-import { Label } from "@/components/ui/forms/label";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/forms/form";
 import {
   Card,
   CardContent,
@@ -11,29 +20,22 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/layout/card";
+import { Code2, Mail, Lock, CheckCircle2, AlertCircle } from "lucide-react";
 import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/layout/tabs";
-import {
-  Code2,
-  Mail,
-  Lock,
-  User,
-  GraduationCap,
-  CheckCircle2,
-} from "lucide-react";
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "@/components/ui/feedback/alert";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
+import { getLoginSchema, LoginFormValues } from "@/schemas/auth.schema";
 
 const Login = () => {
   const { t } = useTranslation();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
+  const { login } = useAuth();
   const { toast } = useToast();
+  const [serverError, setServerError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const features = [
     t("landing.login_features.evaluation"),
@@ -42,38 +44,52 @@ const Login = () => {
     t("landing.login_features.languages"),
   ];
 
-  const handleLogin = async (e: React.FormEvent, role: string) => {
-    e.preventDefault();
-    setIsLoading(true);
+  // Obtenemos el esquema inyectando 't'
+  const loginSchema = getLoginSchema(t);
 
-    // Simulate login
-    setTimeout(() => {
-      setIsLoading(false);
-      const roleLabel = t(`auth.roles.${role}`);
+  const form = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
+
+  const onSubmit = async (values: LoginFormValues) => {
+    setIsLoading(true);
+    setServerError(null);
+
+    try {
+      await login(values);
       toast({
         title: t("auth.login.success_title"),
-        description: t("auth.login.success_desc", { role: roleLabel }),
+        description: t("auth.login.success_desc"),
       });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
+      console.error("Login error:", error);
+      const errorMessage =
+        error.response?.data?.error?.message ||
+        "Credenciales inválidas o error de conexión";
+      setServerError(errorMessage);
 
-      // Navigate based on role
-      if (role === "student") {
-        navigate("/dashboard");
-      } else if (role === "professor") {
-        navigate("/professor");
-      } else {
-        navigate("/admin");
-      }
-    }, 1000);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: errorMessage,
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <div className="min-h-screen bg-background flex">
-      {/* Left Panel - Rediseñado para "cuadrar" el contenido */}
+      {/* Left Panel */}
       <div className="hidden lg:flex lg:w-1/2 bg-primary/5 relative overflow-hidden border-r border-border/50">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-accent/20" />
 
         <div className="relative z-10 flex flex-col justify-center h-full px-12 xl:px-24 w-full">
-          {/* Header Section */}
           <div className="mb-12">
             <div className="h-16 w-16 rounded-2xl bg-primary flex items-center justify-center mb-8 shadow-xl shadow-primary/20">
               <Code2 className="h-8 w-8 text-primary-foreground" />
@@ -88,7 +104,6 @@ const Login = () => {
             </p>
           </div>
 
-          {/* Features List - Ahora con tarjetas sutiles para dar estructura */}
           <div className="space-y-4 max-w-lg">
             {features.map((feature, index) => (
               <div
@@ -109,7 +124,7 @@ const Login = () => {
       {/* Right Panel - Login Form */}
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="w-full max-w-md">
-          {/* Mobile Logo (visible solo en móvil) */}
+          {/* Mobile Logo */}
           <div className="lg:hidden flex flex-col items-center justify-center gap-4 mb-8 text-center">
             <div className="h-12 w-12 rounded-xl bg-primary flex items-center justify-center">
               <Code2 className="h-6 w-6 text-primary-foreground" />
@@ -130,62 +145,46 @@ const Login = () => {
               <CardDescription>{t("auth.login.subtitle")}</CardDescription>
             </CardHeader>
             <CardContent>
-              <Tabs defaultValue="student" className="w-full">
-                <TabsList className="grid w-full grid-cols-3 mb-6 p-1 bg-muted/50">
-                  <TabsTrigger
-                    value="student"
-                    className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">
-                    <User className="h-4 w-4" />
-                    <span className="hidden sm:inline">
-                      {t("auth.roles.student")}
-                    </span>
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="professor"
-                    className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">
-                    <GraduationCap className="h-4 w-4" />
-                    <span className="hidden sm:inline">
-                      {t("auth.roles.professor")}
-                    </span>
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="admin"
-                    className="gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">
-                    <Lock className="h-4 w-4" />
-                    <span className="hidden sm:inline">
-                      {t("auth.roles.admin")}
-                    </span>
-                  </TabsTrigger>
-                </TabsList>
+              {serverError && (
+                <Alert variant="destructive" className="mb-6">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Error</AlertTitle>
+                  <AlertDescription>{serverError}</AlertDescription>
+                </Alert>
+              )}
 
-                {["student", "professor", "admin"].map((role) => (
-                  <TabsContent key={role} value={role} className="mt-0">
-                    <form
-                      onSubmit={(e) => handleLogin(e, role)}
-                      className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor={`email-${role}`}>
-                          {t("auth.login.email")}
-                        </Label>
+              <Form {...form}>
+                <form
+                  onSubmit={form.handleSubmit(onSubmit)}
+                  className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("auth.login.email")}</FormLabel>
                         <div className="relative group">
-                          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                          <Input
-                            id={`email-${role}`}
-                            type="email"
-                            placeholder={t("auth.login.email_placeholder")}
-                            className="pl-10"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            required
-                          />
+                          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors z-10" />
+                          <FormControl>
+                            <Input
+                              placeholder={t("auth.login.email_placeholder")}
+                              className="pl-10"
+                              {...field}
+                            />
+                          </FormControl>
                         </div>
-                      </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                      <div className="space-y-2">
+                  <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
                         <div className="flex items-center justify-between">
-                          <Label htmlFor={`password-${role}`}>
-                            {t("auth.login.password")}
-                          </Label>
+                          <FormLabel>{t("auth.login.password")}</FormLabel>
                           <Link
                             to="/forgot-password"
                             className="text-xs font-medium text-primary hover:text-primary/80 transition-colors">
@@ -193,54 +192,54 @@ const Login = () => {
                           </Link>
                         </div>
                         <div className="relative group">
-                          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                          <Input
-                            id={`password-${role}`}
-                            type="password"
-                            placeholder="••••••••"
-                            className="pl-10"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            required
-                          />
+                          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors z-10" />
+                          <FormControl>
+                            <Input
+                              type="password"
+                              placeholder="••••••••"
+                              className="pl-10"
+                              {...field}
+                            />
+                          </FormControl>
                         </div>
-                      </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                      <Button
-                        type="submit"
-                        className="w-full font-medium h-11"
-                        size="lg"
-                        disabled={isLoading}>
-                        {isLoading ? (
-                          <>
-                            <svg
-                              className="animate-spin -ml-1 mr-2 h-4 w-4"
-                              fill="none"
-                              viewBox="0 0 24 24">
-                              <circle
-                                className="opacity-25"
-                                cx="12"
-                                cy="12"
-                                r="10"
-                                stroke="currentColor"
-                                strokeWidth="4"
-                              />
-                              <path
-                                className="opacity-75"
-                                fill="currentColor"
-                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                              />
-                            </svg>
-                            {t("auth.login.submitting")}
-                          </>
-                        ) : (
-                          t("auth.login.submit")
-                        )}
-                      </Button>
-                    </form>
-                  </TabsContent>
-                ))}
-              </Tabs>
+                  <Button
+                    type="submit"
+                    className="w-full font-medium h-11"
+                    size="lg"
+                    disabled={isLoading}>
+                    {isLoading ? (
+                      <>
+                        <svg
+                          className="animate-spin -ml-1 mr-2 h-4 w-4"
+                          fill="none"
+                          viewBox="0 0 24 24">
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          />
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          />
+                        </svg>
+                        {t("auth.login.submitting")}
+                      </>
+                    ) : (
+                      t("auth.login.submit")
+                    )}
+                  </Button>
+                </form>
+              </Form>
 
               <div className="mt-6 text-center text-sm text-muted-foreground">
                 <p>{t("auth.login.no_account")}</p>
