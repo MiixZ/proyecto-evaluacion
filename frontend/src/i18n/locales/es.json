@@ -92,6 +92,18 @@
       "verdict": "Veredicto"
     }
   },
+  "editor": {
+    "lines": "líneas",
+    "ready": "Listo",
+    "copy": "Copiar código",
+    "reset": "Reiniciar",
+    "submit": "Enviar",
+    "submitting": "Enviando...",
+    "toasts": {
+      "reset_title": "Código reiniciado",
+      "reset_desc": "El editor ha sido restaurado al código inicial."
+    }
+  },
   "landing": {
     "hero": {
       "badge": "v1.0 Disponible",

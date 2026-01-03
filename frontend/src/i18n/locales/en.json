@@ -57,6 +57,53 @@
     "login": "Sign In",
     "start": "Get Started"
   },
+  "exercise": {
+    "difficulty": {
+      "beginner": "Easy",
+      "intermediate": "Medium",
+      "advanced": "Hard"
+    },
+    "info": {
+      "max_attempts": "Max Attempts",
+      "deadline": "Deadline",
+      "points": "Points"
+    },
+    "tabs": {
+      "statement": "Statement",
+      "hints": "Hints",
+      "history": "History"
+    },
+    "hints": {
+      "empty": "No hints available for this exercise."
+    },
+    "history": {
+      "empty": "Detailed history functionality coming soon."
+    },
+    "status": {
+      "loading": "Loading exercise...",
+      "error_title": "Error",
+      "error_desc": "Could not load the exercise.",
+      "missing_data": "Missing course or exercise data"
+    },
+    "submission": {
+      "success_title": "Code submitted",
+      "error_title": "Submission error",
+      "error_desc": "Could not process your solution.",
+      "verdict": "Verdict"
+    }
+  },
+  "editor": {
+    "lines": "lines",
+    "ready": "Ready",
+    "copy": "Copy code",
+    "reset": "Reset",
+    "submit": "Submit",
+    "submitting": "Submitting...",
+    "toasts": {
+      "reset_title": "Code reset",
+      "reset_desc": "The editor has been restored to the initial code."
+    }
+  },
   "landing": {
     "hero": {
       "badge": "v1.0 Available",

@@ -1,6 +1,8 @@
-import { useState } from "react";
-import { RotateCcw, Upload, Copy, Check } from "lucide-react";
+import { useState, useEffect } from "react";
+import { RotateCcw, Upload, Copy, Check, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import {
   Select,
   SelectTrigger,
@@ -10,21 +12,15 @@ import {
 } from "@/components/ui/forms/select";
 import { Button } from "@/components/ui/forms/button";
 import { cn } from "@/lib/utils";
+import { languageService } from "@/services/language.service";
 
 interface CodeEditorProps {
   initialCode?: string;
   language?: string;
   onSubmit?: (code: string, language: string) => void;
   readOnly?: boolean;
+  isSubmitting?: boolean;
 }
-
-const languages = [
-  { value: "python", label: "Python" },
-  { value: "java", label: "Java" },
-  { value: "cpp", label: "C++" },
-  { value: "c", label: "C" },
-  { value: "javascript", label: "JavaScript" },
-];
 
 const defaultCode = `# Escribe tu solución aquí
 def solution():
@@ -40,27 +36,39 @@ export const CodeEditor = ({
   language = "python",
   onSubmit,
   readOnly = false,
+  isSubmitting = false,
 }: CodeEditorProps) => {
+  const { t } = useTranslation();
   const [code, setCode] = useState(initialCode);
   const [selectedLanguage, setSelectedLanguage] = useState(language);
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
 
+  useEffect(() => {
+    setCode(initialCode);
+  }, [initialCode]);
+
+  useEffect(() => {
+    if (language) setSelectedLanguage(language);
+  }, [language]);
+
+  const { data: availableLanguages = [] } = useQuery({
+    queryKey: ["languages"],
+    queryFn: languageService.getActiveLanguages,
+    staleTime: 1000 * 60 * 60,
+  });
+
   const handleSubmit = () => {
     if (onSubmit) {
       onSubmit(code, selectedLanguage);
     }
-    toast({
-      title: "Código enviado",
-      description: "Tu solución está siendo evaluada...",
-    });
   };
 
   const handleReset = () => {
     setCode(initialCode);
     toast({
-      title: "Código reiniciado",
-      description: "El editor ha sido restaurado al código inicial.",
+      title: t("editor.toasts.reset_title"),
+      description: t("editor.toasts.reset_desc"),
     });
   };
 
@@ -80,20 +88,26 @@ export const CodeEditor = ({
           <Select
             value={selectedLanguage}
             onValueChange={setSelectedLanguage}
-            disabled={readOnly}>
+            disabled={readOnly || isSubmitting}>
             <SelectTrigger className="w-[140px] h-8 text-xs bg-background">
-              <SelectValue />
+              <SelectValue placeholder="Lenguaje" />
             </SelectTrigger>
             <SelectContent>
-              {languages.map((lang) => (
-                <SelectItem key={lang.value} value={lang.value}>
-                  {lang.label}
+              {availableLanguages.map((lang) => (
+                <SelectItem key={lang.code} value={lang.code}>
+                  {lang.name}
                 </SelectItem>
               ))}
+              {/* Fallback por si falla el fetch o no hay lenguajes */}
+              {availableLanguages.length === 0 && (
+                <SelectItem value={selectedLanguage}>
+                  {selectedLanguage}
+                </SelectItem>
+              )}
             </SelectContent>
           </Select>
           <span className="text-xs text-muted-foreground font-mono">
-            {code.split("\n").length} líneas
+            {code.split("\n").length} {t("editor.lines")}
           </span>
         </div>
         <div className="flex items-center gap-1">
@@ -102,7 +116,7 @@ export const CodeEditor = ({
             size="icon"
             className="h-8 w-8"
             onClick={handleCopy}
-            title="Copiar código">
+            title={t("editor.copy")}>
             {copied ? (
               <Check className="h-4 w-4 text-green-500" />
             ) : (
@@ -115,16 +129,27 @@ export const CodeEditor = ({
                 variant="ghost"
                 size="sm"
                 className="h-8 text-xs"
-                onClick={handleReset}>
+                onClick={handleReset}
+                disabled={isSubmitting}>
                 <RotateCcw className="h-3 w-3 mr-1.5" />
-                Reiniciar
+                {t("editor.reset")}
               </Button>
               <Button
                 size="sm"
                 className="h-8 text-xs px-4"
-                onClick={handleSubmit}>
-                <Upload className="h-3 w-3 mr-1.5" />
-                Enviar
+                onClick={handleSubmit}
+                disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />
+                    {t("editor.submitting")}
+                  </>
+                ) : (
+                  <>
+                    <Upload className="h-3 w-3 mr-1.5" />
+                    {t("editor.submit")}
+                  </>
+                )}
               </Button>
             </>
           )}
@@ -146,12 +171,12 @@ export const CodeEditor = ({
         <textarea
           value={code}
           onChange={(e) => setCode(e.target.value)}
-          readOnly={readOnly}
+          readOnly={readOnly || isSubmitting}
           className={cn(
             "flex-1 p-4 bg-transparent resize-none outline-none leading-6 w-full h-full custom-scrollbar",
             "focus:ring-0 focus:outline-none placeholder:text-zinc-600"
           )}
-          placeholder="Escribe tu código aquí..."
+          placeholder={t("editor.placeholder") || "Escribe tu código aquí..."}
           spellCheck={false}
         />
       </div>
@@ -161,7 +186,7 @@ export const CodeEditor = ({
         <span>UTF-8</span>
         <span className="flex items-center gap-2">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-          Listo
+          {t("editor.ready")}
         </span>
       </div>
     </div>
