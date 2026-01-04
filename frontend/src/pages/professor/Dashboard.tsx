@@ -80,7 +80,11 @@ export default function ProfessorDashboard() {
           </Badge>
         );
       case "compilation_error":
-        return <Badge variant="destructive">Error Comp.</Badge>;
+        return (
+          <Badge variant="destructive">
+            {t("dashboard.compilation_error")}
+          </Badge>
+        );
       default:
         return <Badge variant="secondary">{verdict || status}</Badge>;
     }
@@ -213,7 +217,7 @@ export default function ProfessorDashboard() {
                     <TableRow key={submission.id}>
                       <TableCell>
                         <div className="font-medium">
-                          {submission.studentName || "Unknown"}
+                          {submission.studentName || t("dashboard.unknown")}
                         </div>
                         <div className="text-xs text-muted-foreground sm:hidden">
                           {submission.exerciseTitle}
@@ -223,7 +227,7 @@ export default function ProfessorDashboard() {
                         </div>
                       </TableCell>
                       <TableCell className="hidden sm:table-cell">
-                        {submission.exerciseTitle || "Untitled"}
+                        {submission.exerciseTitle || t("dashboard.untitled")}
                       </TableCell>
                       <TableCell>
                         {getStatusBadge(submission.verdict, submission.status)}
@@ -261,10 +265,10 @@ export default function ProfessorDashboard() {
                   </div>
                   <div className="space-y-0.5">
                     <p className="text-sm font-medium leading-none">
-                      Ejercicios por corregir
+                      {t("dashboard.exercises_to_correct")}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Pendientes de evaluación manual o revisión
+                      {t("dashboard.exercises_to_correct_desc")}
                     </p>
                   </div>
                 </div>
@@ -280,10 +284,10 @@ export default function ProfessorDashboard() {
                   </div>
                   <div className="space-y-0.5">
                     <p className="text-sm font-medium leading-none">
-                      Feedback pendiente
+                      {t("dashboard.pending_feedback")}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Comentarios no leídos o respuestas requeridas
+                      {t("dashboard.pending_feedback_desc")}
                     </p>
                   </div>
                 </div>
@@ -294,7 +298,7 @@ export default function ProfessorDashboard() {
 
               {!workload?.pendingEvaluation && !workload?.pendingFeedback && (
                 <p className="text-sm text-muted-foreground text-center py-2">
-                  ¡Todo al día! No hay tareas pendientes.
+                  {t("dashboard.all_caught_up")}
                 </p>
               )}
             </CardContent>
@@ -304,12 +308,13 @@ export default function ProfessorDashboard() {
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base font-medium">
-                Rendimiento por Grupos
+                {t("dashboard.performance_by_groups")}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {groups && groups.length > 0 ? (
-                groups.map((group) => (
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                groups.map((group: any) => (
                   <div key={group.groupId} className="space-y-1">
                     <div className="flex items-center justify-between text-sm">
                       <span className="font-medium">{group.groupName}</span>
@@ -327,13 +332,14 @@ export default function ProfessorDashboard() {
                       </span>
                     </div>
                     <div className="text-xs text-muted-foreground">
-                      {group.subjectName} • {group.studentCount} estudiantes
+                      {group.subjectName} • {group.studentCount}{" "}
+                      {t("dashboard.students")}
                     </div>
                   </div>
                 ))
               ) : (
                 <div className="text-sm text-muted-foreground text-center py-4">
-                  No hay grupos asignados.
+                  {t("dashboard.no_assigned_groups")}
                 </div>
               )}
             </CardContent>
