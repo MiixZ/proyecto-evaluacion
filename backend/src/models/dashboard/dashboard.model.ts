@@ -138,9 +138,11 @@ export class DashboardModel {
 
   async getRecentActivityByGroup(
     groupId: UUID,
+    page: number = 1,
     limit: number = 5
-  ): Promise<Rows.RecentActivityRow[]> {
+  ): Promise<{ items: Rows.RecentActivityRow[]; total: number }> {
     const safeLimit = Math.max(1, Math.floor(limit));
+    const offset = Math.max(0, (page - 1) * safeLimit);
 
     const query = `
       SELECT 
@@ -156,21 +158,35 @@ export class DashboardModel {
       JOIN user_groups ug ON u.id = ug.user_id 
       WHERE ug.group_id = ?
       ORDER BY s.created_at DESC
-      LIMIT ${safeLimit} 
+      LIMIT ${safeLimit} OFFSET ${offset}
+    `;
+
+    const countQuery = `
+      SELECT COUNT(*) as total
+      FROM submissions s
+      JOIN users u ON s.student_id = u.id
+      JOIN user_groups ug ON u.id = ug.user_id 
+      WHERE ug.group_id = ?
     `;
 
     const [rows] = await getPool().execute<Rows.RecentActivityRow[]>(query, [
       groupId,
     ]);
+    const [countRows] = await getPool().execute<any[]>(countQuery, [groupId]);
 
-    return rows;
+    return {
+      items: rows,
+      total: countRows[0].total,
+    };
   }
 
   async getPlagiarismAlertsByGroup(
     groupId: UUID,
+    page: number = 1,
     limit: number = 5
-  ): Promise<Rows.PlagiarismAlertRow[]> {
+  ): Promise<{ items: Rows.PlagiarismAlertRow[]; total: number }> {
     const safeLimit = Math.max(1, Math.floor(limit));
+    const offset = Math.max(0, (page - 1) * safeLimit);
 
     const query = `
       SELECT 
@@ -187,14 +203,27 @@ export class DashboardModel {
       JOIN user_groups ug ON u.id = ug.user_id
       WHERE ug.group_id = ? AND pc.is_flagged = TRUE
       ORDER BY pc.created_at DESC
-      LIMIT ${safeLimit}
+      LIMIT ${safeLimit} OFFSET ${offset}
+    `;
+
+    const countQuery = `
+      SELECT COUNT(*) as total
+      FROM plagiarism_checks pc
+      JOIN submissions s ON pc.submission_id = s.id
+      JOIN users u ON s.student_id = u.id
+      JOIN user_groups ug ON u.id = ug.user_id
+      WHERE ug.group_id = ? AND pc.is_flagged = TRUE
     `;
 
     const [rows] = await getPool().execute<Rows.PlagiarismAlertRow[]>(query, [
       groupId,
     ]);
+    const [countRows] = await getPool().execute<any[]>(countQuery, [groupId]);
 
-    return rows;
+    return {
+      items: rows,
+      total: countRows[0].total,
+    };
   }
 }
 

@@ -14,7 +14,9 @@ import StudentSubmissionsPage from "./pages/student/Submissions";
 import { AuthProvider } from "./context/AuthProvider";
 import DashboardLayout from "./components/layout/DashboardLayout";
 import ProfilePage from "./pages/student/Profile";
-import DashboardWrapper from "./pages/DashboardWrapper"; // Importamos el wrapper
+import DashboardWrapper from "./pages/DashboardWrapper";
+import ActivityHistory from "./pages/professor/ActivityHistory";
+import PlagiarismHistory from "./pages/professor/PlagiarismHistory";
 
 const queryClient = new QueryClient();
 
@@ -32,10 +34,9 @@ const App = () => (
 
             {/* Rutas Protegidas */}
             <Route element={<DashboardLayout />}>
-              {/* Ruta unificada para el Dashboard */}
               <Route path="/dashboard" element={<DashboardWrapper />} />
 
-              {/* Rutas específicas de estudiante */}
+              {/* Estudiante */}
               <Route
                 path="/dashboard/exercises"
                 element={<StudentExercises />}
@@ -55,7 +56,17 @@ const App = () => (
                 element={<StudentExerciseView />}
               />
 
-              {/* Redirecciones de conveniencia para mantener compatibilidad */}
+              {/* Profesor */}
+              <Route
+                path="/dashboard/group/:groupId/activity"
+                element={<ActivityHistory />}
+              />
+              <Route
+                path="/dashboard/group/:groupId/plagiarism"
+                element={<PlagiarismHistory />}
+              />
+
+              {/* Alias/Redirecciones */}
               <Route
                 path="/professor"
                 element={<Navigate to="/dashboard" replace />}
@@ -70,6 +81,7 @@ const App = () => (
               />
             </Route>
 
+            {/* Ruta 404 */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

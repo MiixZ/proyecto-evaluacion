@@ -49,22 +49,79 @@ export class DashboardController {
     const activeGroupInfo =
       allGroups.find((g) => g.group_id === activeGroupId) || allGroups[0];
 
-    const [students, recentActivity, plagiarismAlerts] = await Promise.all([
-      dashboardModel.getStudentsByGroup(activeGroupId),
-      dashboardModel.getRecentActivityByGroup(activeGroupId, 10),
-      dashboardModel.getPlagiarismAlertsByGroup(activeGroupId, 5),
-    ]);
+    const [students, recentActivityData, plagiarismAlertsData] =
+      await Promise.all([
+        dashboardModel.getStudentsByGroup(activeGroupId),
+        dashboardModel.getRecentActivityByGroup(activeGroupId, 1, 10),
+        dashboardModel.getPlagiarismAlertsByGroup(activeGroupId, 1, 5),
+      ]);
 
     return ApiResponse.success(res, {
       groups: allGroups.map(dashboardMapper.toGroupStatsDTO),
       activeGroup: {
         info: dashboardMapper.toGroupStatsDTO(activeGroupInfo),
         students: students.map(dashboardMapper.toGroupStudentDTO),
-        recentActivity: recentActivity.map(dashboardMapper.toRecentActivityDTO),
-        plagiarismAlerts: plagiarismAlerts.map(
+        recentActivity: recentActivityData.items.map(
+          dashboardMapper.toRecentActivityDTO
+        ),
+        plagiarismAlerts: plagiarismAlertsData.items.map(
           dashboardMapper.toPlagiarismAlertDTO
         ),
       },
+    });
+  });
+
+  getGroupActivity = catchAsync(async (req: AuthRequest, res: Response) => {
+    if (
+      req.user?.role !== UserRole.TEACHER &&
+      req.user?.role !== UserRole.ADMIN
+    ) {
+      throw new AppError('FORBIDDEN', 403, 'Acceso denegado');
+    }
+
+    const { groupId } = req.params;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+
+    const { items, total } = await dashboardModel.getRecentActivityByGroup(
+      groupId as UUID,
+      page,
+      limit
+    );
+
+    return ApiResponse.success(res, {
+      items: items.map(dashboardMapper.toRecentActivityDTO),
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    });
+  });
+
+  getGroupPlagiarism = catchAsync(async (req: AuthRequest, res: Response) => {
+    if (
+      req.user?.role !== UserRole.TEACHER &&
+      req.user?.role !== UserRole.ADMIN
+    ) {
+      throw new AppError('FORBIDDEN', 403, 'Acceso denegado');
+    }
+
+    const { groupId } = req.params;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+
+    const { items, total } = await dashboardModel.getPlagiarismAlertsByGroup(
+      groupId as UUID,
+      page,
+      limit
+    );
+
+    return ApiResponse.success(res, {
+      items: items.map(dashboardMapper.toPlagiarismAlertDTO),
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
     });
   });
 

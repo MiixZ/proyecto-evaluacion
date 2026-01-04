@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { es, enUS } from "date-fns/locale";
+import { useNavigate } from "react-router-dom";
 
 import {
   Card,
@@ -52,6 +53,7 @@ import { dashboardService } from "@/services/dashboard.service";
 
 export default function ProfessorDashboard() {
   const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
   const dateLocale = i18n.language === "en" ? enUS : es;
   const [selectedGroupId, setSelectedGroupId] = useState<string | undefined>(
     undefined
@@ -108,6 +110,7 @@ export default function ProfessorDashboard() {
     );
   }
 
+  // Filtrado de estudiantes
   const filteredStudents = activeGroup.students.filter(
     (student) =>
       student.name.toLowerCase().includes(studentFilter.toLowerCase()) ||
@@ -376,7 +379,10 @@ export default function ProfessorDashboard() {
               <Button
                 variant="ghost"
                 className="w-full mt-6 text-xs text-muted-foreground hover:text-primary"
-                size="sm">
+                size="sm"
+                onClick={() =>
+                  navigate(`/dashboard/group/${selectedGroupId}/activity`)
+                }>
                 Ver toda la actividad <ChevronRight className="h-3 w-3 ml-1" />
               </Button>
             </CardContent>
@@ -420,7 +426,10 @@ export default function ProfessorDashboard() {
               <div className="mt-4 flex justify-end">
                 <Button
                   variant="link"
-                  className="text-xs text-orange-700 h-auto p-0">
+                  className="text-xs text-orange-700 h-auto p-0"
+                  onClick={() =>
+                    navigate(`/dashboard/group/${selectedGroupId}/plagiarism`)
+                  }>
                   Ver todos los casos <ChevronRight className="h-3 w-3 ml-1" />
                 </Button>
               </div>

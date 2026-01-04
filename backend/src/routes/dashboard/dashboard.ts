@@ -6,8 +6,20 @@ const router = Router();
 
 router.use(authMiddleware);
 
-router.get('/student/progress', dashboardController.getMyProgress);
+router.get('/my-progress', dashboardController.getMyProgress);
+
 router.get('/teacher/overview', dashboardController.getTeacherOverview);
+
+router.get(
+  '/teacher/group/:groupId/activity',
+  dashboardController.getGroupActivity
+);
+router.get(
+  '/teacher/group/:groupId/plagiarism',
+  dashboardController.getGroupPlagiarism
+);
+
+// Analíticas
 router.get('/analytics/exercises', dashboardController.getExerciseAnalytics);
 router.get('/analytics/plagiarism', dashboardController.getPlagiarismAnalytics);
 
