@@ -41,13 +41,16 @@ export const dashboardService = {
   getGroupActivity: async (
     groupId: string,
     page: number = 1,
-    limit: number = 20
+    limit: number = 20,
+    sortBy: string = "date",
+    sortOrder: "ASC" | "DESC" = "DESC",
+    status: string = "all"
   ): Promise<PaginatedResponse<RecentActivityDTO>> => {
     const { data } = await api.get<
       ApiResponse<PaginatedResponse<RecentActivityDTO>>
-    >(
-      `/v1/dashboard/teacher/group/${groupId}/activity?page=${page}&limit=${limit}`
-    );
+    >(`/v1/dashboard/teacher/group/${groupId}/activity`, {
+      params: { page, limit, sortBy, sortOrder, status },
+    });
 
     return data.data;
   },
@@ -55,13 +58,16 @@ export const dashboardService = {
   getGroupPlagiarism: async (
     groupId: string,
     page: number = 1,
-    limit: number = 20
+    limit: number = 20,
+    sortBy: string = "date",
+    sortOrder: "ASC" | "DESC" = "DESC",
+    type: string = "all"
   ): Promise<PaginatedResponse<PlagiarismAlertDTO>> => {
     const { data } = await api.get<
       ApiResponse<PaginatedResponse<PlagiarismAlertDTO>>
-    >(
-      `/v1/dashboard/teacher/group/${groupId}/plagiarism?page=${page}&limit=${limit}`
-    );
+    >(`/v1/dashboard/teacher/group/${groupId}/plagiarism`, {
+      params: { page, limit, sortBy, sortOrder, type },
+    });
 
     return data.data;
   },

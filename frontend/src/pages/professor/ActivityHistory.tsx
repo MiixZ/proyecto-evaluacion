@@ -2,7 +2,14 @@ import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, Loader2, Calendar } from "lucide-react";
+import {
+  ArrowLeft,
+  Loader2,
+  Calendar,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+} from "lucide-react";
 import { format } from "date-fns";
 import { es, enUS } from "date-fns/locale";
 
@@ -32,27 +39,59 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/data/pagination";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/forms/select";
 
 export default function ActivityHistory() {
   const { groupId } = useParams<{ groupId: string }>();
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
-  const [page, setPage] = useState(1);
   const dateLocale = i18n.language === "en" ? enUS : es;
 
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [sorting, setSorting] = useState<{
+    column: string;
+    direction: "ASC" | "DESC";
+  }>({ column: "date", direction: "DESC" });
+
   const { data, isLoading } = useQuery({
-    queryKey: ["groupActivity", groupId, page],
-    queryFn: () => dashboardService.getGroupActivity(groupId!, page, 20),
+    queryKey: ["groupActivity", groupId, page, limit, sorting, filterStatus],
+    queryFn: () =>
+      dashboardService.getGroupActivity(
+        groupId!,
+        page,
+        limit,
+        sorting.column,
+        sorting.direction,
+        filterStatus
+      ),
     enabled: !!groupId,
   });
 
-  if (isLoading) {
-    return (
-      <div className="flex h-[50vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
+  const handleSort = (column: string) => {
+    setSorting((prev) => ({
+      column,
+      direction:
+        prev.column === column && prev.direction === "DESC" ? "ASC" : "DESC",
+    }));
+  };
+
+  const SortIcon = ({ column }: { column: string }) => {
+    if (sorting.column !== column)
+      return <ArrowUpDown className="ml-2 h-4 w-4" />;
+    return sorting.direction === "ASC" ? (
+      <ArrowUp className="ml-2 h-4 w-4 text-primary" />
+    ) : (
+      <ArrowDown className="ml-2 h-4 w-4 text-primary" />
     );
-  }
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -70,6 +109,14 @@ export default function ActivityHistory() {
         return <Badge variant="outline">Info</Badge>;
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex h-[50vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -90,19 +137,86 @@ export default function ActivityHistory() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Entregas recientes</CardTitle>
-          <CardDescription>
-            Mostrando {data?.items.length || 0} de {data?.total || 0} registros
-          </CardDescription>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <CardTitle>Entregas</CardTitle>
+              <CardDescription>
+                Mostrando {data?.items.length || 0} de {data?.total || 0}{" "}
+                registros
+              </CardDescription>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {/* Filtro por Estado */}
+              <Select
+                value={filterStatus}
+                onValueChange={(val) => {
+                  setFilterStatus(val);
+                  setPage(1); // Reset page on filter
+                }}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Estado" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos los estados</SelectItem>
+                  <SelectItem value="passed">Aceptados</SelectItem>
+                  <SelectItem value="failed">Fallidos</SelectItem>
+                  <SelectItem value="pending">Pendientes</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* Selector de Filas por página */}
+              <Select
+                value={limit.toString()}
+                onValueChange={(val) => {
+                  setLimit(Number(val));
+                  setPage(1);
+                }}>
+                <SelectTrigger className="w-[130px]">
+                  <SelectValue placeholder="Filas" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="5">5 por pág.</SelectItem>
+                  <SelectItem value="10">10 por pág.</SelectItem>
+                  <SelectItem value="20">20 por pág.</SelectItem>
+                  <SelectItem value="50">50 por pág.</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Estudiante</TableHead>
-                <TableHead>Acción</TableHead>
-                <TableHead>Estado</TableHead>
-                <TableHead className="text-right">Fecha</TableHead>
+                <TableHead
+                  className="cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => handleSort("studentName")}>
+                  <div className="flex items-center">
+                    Estudiante <SortIcon column="studentName" />
+                  </div>
+                </TableHead>
+                <TableHead
+                  className="cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => handleSort("exerciseTitle")}>
+                  <div className="flex items-center">
+                    Acción <SortIcon column="exerciseTitle" />
+                  </div>
+                </TableHead>
+                <TableHead
+                  className="cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => handleSort("status")}>
+                  <div className="flex items-center">
+                    Estado <SortIcon column="status" />
+                  </div>
+                </TableHead>
+                <TableHead
+                  className="text-right cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => handleSort("date")}>
+                  <div className="flex items-center justify-end">
+                    Fecha <SortIcon column="date" />
+                  </div>
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -124,7 +238,7 @@ export default function ActivityHistory() {
               {data?.items.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={4} className="h-24 text-center">
-                    No hay actividad registrada.
+                    No se encontraron resultados con los filtros actuales.
                   </TableCell>
                 </TableRow>
               )}

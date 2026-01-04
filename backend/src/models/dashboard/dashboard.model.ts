@@ -128,21 +128,53 @@ export class DashboardModel {
       GROUP BY u.id
       ORDER BY u.last_name ASC
     `;
-
     const [rows] = await getPool().execute<Rows.GroupStudentRow[]>(query, [
       groupId,
     ]);
-
     return rows;
   }
 
   async getRecentActivityByGroup(
     groupId: UUID,
     page: number = 1,
-    limit: number = 5
+    limit: number = 5,
+    sortBy: string = 'date',
+    sortOrder: 'ASC' | 'DESC' = 'DESC',
+    filterStatus?: string
   ): Promise<{ items: Rows.RecentActivityRow[]; total: number }> {
     const safeLimit = Math.max(1, Math.floor(limit));
     const offset = Math.max(0, (page - 1) * safeLimit);
+
+    const sortMap: Record<string, string> = {
+      studentName: 'u.last_name',
+      exerciseTitle: 'e.title',
+      status: 's.verdict',
+      date: 's.created_at',
+    };
+    const orderBy = sortMap[sortBy] || 's.created_at';
+    const orderDir = sortOrder === 'ASC' ? 'ASC' : 'DESC';
+
+    let whereClause = 'ug.group_id = ?';
+    const params: any[] = [groupId];
+
+    if (filterStatus && filterStatus !== 'all') {
+      if (filterStatus === 'passed') {
+        whereClause += " AND s.verdict = 'accepted'";
+      } else if (filterStatus === 'failed') {
+        whereClause +=
+          " AND s.verdict IN ('wrong_answer', 'compilation_error', 'runtime_error', 'time_limit')";
+      } else if (filterStatus === 'pending') {
+        whereClause += " AND s.status != 'completed'";
+      }
+    }
+
+    const baseQuery = `
+      FROM submissions s
+      JOIN users u ON s.student_id = u.id
+      JOIN exercises e ON s.exercise_id = e.id
+      JOIN user_groups ug ON u.id = ug.user_id 
+      WHERE ${whereClause}
+    `;
 
     const query = `
       SELECT 
@@ -152,27 +184,19 @@ export class DashboardModel {
         s.status,
         s.verdict,
         s.created_at
-      FROM submissions s
-      JOIN users u ON s.student_id = u.id
-      JOIN exercises e ON s.exercise_id = e.id
-      JOIN user_groups ug ON u.id = ug.user_id 
-      WHERE ug.group_id = ?
-      ORDER BY s.created_at DESC
+      ${baseQuery}
+      ORDER BY ${orderBy} ${orderDir}
       LIMIT ${safeLimit} OFFSET ${offset}
     `;
 
-    const countQuery = `
-      SELECT COUNT(*) as total
-      FROM submissions s
-      JOIN users u ON s.student_id = u.id
-      JOIN user_groups ug ON u.id = ug.user_id 
-      WHERE ug.group_id = ?
-    `;
+    const countQuery = `SELECT COUNT(*) as total ${baseQuery}`;
 
-    const [rows] = await getPool().execute<Rows.RecentActivityRow[]>(query, [
-      groupId,
-    ]);
-    const [countRows] = await getPool().execute<any[]>(countQuery, [groupId]);
+    const [rows] = await getPool().execute<Rows.RecentActivityRow[]>(
+      query,
+      params
+    );
+
+    const [countRows] = await getPool().execute<any[]>(countQuery, params);
 
     return {
       items: rows,
@@ -183,10 +207,40 @@ export class DashboardModel {
   async getPlagiarismAlertsByGroup(
     groupId: UUID,
     page: number = 1,
-    limit: number = 5
+    limit: number = 5,
+    sortBy: string = 'date',
+    sortOrder: 'ASC' | 'DESC' = 'DESC',
+    filterType?: string
   ): Promise<{ items: Rows.PlagiarismAlertRow[]; total: number }> {
     const safeLimit = Math.max(1, Math.floor(limit));
     const offset = Math.max(0, (page - 1) * safeLimit);
+
+    const sortMap: Record<string, string> = {
+      studentName: 'u.last_name',
+      exerciseTitle: 'e.title',
+      similarity: 'pc.similarity_percent',
+      type: 'pc.plagiarism_type',
+      date: 'pc.created_at',
+    };
+    const orderBy = sortMap[sortBy] || 'pc.created_at';
+    const orderDir = sortOrder === 'ASC' ? 'ASC' : 'DESC';
+
+    let whereClause = 'ug.group_id = ? AND pc.is_flagged = TRUE';
+    const params: any[] = [groupId];
+
+    if (filterType && filterType !== 'all') {
+      whereClause += ' AND pc.plagiarism_type = ?';
+      params.push(filterType);
+    }
+
+    const baseQuery = `
+      FROM plagiarism_checks pc
+      JOIN submissions s ON pc.submission_id = s.id
+      JOIN users u ON s.student_id = u.id
+      JOIN exercises e ON s.exercise_id = e.id
+      JOIN user_groups ug ON u.id = ug.user_id
+      WHERE ${whereClause}
+    `;
 
     const query = `
       SELECT 
@@ -196,29 +250,18 @@ export class DashboardModel {
         pc.similarity_percent,
         pc.plagiarism_type,
         pc.created_at
-      FROM plagiarism_checks pc
-      JOIN submissions s ON pc.submission_id = s.id
-      JOIN users u ON s.student_id = u.id
-      JOIN exercises e ON s.exercise_id = e.id
-      JOIN user_groups ug ON u.id = ug.user_id
-      WHERE ug.group_id = ? AND pc.is_flagged = TRUE
-      ORDER BY pc.created_at DESC
+      ${baseQuery}
+      ORDER BY ${orderBy} ${orderDir}
       LIMIT ${safeLimit} OFFSET ${offset}
     `;
 
-    const countQuery = `
-      SELECT COUNT(*) as total
-      FROM plagiarism_checks pc
-      JOIN submissions s ON pc.submission_id = s.id
-      JOIN users u ON s.student_id = u.id
-      JOIN user_groups ug ON u.id = ug.user_id
-      WHERE ug.group_id = ? AND pc.is_flagged = TRUE
-    `;
+    const countQuery = `SELECT COUNT(*) as total ${baseQuery}`;
 
-    const [rows] = await getPool().execute<Rows.PlagiarismAlertRow[]>(query, [
-      groupId,
-    ]);
-    const [countRows] = await getPool().execute<any[]>(countQuery, [groupId]);
+    const [rows] = await getPool().execute<Rows.PlagiarismAlertRow[]>(
+      query,
+      params
+    );
+    const [countRows] = await getPool().execute<any[]>(countQuery, params);
 
     return {
       items: rows,

@@ -82,11 +82,17 @@ export class DashboardController {
     const { groupId } = req.params;
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 20;
+    const sortBy = (req.query.sortBy as string) || 'date';
+    const sortOrder = (req.query.sortOrder as 'ASC' | 'DESC') || 'DESC';
+    const status = req.query.status as string | undefined;
 
     const { items, total } = await dashboardModel.getRecentActivityByGroup(
       groupId as UUID,
       page,
-      limit
+      limit,
+      sortBy,
+      sortOrder,
+      status
     );
 
     return ApiResponse.success(res, {
@@ -109,11 +115,17 @@ export class DashboardController {
     const { groupId } = req.params;
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 20;
+    const sortBy = (req.query.sortBy as string) || 'date';
+    const sortOrder = (req.query.sortOrder as 'ASC' | 'DESC') || 'DESC';
+    const type = req.query.type as string | undefined;
 
     const { items, total } = await dashboardModel.getPlagiarismAlertsByGroup(
       groupId as UUID,
       page,
-      limit
+      limit,
+      sortBy,
+      sortOrder,
+      type
     );
 
     return ApiResponse.success(res, {
