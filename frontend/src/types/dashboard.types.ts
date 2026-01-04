@@ -20,6 +20,12 @@ export interface GroupStudentDTO {
   status: "active" | "inactive" | "risk";
 }
 
+export interface StudentDashboardProgress {
+  stats: StudentStats;
+  progressBySubject: StudentProgress[];
+  recentSubmissions: DashboardSubmission[];
+}
+
 export interface RecentActivityDTO {
   id: string;
   studentName: string;

@@ -12,7 +12,7 @@ interface ApiResponse<T> {
 export const studentService = {
   getProgress: async (): Promise<StudentDashboardProgress[]> => {
     const { data } = await api.get<ApiResponse<StudentDashboardProgress[]>>(
-      "v1/dashboard/student/progress"
+      "v1/dashboard/my-progress"
     );
 
     return data.data;
