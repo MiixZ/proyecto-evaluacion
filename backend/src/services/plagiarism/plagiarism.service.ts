@@ -5,7 +5,7 @@ import {
 } from '@validators/plagiarism.validator';
 import { UUID, PlagiarismType } from '@CustomTypes/common.types';
 import { submissionModel } from '@models/submission/submission.model';
-import stringSimilarity from 'string-similarity';
+import { winnowingService } from './winnowing.service';
 import { auditService } from '@services/audit/audit.service';
 
 export class PlagiarismService {
@@ -76,7 +76,7 @@ export class PlagiarismService {
       similarityPercent: similarityPercent,
       plagiarismType: PlagiarismType.INTERNAL,
       isFlagged,
-      toolUsed: 'String Similarity (Dice Coefficient)',
+      toolUsed: 'Winnowing Algorithm (Jaccard Index)',
       notes: isFlagged
         ? `Alta similitud textual detectada (${similarityPercent}%). Revisión manual recomendada.`
         : undefined,
@@ -100,17 +100,7 @@ export class PlagiarismService {
   }
 
   private calculateSimilarity(code1: string, code2: string): number {
-    const clean1 = this.normalizeCode(code1);
-    const clean2 = this.normalizeCode(code2);
-
-    if (!clean1 || !clean2) return 0;
-    if (clean1 === clean2) return 1;
-
-    return stringSimilarity.compareTwoStrings(clean1, clean2);
-  }
-
-  private normalizeCode(code: string): string {
-    return code.replace(/\s+/g, ' ').trim();
+    return winnowingService.calculateSimilarity(code1, code2);
   }
 }
 

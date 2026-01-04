@@ -288,7 +288,7 @@ export class SubmissionService {
       await submissionModel.findAllByExerciseId(exerciseId);
 
     for (const prev of previousSubmissions) {
-      if (prev.studentId !== currentStudentId) {
+      if (prev.student.id !== currentStudentId) {
         await plagiarismService.runBasicComparison(submissionId, prev.id);
       }
     }
