@@ -191,9 +191,9 @@ export class SubmissionService {
     }
 
     if (isLate && exercise.lateSubmissionPenaltyPercent > 0) {
-      const penalty =
+      const latePenalty =
         (finalScore * exercise.lateSubmissionPenaltyPercent) / 100;
-      finalScore = Math.max(0, finalScore - penalty);
+      finalScore = Math.max(0, finalScore - latePenalty);
     }
 
     const submissionTestResults: SubmissionTestResultEntity[] =
@@ -344,14 +344,14 @@ export class SubmissionService {
         submissionId: currentSubmissionId,
         comparedWithSubmissionId: currentSubmissionId,
         similarityPercent: 100,
-        plagiarismType: PlagiarismType.BEHAVIORAL,
+        plagiarismType: PlagiarismType.INTERNAL,
         isFlagged: true,
         toolUsed: 'Behavioral Analysis (Rate Limiting)',
-        notes: `Comportamiento anómalo detectado: ${recentCount} intentos en menos de ${RECENT_MINUTES} minuto(s). Posible intento de adivinación (gambling).`,
+        notes: `ALERTA DE COMPORTAMIENTO: ${recentCount} intentos en <${RECENT_MINUTES} min. Posible "gambling" (fuerza bruta).`,
       });
 
       logger.warn(
-        `Anomalía detectada para usuario ${studentId} en ejercicio ${exerciseId}`
+        `Anomalía de comportamiento detectada para usuario ${studentId}`
       );
     }
   }

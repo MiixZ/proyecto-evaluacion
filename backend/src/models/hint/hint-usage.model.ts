@@ -57,7 +57,7 @@ export class HintUsageModel {
       exerciseId,
     ]);
 
-    return rows[0].total_penalty;
+    return Number(rows[0].total_penalty);
   }
 
   /**
