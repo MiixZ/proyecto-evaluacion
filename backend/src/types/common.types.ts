@@ -86,6 +86,7 @@ export enum PlagiarismType {
   INTERNAL = 'internal',
   EXTERNAL = 'external',
   AI_GENERATED = 'ai_generated',
+  BEHAVIORAL = 'behavioral',
 }
 
 export enum CourseStatus {

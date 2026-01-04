@@ -4,6 +4,7 @@ import { HintUsageEntity } from './hint-usage.entity';
 import { HintUsageRow } from './hint-usage.row';
 import { UUID } from '@CustomTypes/common.types';
 import { hintMapper } from '@mappers/hint.mapper';
+import { RowDataPacket } from 'mysql2/promise';
 
 export class HintUsageModel {
   /**
@@ -38,6 +39,25 @@ export class HintUsageModel {
       penaltyApplied: data.penaltyApplied,
       usedAt: new Date(),
     };
+  }
+
+  async getTotalPenaltyForExercise(
+    studentId: UUID,
+    exerciseId: UUID
+  ): Promise<number> {
+    const query = `
+      SELECT COALESCE(SUM(hu.penalty_applied), 0) as total_penalty
+      FROM hint_usage hu
+      JOIN submissions s ON hu.submission_id = s.id
+      WHERE s.student_id = ? AND s.exercise_id = ?
+    `;
+
+    const [rows] = await getPool().execute<RowDataPacket[]>(query, [
+      studentId,
+      exerciseId,
+    ]);
+
+    return rows[0].total_penalty;
   }
 
   /**

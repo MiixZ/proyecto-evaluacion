@@ -171,6 +171,23 @@ export class SubmissionModel {
     );
   }
 
+  async countRecentSubmissions(
+    studentId: string,
+    exerciseId: string,
+    minutes: number
+  ): Promise<number> {
+    const [rows] = await getPool().query<RowDataPacket[]>(
+      `SELECT COUNT(*) as count 
+       FROM submissions 
+       WHERE student_id = ? 
+       AND exercise_id = ? 
+       AND created_at > DATE_SUB(NOW(), INTERVAL ? MINUTE)`,
+      [studentId, exerciseId, minutes]
+    );
+
+    return rows[0].count;
+  }
+
   async updateResult(
     id: string,
     verdict: SubmissionVerdict,

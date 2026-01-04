@@ -7,6 +7,7 @@ import {
   SubmissionVerdict,
   EfficiencyOrder,
   UserRole,
+  PlagiarismType,
 } from '@CustomTypes/common.types';
 import {
   ExecutionRequest,
@@ -25,6 +26,7 @@ import { auditService } from '@services/audit/audit.service';
 import { languageService } from '@services/language/language.service';
 import { submissionErrorService } from '@services/catalog/submission-error.service';
 import { plagiarismService } from '@services/plagiarism/plagiarism.service';
+import { hintUsageModel } from '@models/hint/hint-usage.model';
 
 export class SubmissionService {
   private executionClient: ExecutionEngineClient;
@@ -134,6 +136,10 @@ export class SubmissionService {
       constructor: { name: 'RowDataPacket' },
     });
 
+    this.checkBehavioralAnomaly(userId, exercise.id, submissionId).catch(
+      (err) => logger.error('Error en chequeo de anomalía', err)
+    );
+
     this.triggerPlagiarismCheck(submissionId, exercise.id, userId).catch(
       (err) => logger.error('Error en chequeo automático de plagio', err)
     );
@@ -174,6 +180,15 @@ export class SubmissionService {
     }
 
     let finalScore = execResult.score;
+
+    const hintsPenalty = await hintUsageModel.getTotalPenaltyForExercise(
+      userId,
+      exercise.id
+    );
+
+    if (hintsPenalty > 0) {
+      finalScore = Math.max(0, finalScore - hintsPenalty);
+    }
 
     if (isLate && exercise.lateSubmissionPenaltyPercent > 0) {
       const penalty =
@@ -307,6 +322,37 @@ export class SubmissionService {
       if (prev.student.id !== currentStudentId) {
         await plagiarismService.runBasicComparison(submissionId, prev.id);
       }
+    }
+  }
+
+  private async checkBehavioralAnomaly(
+    studentId: UUID,
+    exerciseId: UUID,
+    currentSubmissionId: UUID
+  ) {
+    const RECENT_MINUTES = 1;
+    const MAX_ATTEMPTS_THRESHOLD = 5;
+
+    const recentCount = await submissionModel.countRecentSubmissions(
+      studentId,
+      exerciseId,
+      RECENT_MINUTES
+    );
+
+    if (recentCount >= MAX_ATTEMPTS_THRESHOLD) {
+      await plagiarismService.createCheck({
+        submissionId: currentSubmissionId,
+        comparedWithSubmissionId: currentSubmissionId,
+        similarityPercent: 100,
+        plagiarismType: PlagiarismType.BEHAVIORAL,
+        isFlagged: true,
+        toolUsed: 'Behavioral Analysis (Rate Limiting)',
+        notes: `Comportamiento anómalo detectado: ${recentCount} intentos en menos de ${RECENT_MINUTES} minuto(s). Posible intento de adivinación (gambling).`,
+      });
+
+      logger.warn(
+        `Anomalía detectada para usuario ${studentId} en ejercicio ${exerciseId}`
+      );
     }
   }
 }

@@ -22,6 +22,7 @@ import CreateExercise from "./pages/professor/CreateExercise";
 import ExercisesList from "./pages/professor/ExerciseList";
 import SubmissionDetails from "./pages/professor/SubmissionDetail";
 import PlagiarismComparison from "./pages/professor/PlagiarismComparison";
+import SubmissionComparison from "./pages/student/SubmissionComparison";
 
 const queryClient = new QueryClient();
 
@@ -59,6 +60,11 @@ const App = () => (
               <Route
                 path="/dashboard/exercise/:id"
                 element={<StudentExerciseView />}
+              />
+
+              <Route
+                path="compare/:exerciseId"
+                element={<SubmissionComparison />}
               />
 
               {/* Profesor */}
