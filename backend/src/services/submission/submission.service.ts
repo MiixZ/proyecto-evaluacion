@@ -24,6 +24,7 @@ import { CreateSubmissionInput } from '@validators/submission.validator';
 import { auditService } from '@services/audit/audit.service';
 import { languageService } from '@services/language/language.service';
 import { submissionErrorService } from '@services/catalog/submission-error.service';
+import { plagiarismService } from '@services/plagiarism/plagiarism.service';
 
 export class SubmissionService {
   private executionClient: ExecutionEngineClient;
@@ -114,6 +115,10 @@ export class SubmissionService {
     );
     const now = new Date();
     const isLate = exercise.deadline ? now > exercise.deadline : false;
+
+    this.triggerPlagiarismCheck(submissionId, exercise.id, userId).catch(
+      (err) => logger.error('Error en chequeo automático de plagio', err)
+    );
 
     await submissionModel.create({
       id: submissionId,
@@ -272,6 +277,21 @@ export class SubmissionService {
     if (timeRatio <= 0.9) return EfficiencyOrder.ACCEPTABLE;
 
     return EfficiencyOrder.ANY;
+  }
+
+  private async triggerPlagiarismCheck(
+    submissionId: UUID,
+    exerciseId: UUID,
+    currentStudentId: UUID
+  ) {
+    const previousSubmissions =
+      await submissionModel.findAllByExerciseId(exerciseId);
+
+    for (const prev of previousSubmissions) {
+      if (prev.studentId !== currentStudentId) {
+        await plagiarismService.runBasicComparison(submissionId, prev.id);
+      }
+    }
   }
 }
 

@@ -331,6 +331,42 @@ export class SubmissionModel {
       language: row.language,
     }));
   }
+
+  async findAllByExerciseId(exerciseId: string): Promise<any[]> {
+    const [rows] = await getPool().query<SubmissionListRow[]>(
+      `SELECT 
+      s.id, s.exercise_id, s.verdict, s.score, s.created_at, s.language,
+      e.title as exercise_title,
+      subj.name as subject_name,
+      c.id as course_id,
+      u.id as student_id,
+      CONCAT(u.first_name, ' ', u.last_name) as student_name
+      FROM submissions s
+      JOIN exercises e ON s.exercise_id = e.id
+      JOIN courses c ON s.course_id = c.id
+      JOIN subjects subj ON c.subject_id = subj.id
+      JOIN users u ON s.student_id = u.id
+      WHERE s.exercise_id = ?
+      ORDER BY s.created_at DESC`,
+      [exerciseId]
+    );
+
+    return rows.map((row) => ({
+      id: row.id,
+      exerciseId: row.exercise_id,
+      exerciseTitle: row.exercise_title,
+      subjectName: row.subject_name,
+      courseId: row.course_id,
+      verdict: row.verdict,
+      score: row.score,
+      createdAt: row.created_at,
+      language: row.language,
+      student: {
+        id: row.student_id,
+        name: row.student_name,
+      },
+    }));
+  }
 }
 
 export const submissionModel = new SubmissionModel();
