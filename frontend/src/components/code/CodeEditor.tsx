@@ -26,6 +26,7 @@ interface CodeEditorProps {
   onSubmit?: (code: string, language: string) => void;
   readOnly?: boolean;
   isSubmitting?: boolean;
+  onChange?: (code: string) => void;
 }
 
 const defaultCode = `# Escribe tu solución aquí
@@ -43,6 +44,7 @@ export const CodeEditor = ({
   onSubmit,
   readOnly = false,
   isSubmitting = false,
+  onChange,
 }: CodeEditorProps) => {
   const { t } = useTranslation();
   const [code, setCode] = useState(initialCode);
@@ -230,7 +232,10 @@ export const CodeEditor = ({
           height="100%"
           theme={vscodeDark}
           extensions={extensions}
-          onChange={(value) => setCode(value)}
+          onChange={(value) => {
+            setCode(value);
+            onChange?.(value);
+          }}
           editable={!readOnly && !isSubmitting}
           basicSetup={{
             lineNumbers: true,

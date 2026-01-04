@@ -13,7 +13,23 @@ interface UpdateStudentData {
   email: string;
 }
 
+export interface GroupDetails {
+  id: string;
+  courseId: string;
+  name: string;
+  description: string | null;
+  capacity: number | null;
+  status: string;
+}
+
 export const groupService = {
+  getById: async (groupId: string): Promise<GroupDetails> => {
+    const { data } = await api.get<{ data: GroupDetails }>(
+      `/v1/groups/${groupId}`
+    );
+    return data.data;
+  },
+
   getGroupStudents: async (groupId: string): Promise<GroupStudentDTO[]> => {
     const { data } = await api.get(`/v1/groups/${groupId}/students`);
 

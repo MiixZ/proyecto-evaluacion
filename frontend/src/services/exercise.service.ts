@@ -12,9 +12,39 @@ interface ApiResponse<T> {
   message?: string;
 }
 
+export interface CreateExercisePayload {
+  syllabusId: string;
+  title: string;
+  description: string;
+  difficulty: "beginner" | "intermediate" | "advanced";
+  language: string;
+  templateCode?: string;
+  points: number;
+  maxAttempts: number;
+  deadline?: string;
+  lateSubmissionPenaltyPercent: number;
+  testCases: {
+    input: string;
+    expectedOutput: string;
+    isHidden: boolean;
+    timeLimitSeconds: number;
+    memoryLimitMb: number;
+    hintText?: string;
+    hintPenaltyPercent?: number;
+  }[];
+}
+
 export const exerciseService = {
   getById: async (id: string): Promise<Exercise> => {
     const { data } = await api.get<ApiResponse<Exercise>>(`v1/exercises/${id}`);
+    return data.data;
+  },
+
+  create: async (payload: CreateExercisePayload): Promise<Exercise> => {
+    const { data } = await api.post<ApiResponse<Exercise>>(
+      "v1/exercises",
+      payload
+    );
     return data.data;
   },
 
