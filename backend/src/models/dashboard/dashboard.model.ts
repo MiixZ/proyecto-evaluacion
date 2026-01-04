@@ -316,7 +316,7 @@ export class DashboardModel {
   ): Promise<any> {
     const offset = (page - 1) * limit;
 
-    let whereClause = 'WHERE g.id = ?';
+    let whereClause = 'WHERE ug.group_id = ?';
     const params: any[] = [groupId];
 
     if (status && status !== 'all') {
@@ -341,13 +341,17 @@ export class DashboardModel {
     const query = `
       SELECT 
         s.id, s.status, s.score, s.created_at as time, s.verdict,
-        e.title as exerciseTitle,
+        e.title as exerciseTitle, e.difficulty,
         CONCAT(u.first_name, ' ', u.last_name) as studentName,
-        u.profile_image_url as avatarUrl
+        u.profile_image_url as avatarUrl,
+        u.email
       FROM submissions s
       JOIN exercises e ON s.exercise_id = e.id
       JOIN users u ON s.student_id = u.id
-      JOIN groups g ON g.course_id = s.course_id -- O la relación que uses para vincular submission a grupo
+      -- Verificamos que el usuario pertenezca al grupo solicitado
+      JOIN user_groups ug ON u.id = ug.user_id
+      -- Verificamos que la entrega sea del curso al que pertenece el grupo
+      JOIN \`groups\` g ON ug.group_id = g.id AND s.course_id = g.course_id
       ${whereClause}
       ORDER BY ${sortCol} ${sortOrder}
       LIMIT ? OFFSET ?
@@ -356,23 +360,41 @@ export class DashboardModel {
     const countQuery = `
       SELECT COUNT(*) as total
       FROM submissions s
-      JOIN groups g ON g.course_id = s.course_id
+      JOIN users u ON s.student_id = u.id
+      JOIN user_groups ug ON u.id = ug.user_id
+      JOIN \`groups\` g ON ug.group_id = g.id AND s.course_id = g.course_id
       ${whereClause}
     `;
 
-    const [rows] = await getPool().query<any[]>(query, [
-      ...params,
-      limit,
-      offset,
-    ]);
-    const [countRows] = await getPool().query<any[]>(countQuery, params);
+    try {
+      const [rows] = await getPool().query<any[]>(query, [
+        ...params,
+        limit,
+        offset,
+      ]);
+      const [countRows] = await getPool().query<any[]>(countQuery, params);
 
-    return {
-      items: rows,
-      total: countRows[0].total,
-      page,
-      totalPages: Math.ceil(countRows[0].total / limit),
-    };
+      return {
+        items: rows.map((row) => ({
+          id: row.id,
+          studentName: row.studentName,
+          avatarUrl: row.avatarUrl,
+          email: row.email,
+          exerciseTitle: row.exerciseTitle,
+          difficulty: row.difficulty,
+          status: row.status,
+          verdict: row.verdict,
+          score: row.score,
+          time: row.time,
+        })),
+        total: countRows[0].total,
+        page,
+        totalPages: Math.ceil(countRows[0].total / limit),
+      };
+    } catch (error) {
+      console.error('Error en getGroupActivity:', error);
+      throw error;
+    }
   }
 }
 

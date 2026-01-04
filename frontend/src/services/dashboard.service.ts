@@ -3,7 +3,6 @@ import {
   ProfessorDashboardResponse,
   DashboardSubmission,
   PaginatedResponse,
-  RecentActivityDTO,
   PlagiarismAlertDTO,
 } from "@/types/dashboard.types";
 
@@ -56,9 +55,9 @@ export const dashboardService = {
       ...(studentId && { studentId }),
     });
 
-    const { data } = await api.get(
-      `/teacher/group/${groupId}/activity?${params}`
-    );
+    const { data } = await api.get<
+      ApiResponse<PaginatedResponse<DashboardSubmission>>
+    >(`/v1/dashboard/teacher/group/${groupId}/activity?${params}`);
 
     return data.data;
   },
