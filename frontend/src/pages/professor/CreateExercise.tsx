@@ -273,7 +273,7 @@ export default function CreateExercise() {
           </Button>
           <div>
             <h1 className="text-2xl font-bold tracking-tight">
-              Crear Nuevo Ejercicio
+              {isEditMode ? "Editar Ejercicio" : "Crear Nuevo Ejercicio"}
             </h1>
             <p className="text-muted-foreground">
               Define el enunciado y las pruebas automáticas
