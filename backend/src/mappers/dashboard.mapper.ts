@@ -43,6 +43,7 @@ export const dashboardMapper = {
   toGroupStatsDTO(row: GroupStatsRow): GroupStatsDTO {
     return {
       groupId: row.group_id as UUID,
+      courseId: row.course_id as UUID,
       groupName: row.group_name,
       academicYear: row.academic_year,
       subjectName: row.subject_name,

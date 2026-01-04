@@ -18,6 +18,7 @@ export interface StudentProgressDTO {
 
 export interface GroupStatsDTO {
   groupId: UUID;
+  courseId: UUID;
   groupName: string;
   academicYear: string;
   subjectName: string;

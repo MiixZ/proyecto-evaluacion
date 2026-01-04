@@ -19,6 +19,7 @@ export interface StudentProgressRow extends RowDataPacket {
 
 export interface GroupStatsRow extends RowDataPacket {
   group_id: string;
+  course_id: string;
   group_name: string;
   academic_year: string;
   subject_name: string;
