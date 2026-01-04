@@ -11,6 +11,7 @@ import {
   ArrowUp,
   ArrowDown,
   Eye,
+  CheckCircle,
 } from "lucide-react";
 import { format } from "date-fns";
 import { es, enUS } from "date-fns/locale";
@@ -55,17 +56,25 @@ export default function PlagiarismHistory() {
   const { t, i18n } = useTranslation();
   const dateLocale = i18n.language === "en" ? enUS : es;
 
-  // Estados
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [filterType, setFilterType] = useState("all");
+  const [reviewStatus, setReviewStatus] = useState("all");
   const [sorting, setSorting] = useState<{
     column: string;
     direction: "ASC" | "DESC";
   }>({ column: "date", direction: "DESC" });
 
   const { data, isLoading } = useQuery({
-    queryKey: ["groupPlagiarism", groupId, page, limit, sorting, filterType],
+    queryKey: [
+      "groupPlagiarism",
+      groupId,
+      page,
+      limit,
+      sorting,
+      filterType,
+      reviewStatus,
+    ],
     queryFn: () =>
       dashboardService.getGroupPlagiarism(
         groupId!,
@@ -73,7 +82,8 @@ export default function PlagiarismHistory() {
         limit,
         sorting.column,
         sorting.direction,
-        filterType
+        filterType,
+        reviewStatus
       ),
     enabled: !!groupId,
   });
@@ -140,6 +150,23 @@ export default function PlagiarismHistory() {
             </div>
 
             <div className="flex items-center gap-2">
+              {/* Filtro por Estado */}
+              <Select
+                value={reviewStatus}
+                onValueChange={(val) => {
+                  setReviewStatus(val);
+                  setPage(1);
+                }}>
+                <SelectTrigger className="w-[160px]">
+                  <SelectValue placeholder="Estado" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="pending">Pendientes</SelectItem>
+                  <SelectItem value="reviewed">Revisados</SelectItem>
+                </SelectContent>
+              </Select>
+
               {/* Filtro por Tipo */}
               <Select
                 value={filterType}
@@ -222,9 +249,23 @@ export default function PlagiarismHistory() {
             </TableHeader>
             <TableBody>
               {data?.items.map((alert) => (
-                <TableRow key={alert.id}>
+                <TableRow
+                  key={alert.id}
+                  className={alert.isReviewed ? "bg-muted/30 opacity-70" : ""}>
                   <TableCell className="font-medium">
-                    {alert.studentName}
+                    <div className="flex items-center gap-2">
+                      {alert.isReviewed ? (
+                        <span title="Revisado">
+                          <CheckCircle className="h-4 w-4 text-green-600" />
+                        </span>
+                      ) : (
+                        <div
+                          className="h-2 w-2 rounded-full bg-orange-500"
+                          title="Pendiente"
+                        />
+                      )}
+                      {alert.studentName}
+                    </div>
                   </TableCell>
                   <TableCell>{alert.exerciseTitle}</TableCell>
                   <TableCell className="capitalize">
@@ -241,13 +282,13 @@ export default function PlagiarismHistory() {
                   </TableCell>
                   <TableCell className="text-right">
                     <Button
-                      variant="outline"
+                      variant={alert.isReviewed ? "secondary" : "outline"}
                       size="sm"
                       onClick={() =>
                         navigate(`/plagiarism/compare/${alert.id}`)
                       }>
                       <Eye className="h-4 w-4 mr-2" />
-                      Revisar
+                      {alert.isReviewed ? "Ver Detalle" : "Revisar"}
                     </Button>
                   </TableCell>
                 </TableRow>

@@ -21,7 +21,6 @@ import {
 import { UUID } from '@CustomTypes/common.types';
 
 export const dashboardMapper = {
-  // ... (métodos existentes: toStudentProgressDTO, toGroupStatsDTO, toTeacherWorkloadDTO, toExerciseMetricsDTO, toPlagiarismSummaryDTO) ...
   toStudentProgressDTO(row: StudentProgressRow): StudentProgressDTO {
     return {
       studentId: row.student_id as UUID,
@@ -141,6 +140,10 @@ export const dashboardMapper = {
       similarity: Number(row.similarity_percent),
       type: row.plagiarism_type,
       date: new Date(row.created_at).toISOString(),
+      reviewedAt: row.reviewed_at
+        ? new Date(row.reviewed_at).toISOString()
+        : null,
+      isReviewed: !!row.reviewed_at,
     };
   },
 };

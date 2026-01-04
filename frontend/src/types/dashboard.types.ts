@@ -43,6 +43,8 @@ export interface PlagiarismAlertDTO {
   similarity: number;
   type: string;
   date: string;
+  reviewedAt?: string | null;
+  isReviewed?: boolean;
 }
 
 export interface ProfessorDashboardResponse {

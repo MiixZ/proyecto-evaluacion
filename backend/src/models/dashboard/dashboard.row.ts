@@ -90,4 +90,5 @@ export interface PlagiarismAlertRow extends RowDataPacket {
   similarity_percent: number;
   plagiarism_type: string;
   created_at: Date;
+  reviewed_at: Date | null;
 }

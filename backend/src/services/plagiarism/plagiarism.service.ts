@@ -8,6 +8,8 @@ import { submissionModel } from '@models/submission/submission.model';
 import { winnowingService } from './winnowing.service';
 import { auditService } from '@services/audit/audit.service';
 import { submissionService } from '@services/submission/submission.service';
+import { FeedbackVisibility } from '@models/feedback/feedback.entity';
+import { feedbackService } from '@services/feedback/feedback.service';
 
 export class PlagiarismService {
   async createCheck(input: CreatePlagiarismCheckInput) {
@@ -44,8 +46,23 @@ export class PlagiarismService {
         await submissionService.applyPlagiarismPenalty(
           originalCheck.submissionId
         );
+
+        await feedbackService.createFeedback(
+          {
+            submissionId: originalCheck.submissionId,
+            content: 'Acusado de plagio',
+            isGeneral: true,
+            scoreAdjustment: 0,
+            visibility: FeedbackVisibility.STUDENT,
+            lineNumber: undefined,
+          },
+          reviewerId
+        );
       } catch (error) {
-        console.error('Error al aplicar penalización de plagio:', error);
+        console.error(
+          'Error al aplicar penalización o feedback de plagio:',
+          error
+        );
       }
     }
 

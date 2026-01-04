@@ -68,12 +68,13 @@ export const dashboardService = {
     limit: number = 20,
     sortBy: string = "date",
     sortOrder: "ASC" | "DESC" = "DESC",
-    type: string = "all"
+    type: string = "all",
+    reviewStatus: string = "all"
   ): Promise<PaginatedResponse<PlagiarismAlertDTO>> => {
     const { data } = await api.get<
       ApiResponse<PaginatedResponse<PlagiarismAlertDTO>>
     >(`/v1/dashboard/teacher/group/${groupId}/plagiarism`, {
-      params: { page, limit, sortBy, sortOrder, type },
+      params: { page, limit, sortBy, sortOrder, type, reviewStatus },
     });
 
     return data.data;

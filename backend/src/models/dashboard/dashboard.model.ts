@@ -246,7 +246,8 @@ export class DashboardModel {
     limit: number = 5,
     sortBy: string = 'date',
     sortOrder: 'ASC' | 'DESC' = 'DESC',
-    filterType?: string
+    filterType?: string,
+    reviewStatus?: string
   ): Promise<{ items: Rows.PlagiarismAlertRow[]; total: number }> {
     const safeLimit = Math.max(1, Math.floor(limit));
     const offset = Math.max(0, (page - 1) * safeLimit);
@@ -257,6 +258,7 @@ export class DashboardModel {
       similarity: 'pc.similarity_percent',
       type: 'pc.plagiarism_type',
       date: 'pc.created_at',
+      status: 'pc.reviewed_at',
     };
     const orderBy = sortMap[sortBy] || 'pc.created_at';
     const orderDir = sortOrder === 'ASC' ? 'ASC' : 'DESC';
@@ -267,6 +269,12 @@ export class DashboardModel {
     if (filterType && filterType !== 'all') {
       whereClause += ' AND pc.plagiarism_type = ?';
       params.push(filterType);
+    }
+
+    if (reviewStatus === 'pending') {
+      whereClause += ' AND pc.reviewed_at IS NULL';
+    } else if (reviewStatus === 'reviewed') {
+      whereClause += ' AND pc.reviewed_at IS NOT NULL';
     }
 
     const baseQuery = `
@@ -285,7 +293,8 @@ export class DashboardModel {
         e.title as exercise_title,
         pc.similarity_percent,
         pc.plagiarism_type,
-        pc.created_at
+        pc.created_at,
+        pc.reviewed_at
       ${baseQuery}
       ORDER BY ${orderBy} ${orderDir}
       LIMIT ${safeLimit} OFFSET ${offset}

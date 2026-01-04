@@ -110,6 +110,7 @@ export class DashboardController {
     const sortBy = (req.query.sortBy as string) || 'date';
     const sortOrder = (req.query.sortOrder as 'ASC' | 'DESC') || 'DESC';
     const type = req.query.type as string | undefined;
+    const reviewStatus = req.query.reviewStatus as string | undefined;
 
     const { items, total } = await dashboardModel.getPlagiarismAlertsByGroup(
       groupId as UUID,
@@ -117,7 +118,8 @@ export class DashboardController {
       limit,
       sortBy,
       sortOrder,
-      type
+      type,
+      reviewStatus
     );
 
     return ApiResponse.success(res, {
