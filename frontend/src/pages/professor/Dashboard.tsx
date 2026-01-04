@@ -101,7 +101,24 @@ export default function ProfessorDashboard() {
       const groupInfo = dashboardData.activeGroup.info;
       const students = dashboardData.activeGroup.students;
 
-      const headers = [
+      const statsRows = [
+        ["REPORTE DE GRUPO", groupInfo.groupName],
+        ["Asignatura", groupInfo.subjectName],
+        ["Fecha de emisión", new Date().toLocaleDateString("es-ES")],
+        [""],
+        ["MÉTRICAS GENERALES"],
+        ["Nota Media del Grupo", groupInfo.avgScore.toFixed(2)],
+        ["Porcentaje de Completitud", `${groupInfo.completionPercentage}%`],
+        ["Total Estudiantes", groupInfo.studentCount],
+        [
+          "Alertas de Plagio (último mes)",
+          dashboardData.activeGroup.plagiarismAlerts.length,
+        ],
+        [""],
+        ["DETALLE DE ESTUDIANTES"],
+      ];
+
+      const tableHeaders = [
         "ID Estudiante",
         "Nombre",
         "Email",
@@ -110,27 +127,36 @@ export default function ProfessorDashboard() {
         "Nota Media",
       ];
 
-      const rows = students.map((student) => [
+      const tableRows = students.map((student) => [
         student.id,
         `"${student.name.replace(/"/g, '""')}"`,
         student.email,
-        student.status,
+        student.status === "active"
+          ? "Activo"
+          : student.status === "risk"
+          ? "Riesgo"
+          : "Inactivo",
         student.progress.toFixed(2),
         student.averageScore.toFixed(2),
       ]);
 
-      const csvContent = [
-        headers.join(","),
-        ...rows.map((r) => r.join(",")),
-      ].join("\n");
+      const csvArray = [...statsRows, tableHeaders, ...tableRows];
 
-      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const csvContent = csvArray.map((row) => row.join(",")).join("\n");
+
+      const blob = new Blob(["\uFEFF" + csvContent], {
+        type: "text/csv;charset=utf-8;",
+      });
+
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.setAttribute("href", url);
 
+      const safeGroupName = groupInfo.groupName
+        .replace(/[^a-z0-9]/gi, "_")
+        .toLowerCase();
       const timestamp = new Date().toISOString().split("T")[0];
-      const fileName = `Reporte_${groupInfo.groupName}_${timestamp}.csv`;
+      const fileName = `reporte_${safeGroupName}_${timestamp}.csv`;
 
       link.setAttribute("download", fileName);
       link.style.visibility = "hidden";
@@ -138,7 +164,7 @@ export default function ProfessorDashboard() {
       link.click();
       document.body.removeChild(link);
 
-      toast.success("Datos exportados correctamente");
+      toast.success("Reporte generado correctamente");
     } catch (err) {
       console.error(err);
       toast.error("Error al generar el archivo de exportación");
