@@ -116,7 +116,7 @@ export function AppSidebar() {
 
   const showStudentMenu = true;
   const showProfessorMenu =
-    user?.role === UserRole.PROFESSOR || user?.role === UserRole.ADMIN;
+    user?.role === UserRole.TEACHER || user?.role === UserRole.ADMIN;
   const showAdminMenu = user?.role === UserRole.ADMIN;
 
   const isActiveLink = (url: string, exact: boolean = false) => {

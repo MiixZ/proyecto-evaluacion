@@ -19,6 +19,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setToken(storedToken);
       setUser(storedUser);
     }
+
     setIsLoading(false);
   }, []);
 
@@ -37,7 +38,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         case UserRole.STUDENT:
           navigate("/dashboard");
           break;
-        case UserRole.PROFESSOR:
+        case UserRole.TEACHER:
           navigate("/professor");
           break;
         case UserRole.ADMIN:
@@ -69,6 +70,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       localStorage.setItem("user", JSON.stringify(updatedUser));
     } catch (error) {
       console.error("Error reloading user:", error);
+      logout();
     }
   };
 
