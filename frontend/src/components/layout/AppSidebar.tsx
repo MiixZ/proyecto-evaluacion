@@ -93,6 +93,11 @@ export function AppSidebar() {
         url: "/dashboard/create",
         icon: BookOpen,
       },
+      {
+        title: t("sidebar.menu.my_exercises"),
+        url: "/dashboard/exercises",
+        icon: FileCode,
+      },
     ],
     admin: [
       {

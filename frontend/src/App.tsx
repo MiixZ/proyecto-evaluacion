@@ -19,6 +19,7 @@ import DashboardWrapper from "./pages/DashboardWrapper";
 import ActivityHistory from "./pages/professor/ActivityHistory";
 import PlagiarismHistory from "./pages/professor/PlagiarismHistory";
 import CreateExercise from "./pages/professor/CreateExercise";
+import ExercisesList from "./pages/professor/ExerciseList";
 
 const queryClient = new QueryClient();
 
@@ -69,6 +70,7 @@ const App = () => (
               />
               <Route path="/dashboard/groups" element={<GroupsPage />} />
               <Route path="/dashboard/create" element={<CreateExercise />} />
+              <Route path="/dashboard/exercises" element={<ExercisesList />} />
 
               {/* Alias/Redirecciones */}
               <Route

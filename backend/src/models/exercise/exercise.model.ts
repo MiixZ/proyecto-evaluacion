@@ -194,6 +194,32 @@ export class ExerciseModel {
       ? exerciseMapper.toExecutionLimitEntity(rows[0])
       : null;
   }
+
+  async findByProfessor(teacherId: UUID): Promise<any[]> {
+    const query = `
+      SELECT 
+        e.*,
+        s.title as syllabus_title,
+        c.academic_year,
+        subj.name as subject_name,
+        (SELECT COUNT(*) FROM submissions sub WHERE sub.exercise_id = e.id) as submission_count
+      FROM exercises e
+      JOIN syllabi s ON e.syllabus_id = s.id
+      JOIN courses c ON s.course_id = c.id
+      JOIN subjects subj ON c.subject_id = subj.id
+      WHERE e.created_by = ?
+      ORDER BY e.created_at DESC
+    `;
+
+    const [rows] = await getPool().execute<any[]>(query, [teacherId]);
+
+    return rows;
+  }
+
+  async updateField(id: UUID, field: string, value: any): Promise<void> {
+    const query = `UPDATE exercises SET ${field} = ? WHERE id = ?`;
+    await getPool().execute(query, [value, id]);
+  }
 }
 
 export const exerciseModel = new ExerciseModel();

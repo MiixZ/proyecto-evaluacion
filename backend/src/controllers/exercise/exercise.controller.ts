@@ -56,15 +56,53 @@ export class ExerciseController {
       throw new AppError('FORBIDDEN', 403, 'Acción no permitida');
     }
 
-    const result = isPublished
-      ? await exerciseService.publishExercise(id as UUID)
-      : await exerciseService.unpublishExercise(id as UUID);
+    const result = await exerciseService.togglePublishStatus(
+      id as UUID,
+      isPublished
+    );
 
     return ApiResponse.success(
       res,
       result,
       200,
       `Ejercicio ${isPublished ? 'publicado' : 'ocultado'}`
+    );
+  });
+
+  getMyExercises = catchAsync(async (req: AuthRequest, res: Response) => {
+    const teacherId = req.user?.id;
+
+    if (!teacherId || req.user?.role === UserRole.STUDENT) {
+      throw new AppError(
+        'FORBIDDEN',
+        403,
+        'No autorizado para ver ejercicios de profesor'
+      );
+    }
+
+    const exercises = await exerciseService.getProfessorExercises(teacherId);
+
+    return ApiResponse.success(res, exercises);
+  });
+
+  clone = catchAsync(async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    const teacherId = req.user?.id;
+
+    if (!teacherId || req.user?.role === UserRole.STUDENT) {
+      throw new AppError('FORBIDDEN', 403, 'Acción no permitida');
+    }
+
+    const result = await exerciseService.cloneExercise(
+      id as UUID,
+      teacherId as UUID
+    );
+
+    return ApiResponse.success(
+      res,
+      result,
+      200,
+      'Ejercicio clonado correctamente'
     );
   });
 }

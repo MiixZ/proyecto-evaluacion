@@ -99,19 +99,16 @@ export default function CreateExercise() {
 
   const selectedGroup = groups.find((g) => g.groupId === selectedGroupId);
 
-  // 3. Obtener temarios (syllabi) BASADO en el grupo seleccionado
   const { data: syllabi, isLoading: isLoadingSyllabi } = useQuery({
-    queryKey: ["syllabi", selectedGroup?.courseId], // Usamos courseId del grupo
+    queryKey: ["syllabi", selectedGroup?.courseId],
     queryFn: () => syllabusService.getByCourse(selectedGroup!.courseId),
     enabled: !!selectedGroup?.courseId,
   });
 
-  // Si cambiamos de grupo, limpiamos el syllabus seleccionado
   useEffect(() => {
     setSyllabusId("");
   }, [selectedGroupId]);
 
-  // Si no había grupo inicial y cargan los grupos, seleccionar el primero
   useEffect(() => {
     if (!selectedGroupId && groups.length > 0) {
       setSelectedGroupId(groups[0].groupId);
@@ -126,7 +123,7 @@ export default function CreateExercise() {
         title: "Ejercicio creado",
         description: "El ejercicio se ha guardado correctamente.",
       });
-      navigate("/dashboard");
+      navigate("/dashboard/exercises");
     },
     onError: (error: any) => {
       toast({

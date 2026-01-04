@@ -34,6 +34,17 @@ export interface CreateExercisePayload {
   }[];
 }
 
+export interface ExerciseListItem {
+  id: string;
+  title: string;
+  subject: string;
+  syllabus: string;
+  difficulty: "beginner" | "intermediate" | "advanced";
+  isPublished: boolean;
+  submissionCount: number;
+  createdAt: string;
+}
+
 export const exerciseService = {
   getById: async (id: string): Promise<Exercise> => {
     const { data } = await api.get<ApiResponse<Exercise>>(`v1/exercises/${id}`);
@@ -79,5 +90,27 @@ export const exerciseService = {
       `v1/hints/${submissionId}/test-case/${testCaseId}`
     );
     return data.data;
+  },
+
+  getMyExercises: async (): Promise<ExerciseListItem[]> => {
+    const { data } = await api.get<ApiResponse<ExerciseListItem[]>>(
+      "v1/exercises/professor/mine"
+    );
+
+    return data.data;
+  },
+
+  togglePublish: async (id: string, isPublished: boolean) => {
+    const { data } = await api.patch(`v1/exercises/${id}/publish`, {
+      isPublished,
+    });
+
+    return data;
+  },
+
+  clone: async (id: string) => {
+    const { data } = await api.post(`v1/exercises/${id}/clone`);
+
+    return data;
   },
 };

@@ -6,7 +6,6 @@ import {
   createExerciseRequest,
   getExerciseRequest,
   getExercisesBySyllabusRequest,
-  publishExerciseRequest,
 } from '@validators/exercise.validator';
 
 const router = Router();
@@ -31,10 +30,8 @@ router.get(
   exerciseController.listBySyllabus
 );
 
-router.patch(
-  '/:id/publish',
-  validateRequest(publishExerciseRequest),
-  exerciseController.togglePublish
-);
+router.get('/professor/mine', exerciseController.getMyExercises);
+router.patch('/:id/publish', exerciseController.togglePublish);
+router.post('/:id/clone', exerciseController.clone);
 
 export default router;
