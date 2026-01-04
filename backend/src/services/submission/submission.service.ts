@@ -116,10 +116,6 @@ export class SubmissionService {
     const now = new Date();
     const isLate = exercise.deadline ? now > exercise.deadline : false;
 
-    this.triggerPlagiarismCheck(submissionId, exercise.id, userId).catch(
-      (err) => logger.error('Error en chequeo automático de plagio', err)
-    );
-
     await submissionModel.create({
       id: submissionId,
       exerciseId: exercise.id,
@@ -137,6 +133,10 @@ export class SubmissionService {
       updatedAt: now,
       constructor: { name: 'RowDataPacket' },
     });
+
+    this.triggerPlagiarismCheck(submissionId, exercise.id, userId).catch(
+      (err) => logger.error('Error en chequeo automático de plagio', err)
+    );
 
     const execRequest: ExecutionRequest = {
       id: uuidv4(),
