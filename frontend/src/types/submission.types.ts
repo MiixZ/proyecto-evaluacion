@@ -1,3 +1,5 @@
+import { UUID } from "crypto";
+
 export interface TestResultDTO {
   id: string;
   status: "passed" | "failed" | "error";
@@ -10,6 +12,7 @@ export interface TestResultDTO {
 }
 
 export interface SubmissionDetailDTO {
+  userId: UUID;
   id: string;
   student: {
     id: string;

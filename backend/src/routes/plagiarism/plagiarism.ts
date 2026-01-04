@@ -28,6 +28,7 @@ router.patch(
   validateRequest(reviewPlagiarismRequest),
   plagiarismController.review
 );
+router.get('/:id', plagiarismController.getOne);
 router.get(
   '/',
   validateRequest(listPlagiarismRequest),

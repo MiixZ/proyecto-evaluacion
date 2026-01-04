@@ -1,0 +1,186 @@
+import { useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { ArrowLeft, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
+import { format } from "date-fns";
+import { toast } from "sonner";
+
+import { Button } from "@/components/ui/forms/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/layout/card";
+import { Badge } from "@/components/ui/data/badge";
+import { Textarea } from "@/components/ui/forms/textarea";
+import { CodeEditor } from "@/components/code/CodeEditor"; //
+import { plagiarismService } from "@/services/plagiarism.service";
+import { submissionService } from "@/services/submission.service"; //
+import { PlagiarismType } from "@/types/plagiarism.types";
+
+export default function PlagiarismComparison() {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [reviewNotes, setReviewNotes] = useState("");
+
+  const { data: plagiarismData, isLoading: isLoadingCheck } = useQuery({
+    queryKey: ["plagiarism", id],
+    queryFn: () => plagiarismService.getById(id!),
+    enabled: !!id,
+  });
+
+  const { data: sourceSubmission, isLoading: isLoadingSource } = useQuery({
+    queryKey: ["submission", plagiarismData?.submissionId],
+    queryFn: () => submissionService.getById(plagiarismData!.submissionId),
+    enabled: !!plagiarismData?.submissionId,
+  });
+
+  const { data: targetSubmission, isLoading: isLoadingTarget } = useQuery({
+    queryKey: ["submission", plagiarismData?.comparedWithSubmissionId],
+    queryFn: () =>
+      submissionService.getById(plagiarismData!.comparedWithSubmissionId),
+    enabled: !!plagiarismData?.comparedWithSubmissionId,
+  });
+
+  const reviewMutation = useMutation({
+    mutationFn: ({ isFlagged }: { isFlagged: boolean }) =>
+      plagiarismService.review(id!, reviewNotes, isFlagged),
+    onSuccess: () => {
+      toast.success("Revisión guardada correctamente");
+      queryClient.invalidateQueries({ queryKey: ["groupPlagiarism"] });
+      navigate(-1);
+    },
+    onError: () => toast.error("Error al guardar la revisión"),
+  });
+
+  const isLoading = isLoadingCheck || isLoadingSource || isLoadingTarget;
+
+  if (isLoading) {
+    return <div className="p-8 text-center">Cargando comparación...</div>;
+  }
+
+  if (!plagiarismData || !sourceSubmission || !targetSubmission) {
+    return (
+      <div className="p-8 text-center text-red-500">
+        No se encontraron los datos necesarios.
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-[calc(100vh-4rem)] flex flex-col gap-4 p-4 animate-in fade-in">
+      {/* Header de navegación y acciones */}
+      <div className="flex items-center justify-between bg-card p-4 rounded-lg border shadow-sm">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Volver
+          </Button>
+          <div>
+            <h1 className="text-xl font-bold flex items-center gap-2">
+              Comparación de Código
+              <Badge
+                variant={
+                  plagiarismData.similarityPercent > 80
+                    ? "destructive"
+                    : "secondary"
+                }>
+                {plagiarismData.similarityPercent}% Similitud
+              </Badge>
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Revisando caso generado el{" "}
+              {format(new Date(plagiarismData.createdAt), "PPP p")}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            className="border-green-600 text-green-600 hover:bg-green-50"
+            onClick={() => reviewMutation.mutate({ isFlagged: false })}
+            disabled={reviewMutation.isPending}>
+            <CheckCircle className="mr-2 h-4 w-4" />
+            Descartar (Falso Positivo)
+          </Button>
+          <Button
+            variant="destructive"
+            onClick={() => reviewMutation.mutate({ isFlagged: true })}
+            disabled={reviewMutation.isPending}>
+            <AlertTriangle className="mr-2 h-4 w-4" />
+            Confirmar Plagio
+          </Button>
+        </div>
+      </div>
+
+      {/* Area de Comparación Split View */}
+      <div className="flex-1 grid grid-cols-2 gap-4 min-h-0">
+        {/* Panel Izquierdo: Entrega Sospechosa */}
+        <div className="flex flex-col gap-2 h-full">
+          <Card className="flex flex-col h-full border-l-4 border-l-orange-500">
+            <CardHeader className="py-3 px-4 bg-muted/20">
+              <CardTitle className="text-sm font-medium">
+                Estudiante (Sospechoso)
+              </CardTitle>
+              <CardDescription className="text-xs">
+                {sourceSubmission.student?.name ||
+                  "ID: " + sourceSubmission.userId}
+              </CardDescription>
+            </CardHeader>
+            <div className="flex-1 overflow-hidden relative">
+              <CodeEditor
+                initialCode={sourceSubmission.code}
+                language={sourceSubmission.language || "javascript"}
+                readOnly={true}
+                showSubmitButton={false}
+              />
+            </div>
+          </Card>
+        </div>
+
+        {/* Panel Derecho: Entrega Original/Comparada */}
+        <div className="flex flex-col gap-2 h-full">
+          <Card className="flex flex-col h-full border-l-4 border-l-blue-500">
+            <CardHeader className="py-3 px-4 bg-muted/20">
+              <CardTitle className="text-sm font-medium">
+                Comparado con (Fuente/Otro alumno)
+              </CardTitle>
+              <CardDescription className="text-xs">
+                {plagiarismData.plagiarismType === PlagiarismType.INTERNAL
+                  ? `Otro Estudiante (ID: ${targetSubmission.userId})`
+                  : "Fuente Externa / IA"}
+              </CardDescription>
+            </CardHeader>
+            <div className="flex-1 overflow-hidden relative">
+              <CodeEditor
+                initialCode={targetSubmission.code}
+                language={targetSubmission.language || "javascript"}
+                readOnly={true}
+                showSubmitButton={false}
+              />
+            </div>
+          </Card>
+        </div>
+      </div>
+
+      {/* Notas del profesor */}
+      <Card className="shrink-0">
+        <CardContent className="pt-4">
+          <label className="text-sm font-medium mb-2 block">
+            Notas de la revisión (Opcional):
+          </label>
+          <Textarea
+            placeholder="Escribe aquí tus observaciones sobre por qué confirmas o descartas este caso..."
+            value={reviewNotes}
+            onChange={(e) => setReviewNotes(e.target.value)}
+            className="h-20 resize-none"
+          />
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

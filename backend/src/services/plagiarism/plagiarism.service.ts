@@ -61,7 +61,10 @@ export class PlagiarismService {
     const source = await submissionModel.getById(submissionId);
     const target = await submissionModel.getById(targetSubmissionId);
 
-    const similarityScore = this.calculateSimilarity(source.code, target.code);
+    const similarityScore = this.calculateSimilarity(
+      source?.code!,
+      target?.code!
+    );
     const similarityPercent = Math.round(similarityScore * 100);
 
     const SIMILARITY_THRESHOLD = 80;

@@ -10,6 +10,7 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  Eye,
 } from "lucide-react";
 import { format } from "date-fns";
 import { es, enUS } from "date-fns/locale";
@@ -216,6 +217,7 @@ export default function PlagiarismHistory() {
                     Fecha Detección <SortIcon column="date" />
                   </div>
                 </TableHead>
+                <TableHead className="text-right">Acciones</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -237,12 +239,23 @@ export default function PlagiarismHistory() {
                     <Calendar className="h-3 w-3" />
                     {format(new Date(alert.date), "PP", { locale: dateLocale })}
                   </TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        navigate(`/plagiarism/compare/${alert.id}`)
+                      }>
+                      <Eye className="h-4 w-4 mr-2" />
+                      Revisar
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))}
               {data?.items.length === 0 && (
                 <TableRow>
                   <TableCell
-                    colSpan={5}
+                    colSpan={6}
                     className="h-24 text-center text-muted-foreground">
                     No se han detectado casos de plagio con los filtros
                     actuales.

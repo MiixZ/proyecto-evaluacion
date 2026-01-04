@@ -21,6 +21,7 @@ import PlagiarismHistory from "./pages/professor/PlagiarismHistory";
 import CreateExercise from "./pages/professor/CreateExercise";
 import ExercisesList from "./pages/professor/ExerciseList";
 import SubmissionDetails from "./pages/professor/SubmissionDetail";
+import PlagiarismComparison from "./pages/professor/PlagiarismComparison";
 
 const queryClient = new QueryClient();
 
@@ -80,6 +81,10 @@ const App = () => (
                 element={<CreateExercise />}
               />
               <Route path="/submissions/:id" element={<SubmissionDetails />} />
+              <Route
+                path="/plagiarism/compare/:id"
+                element={<PlagiarismComparison />}
+              />
 
               {/* Alias/Redirecciones */}
               <Route

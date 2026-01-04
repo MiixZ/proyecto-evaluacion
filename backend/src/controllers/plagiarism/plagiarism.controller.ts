@@ -41,6 +41,21 @@ export class PlagiarismController {
     return ApiResponse.success(res, plagiarismMapper.toDTOList(result));
   });
 
+  getOne = catchAsync(async (req: AuthRequest, res: Response) => {
+    if (req.user?.role === UserRole.STUDENT) {
+      throw new AppError('FORBIDDEN', 403, 'No autorizado');
+    }
+
+    const { id } = req.params;
+    const result = await plagiarismService.getById(id);
+
+    if (!result) {
+      throw new AppError('NOT_FOUND', 404, 'Chequeo de plagio no encontrado');
+    }
+
+    return ApiResponse.success(res, plagiarismMapper.toDTO(result));
+  });
+
   review = catchAsync(async (req: AuthRequest, res: Response) => {
     if (req.user?.role === UserRole.STUDENT) {
       throw new AppError(
