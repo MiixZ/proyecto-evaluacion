@@ -70,7 +70,14 @@ const App = () => (
               />
               <Route path="/dashboard/groups" element={<GroupsPage />} />
               <Route path="/dashboard/create" element={<CreateExercise />} />
-              <Route path="/dashboard/exercises" element={<ExercisesList />} />
+              <Route
+                path="/dashboard/manage-exercises"
+                element={<ExercisesList />}
+              />
+              <Route
+                path="/dashboard/edit-exercise/:exerciseId"
+                element={<CreateExercise />}
+              />
 
               {/* Alias/Redirecciones */}
               <Route

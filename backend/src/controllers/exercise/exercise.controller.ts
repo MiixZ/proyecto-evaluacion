@@ -105,6 +105,47 @@ export class ExerciseController {
       'Ejercicio clonado correctamente'
     );
   });
+
+  update = catchAsync(async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    const teacherId = req.user?.id;
+
+    if (!teacherId || req.user?.role === UserRole.STUDENT) {
+      throw new AppError('FORBIDDEN', 403, 'Acción no permitida');
+    }
+
+    const input = req.body as CreateExerciseInput;
+    const result = await exerciseService.updateExercise(
+      id as UUID,
+      input,
+      teacherId as UUID
+    );
+
+    return ApiResponse.success(
+      res,
+      result,
+      200,
+      'Ejercicio actualizado correctamente'
+    );
+  });
+
+  delete = catchAsync(async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    const teacherId = req.user?.id;
+
+    if (!teacherId || req.user?.role === UserRole.STUDENT) {
+      throw new AppError('FORBIDDEN', 403, 'Acción no permitida');
+    }
+
+    await exerciseService.deleteExercise(id as UUID, teacherId as UUID);
+
+    return ApiResponse.success(
+      res,
+      { success: true },
+      200,
+      'Ejercicio eliminado correctamente'
+    );
+  });
 }
 
 export const exerciseController = new ExerciseController();

@@ -95,7 +95,7 @@ export function AppSidebar() {
       },
       {
         title: t("sidebar.menu.my_exercises"),
-        url: "/dashboard/exercises",
+        url: "/dashboard/manage-exercises",
         icon: FileCode,
       },
     ],

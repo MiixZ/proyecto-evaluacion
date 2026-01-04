@@ -7,11 +7,29 @@ import {
 import { CreateExerciseInput } from '@validators/exercise.validator';
 import { UUID, PaginatedResponse } from '@CustomTypes/common.types';
 import { exerciseMapper } from '@mappers/exercise.mapper';
-import { NotFoundError } from '@utils/errors';
+import { AppError, NotFoundError } from '@utils/errors';
 import { syllabusModel } from '@models/syllabus/syllabus.model';
 import { auditService } from '@services/audit/audit.service';
 import { languageService } from '@services/language/language.service';
 import { getPool } from '@config/database';
+
+interface ExerciseDetailDTO extends ExerciseDTO {
+  testCases?: Array<{
+    id: UUID;
+    input: string;
+    expectedOutput: string;
+    isHidden: boolean;
+    timeLimitSeconds: number;
+    memoryLimitMb: number;
+    hintText: string;
+    hintPenaltyPercent: number;
+  }>;
+  limits?: {
+    timeLimitSeconds: number;
+    memoryLimitMb: number;
+  };
+  courseId?: UUID;
+}
 
 export class ExerciseService {
   async createExercise(
@@ -48,7 +66,7 @@ export class ExerciseService {
   async getExerciseById(
     id: UUID,
     isStudent: boolean = false
-  ): Promise<ExerciseDTO | ExerciseStudentDTO> {
+  ): Promise<ExerciseDTO | ExerciseStudentDTO | ExerciseDetailDTO> {
     const exercise = await exerciseModel.getById(id);
 
     if (isStudent) {
@@ -59,7 +77,36 @@ export class ExerciseService {
       return exerciseMapper.toStudentDTO(exercise);
     }
 
-    return exerciseMapper.toDTO(exercise);
+    const testCases = await exerciseModel.getTestCases(id);
+    const limits = await exerciseModel.getExecutionLimits(
+      id,
+      exercise.language
+    );
+
+    const dto = exerciseMapper.toDTO(exercise);
+
+    const detailDto: ExerciseDetailDTO = {
+      ...dto,
+      testCases: testCases.map((tc) => ({
+        id: tc.id,
+        input: tc.input,
+        expectedOutput: tc.expectedOutput,
+        isHidden: tc.isHidden,
+        timeLimitSeconds: tc.timeLimitSeconds,
+        memoryLimitMb: tc.memoryLimitMb,
+        hintText: tc.hintText || '',
+        hintPenaltyPercent: tc.hintPenaltyPercent || 0,
+      })),
+      limits: limits
+        ? {
+            timeLimitSeconds: limits.timeLimitSeconds,
+            memoryLimitMb: limits.memoryLimitMb,
+          }
+        : undefined,
+      courseId: exercise.courseId,
+    };
+
+    return detailDto;
   }
 
   async listExercisesBySyllabus(
@@ -261,6 +308,81 @@ export class ExerciseService {
     } finally {
       connection.release();
     }
+  }
+
+  async deleteExercise(id: UUID, teacherId: UUID) {
+    const exercise = await exerciseModel.getById(id);
+
+    if (exercise.createdBy !== teacherId) {
+      throw new AppError(
+        'FORBIDDEN',
+        403,
+        'No tienes permiso para eliminar este ejercicio'
+      );
+    }
+
+    const connection = await getPool().getConnection();
+
+    try {
+      const [submissions]: any[] = await connection.execute(
+        'SELECT COUNT(*) as count FROM submissions WHERE exercise_id = ?',
+        [id]
+      );
+
+      const submissionCount = submissions[0]?.count || 0;
+
+      if (submissionCount > 0) {
+        throw new AppError(
+          'CONFLICT',
+          409,
+          'No se puede eliminar un ejercicio que ya tiene entregas de alumnos. Prueba a despublicarlo.'
+        );
+      }
+
+      await exerciseModel.delete(id);
+
+      await auditService.log(
+        'DELETE_EXERCISE',
+        'exercise',
+        id,
+        { title: exercise.title },
+        teacherId
+      );
+
+      return { success: true };
+    } finally {
+      connection.release();
+    }
+  }
+
+  async updateExercise(
+    id: UUID,
+    input: CreateExerciseInput,
+    teacherId: UUID
+  ): Promise<ExerciseDTO> {
+    const exercise = await exerciseModel.getById(id);
+
+    if (exercise.createdBy !== teacherId) {
+      throw new AppError(
+        'FORBIDDEN',
+        403,
+        'No tienes permiso para editar este ejercicio'
+      );
+    }
+
+    await languageService.validateLanguageSupport(input.language);
+
+    const updatedExercise = await exerciseModel.updateTransactional(id, input);
+
+    await auditService.log(
+      'UPDATE_EXERCISE',
+      'exercise',
+      id,
+      { title: input.title, syllabusId: input.syllabusId },
+      teacherId
+    );
+
+    return exerciseMapper.toDTO(updatedExercise);
   }
 }
 

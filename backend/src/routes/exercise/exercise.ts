@@ -33,5 +33,10 @@ router.get(
 router.get('/professor/mine', exerciseController.getMyExercises);
 router.patch('/:id/publish', exerciseController.togglePublish);
 router.post('/:id/clone', exerciseController.clone);
+router.put(
+  '/:id',
+  validateRequest(createExerciseRequest),
+  exerciseController.update
+);
 
 export default router;

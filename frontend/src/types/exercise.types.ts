@@ -3,15 +3,34 @@ export type DifficultyLevel = "beginner" | "intermediate" | "advanced";
 export interface Exercise {
   id: string;
   syllabusId: string;
-  courseId?: string;
   title: string;
   description: string;
   difficulty: DifficultyLevel;
   language: string;
-  templateCode?: string | null;
+  templateCode?: string;
   points: number;
   maxAttempts: number;
   deadline?: string;
+  lateSubmissionPenaltyPercent: number;
+  isPublished: boolean;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+  testCases?: Array<{
+    id: string;
+    input: string;
+    expectedOutput: string;
+    isHidden: boolean;
+    timeLimitSeconds: number;
+    memoryLimitMb: number;
+    hintText: string;
+    hintPenaltyPercent: number;
+  }>;
+  limits?: {
+    timeLimitSeconds: number;
+    memoryLimitMb: number;
+  };
+  courseId?: string;
 }
 
 export interface TestResult {

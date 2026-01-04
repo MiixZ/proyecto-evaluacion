@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import {
@@ -55,6 +55,8 @@ type TestCaseForm = {
 export default function CreateExercise() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { exerciseId } = useParams();
+  const isEditMode = !!exerciseId;
 
   const initialGroupId = localStorage.getItem("professorLastGroupId");
 
@@ -73,6 +75,12 @@ export default function CreateExercise() {
   const [deadline, setDeadline] = useState("");
   const [latePenalty, setLatePenalty] = useState(0);
   const [templateCode, setTemplateCode] = useState("");
+
+  const { data: exerciseData, isLoading: isLoadingExercise } = useQuery({
+    queryKey: ["exercise", exerciseId],
+    queryFn: () => exerciseService.getById(exerciseId!),
+    enabled: isEditMode,
+  });
 
   const [testCases, setTestCases] = useState<TestCaseForm[]>([
     {
@@ -106,6 +114,52 @@ export default function CreateExercise() {
   });
 
   useEffect(() => {
+    if (exerciseData && groups.length > 0) {
+      // A. Mapeo de campos básicos
+      setTitle(exerciseData.title);
+      setDescription(exerciseData.description);
+      setDifficulty(exerciseData.difficulty);
+      setLanguage(exerciseData.language);
+      setPoints(exerciseData.points);
+      setMaxAttempts(exerciseData.maxAttempts);
+      setLatePenalty(exerciseData.lateSubmissionPenaltyPercent);
+      if (exerciseData.deadline) {
+        setDeadline(new Date(exerciseData.deadline).toISOString().slice(0, 16));
+      }
+      setTemplateCode(exerciseData.templateCode || "");
+      // setIsPublished(exerciseData.isPublished); // Si decides volver a poner el switch
+
+      const matchedGroup = groups.find(
+        (g) => g.courseId === exerciseData.courseId
+      );
+
+      if (matchedGroup) {
+        setSelectedGroupId(matchedGroup.groupId);
+        setSyllabusId(exerciseData.syllabusId);
+      }
+
+      // C. Mapeo de Casos de Prueba
+      // El backend necesita devolver los test cases en getById.
+      // Si no lo hace actualmente, añade:
+      // `exerciseData.testCases = await exerciseModel.getTestCases(id)` en el backend.
+      if (exerciseData.testCases && exerciseData.testCases.length > 0) {
+        setTestCases(
+          exerciseData.testCases.map((tc: any) => ({
+            id: tc.id || crypto.randomUUID(),
+            input: tc.input,
+            expectedOutput: tc.expectedOutput,
+            isHidden: tc.isHidden,
+            timeLimitSeconds: tc.timeLimitSeconds || 2,
+            memoryLimitMb: tc.memoryLimitMb || 128,
+            hintText: tc.hintText || "",
+            hintPenaltyPercent: tc.hintPenaltyPercent || 0,
+          }))
+        );
+      }
+    }
+  }, [exerciseData, groups]);
+
+  useEffect(() => {
     setSyllabusId("");
   }, [selectedGroupId]);
 
@@ -115,15 +169,19 @@ export default function CreateExercise() {
     }
   }, [groups, selectedGroupId]);
 
-  const createMutation = useMutation({
-    mutationFn: (payload: CreateExercisePayload) =>
-      exerciseService.create(payload),
+  const saveMutation = useMutation({
+    mutationFn: (payload: CreateExercisePayload) => {
+      if (isEditMode) {
+        return exerciseService.update(exerciseId!, payload);
+      }
+      return exerciseService.create(payload);
+    },
     onSuccess: () => {
       toast({
-        title: "Ejercicio creado",
-        description: "El ejercicio se ha guardado correctamente.",
+        title: isEditMode ? "Ejercicio actualizado" : "Ejercicio creado",
+        description: "Los cambios se han guardado correctamente.",
       });
-      navigate("/dashboard/exercises");
+      navigate("/dashboard/manage-exercises");
     },
     onError: (error: any) => {
       toast({
@@ -193,7 +251,7 @@ export default function CreateExercise() {
       testCases: testCases.map(({ id, ...rest }) => rest),
     };
 
-    createMutation.mutate(payload);
+    saveMutation.mutate(payload);
   };
 
   if (isLoadingGroups) {
@@ -222,8 +280,8 @@ export default function CreateExercise() {
             </p>
           </div>
         </div>
-        <Button onClick={handleSubmit} disabled={createMutation.isPending}>
-          {createMutation.isPending ? (
+        <Button onClick={handleSubmit} disabled={saveMutation.isPending}>
+          {saveMutation.isPending ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           ) : (
             <Save className="mr-2 h-4 w-4" />

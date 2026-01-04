@@ -108,6 +108,24 @@ export const exerciseService = {
     return data;
   },
 
+  update: async (
+    id: string,
+    payload: CreateExercisePayload
+  ): Promise<Exercise> => {
+    const { data } = await api.put<ApiResponse<Exercise>>(
+      `v1/exercises/${id}`,
+      payload
+    );
+
+    return data.data;
+  },
+
+  delete: async (id: string) => {
+    const { data } = await api.delete(`v1/exercises/${id}`);
+
+    return data;
+  },
+
   clone: async (id: string) => {
     const { data } = await api.post(`v1/exercises/${id}/clone`);
 
