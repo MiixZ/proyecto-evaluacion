@@ -7,6 +7,7 @@ import { UUID, PlagiarismType } from '@CustomTypes/common.types';
 import { submissionModel } from '@models/submission/submission.model';
 import { winnowingService } from './winnowing.service';
 import { auditService } from '@services/audit/audit.service';
+import { submissionService } from '@services/submission/submission.service';
 
 export class PlagiarismService {
   async createCheck(input: CreatePlagiarismCheckInput) {
@@ -29,11 +30,24 @@ export class PlagiarismService {
     input: ReviewPlagiarismInput,
     reviewerId: UUID
   ) {
+    const originalCheck = await plagiarismModel.getById(id as UUID);
+    if (!originalCheck) throw new Error('Chequeo de plagio no encontrado');
+
     const updatedCheck = await plagiarismModel.updateReview(
       id as UUID,
       input,
       reviewerId
     );
+
+    if (input.isFlagged) {
+      try {
+        await submissionService.applyPlagiarismPenalty(
+          originalCheck.submissionId
+        );
+      } catch (error) {
+        console.error('Error al aplicar penalización de plagio:', error);
+      }
+    }
 
     await auditService.log(
       'REVIEW_PLAGIARISM',

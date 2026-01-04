@@ -279,6 +279,22 @@ export class SubmissionService {
     return EfficiencyOrder.ANY;
   }
 
+  async applyPlagiarismPenalty(submissionId: UUID): Promise<void> {
+    const submission = await submissionModel.getById(submissionId);
+
+    if (!submission) {
+      throw new NotFoundError('Entrega no encontrada para penalizar');
+    }
+
+    await submissionModel.penalize(
+      submissionId,
+      SubmissionVerdict.WRONG_ANSWER,
+      0
+    );
+
+    logger.warn(`Entrega ${submissionId} penalizada por plagio confirmado.`);
+  }
+
   private async triggerPlagiarismCheck(
     submissionId: UUID,
     exerciseId: UUID,

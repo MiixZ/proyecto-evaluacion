@@ -367,6 +367,19 @@ export class SubmissionModel {
       },
     }));
   }
+
+  async penalize(
+    id: string,
+    verdict: SubmissionVerdict,
+    score: number
+  ): Promise<void> {
+    await getPool().query(
+      `UPDATE submissions 
+       SET verdict = ?, score = ?, status = 'completed' 
+       WHERE id = ?`,
+      [verdict, score, id]
+    );
+  }
 }
 
 export const submissionModel = new SubmissionModel();

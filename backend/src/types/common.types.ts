@@ -59,6 +59,7 @@ export enum SubmissionVerdict {
   COMPILATION_ERROR = 'compilation_error',
   MEMORY_LIMIT = 'memory_limit',
   PENDING = 'pending',
+  PLAGIARISM = 'plagiarism',
 }
 
 export enum SubmissionStatus {
