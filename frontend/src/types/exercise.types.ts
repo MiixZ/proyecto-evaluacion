@@ -58,6 +58,7 @@ export interface StudentSubmission {
 }
 
 export interface SubmissionResponse {
+  createdAt: string | number | Date;
   id: string;
   status: string;
   verdict: string;

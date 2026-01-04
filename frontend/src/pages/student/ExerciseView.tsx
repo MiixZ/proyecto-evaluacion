@@ -3,10 +3,14 @@ import { useParams, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import axios from "axios";
+
+// Componentes
 import { CodeEditor } from "@/components/code/CodeEditor";
 import { TestResults } from "@/components/code/TestResults";
 import { SubmissionHistory } from "@/components/exercise/SubmissionHistory";
 import { HintPanel } from "@/components/exercise/HintPanel";
+import FeedbackPanel from "@/components/feedback/FeedbackPanel";
+
 import { Badge } from "@/components/ui/data/badge";
 import {
   Card,
@@ -28,12 +32,14 @@ import {
   Loader2,
   AlertCircle,
   Trophy,
+  MessageSquare,
 } from "lucide-react";
 import {
   Alert,
   AlertDescription,
   AlertTitle,
 } from "@/components/ui/feedback/alert";
+
 import { exerciseService } from "@/services/exercise.service";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -135,6 +141,8 @@ export default function ExerciseView() {
       const newParams = new URLSearchParams(searchParams);
       newParams.delete("submissionId");
       setSearchParams(newParams);
+
+      setActiveTab("statement");
     },
     onError: (err) => {
       let description = t("exercise.submission.error_desc");
@@ -214,6 +222,7 @@ export default function ExerciseView() {
 
   return (
     <div className="space-y-6 p-5 h-full flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500">
+      {/* HEADER */}
       <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
         <div>
           <div className="flex items-center gap-3 mb-2">
@@ -249,13 +258,13 @@ export default function ExerciseView() {
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6 flex-1 min-h-0">
-        {/* Left Column - Tabs */}
+        {/* COLUMNA IZQUIERDA: PESTAÑAS (Enunciado, Pistas, Historial, Feedback) */}
         <div className="flex flex-col h-full min-h-[500px]">
           <Tabs
             value={activeTab}
             onValueChange={setActiveTab}
             className="flex-1 flex flex-col">
-            <TabsList className="w-full justify-start">
+            <TabsList className="w-full justify-start overflow-x-auto">
               <TabsTrigger value="statement">
                 <BookOpen className="h-4 w-4 mr-2" />
                 {t("exercise.tabs.statement")}
@@ -268,8 +277,15 @@ export default function ExerciseView() {
                 <History className="h-4 w-4 mr-2" />
                 {t("exercise.tabs.history")}
               </TabsTrigger>
+
+              {/* NUEVA PESTAÑA: FEEDBACK */}
+              <TabsTrigger value="feedback">
+                <MessageSquare className="h-4 w-4 mr-2" />
+                Feedback
+              </TabsTrigger>
             </TabsList>
 
+            {/* CONTENIDO: ENUNCIADO */}
             <TabsContent value="statement" className="flex-1 mt-4 min-h-0">
               <Card className="h-full flex flex-col">
                 <CardContent className="p-6 flex-1 overflow-y-auto custom-scrollbar">
@@ -284,6 +300,7 @@ export default function ExerciseView() {
               </Card>
             </TabsContent>
 
+            {/* CONTENIDO: PISTAS */}
             <TabsContent value="hints" className="flex-1 mt-4 min-h-0">
               <Card className="h-full flex flex-col">
                 <CardContent className="p-6 flex-1 overflow-y-auto custom-scrollbar">
@@ -292,6 +309,7 @@ export default function ExerciseView() {
               </Card>
             </TabsContent>
 
+            {/* CONTENIDO: HISTORIAL */}
             <TabsContent value="history" className="flex-1 mt-4 min-h-0">
               <Card className="h-full flex flex-col">
                 <CardHeader>
@@ -307,10 +325,48 @@ export default function ExerciseView() {
                 </CardContent>
               </Card>
             </TabsContent>
+
+            {/* CONTENIDO: FEEDBACK (NUEVO) */}
+            <TabsContent value="feedback" className="flex-1 mt-4 min-h-0">
+              <Card className="h-full flex flex-col">
+                <CardHeader>
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <MessageSquare className="h-4 w-4" />
+                    Feedback del Profesor
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-6 flex-1 overflow-y-auto custom-scrollbar">
+                  {submissionResult ? (
+                    <div className="space-y-4">
+                      <div className="text-sm text-muted-foreground mb-4">
+                        Mostrando feedback para el envío del{" "}
+                        <span className="font-medium text-foreground">
+                          {new Date(
+                            submissionResult.createdAt
+                          ).toLocaleString()}
+                        </span>
+                      </div>
+                      <FeedbackPanel
+                        submissionId={submissionResult.id}
+                        readOnly={true}
+                      />
+                    </div>
+                  ) : (
+                    <div className="h-full flex flex-col items-center justify-center text-muted-foreground space-y-2">
+                      <History className="h-8 w-8 opacity-20" />
+                      <p>
+                        Selecciona una entrega del historial para ver su
+                        feedback asociado.
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
           </Tabs>
         </div>
 
-        {/* Right Column - Editor */}
+        {/* COLUMNA DERECHA: EDITOR Y RESULTADOS */}
         <div className="space-y-4 flex flex-col h-full">
           <div className="flex-1 min-h-[400px]">
             <CodeEditor
