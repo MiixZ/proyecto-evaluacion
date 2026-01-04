@@ -15,3 +15,10 @@ export interface UserRow extends RowDataPacket {
   created_at: Date;
   updated_at: Date;
 }
+
+export interface EnrollmentRow extends RowDataPacket {
+  subject_name: string;
+  group_name: string;
+  academic_year: string;
+  role: string;
+}

@@ -2,7 +2,6 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   User,
@@ -12,8 +11,11 @@ import {
   Globe,
   Loader2,
   Save,
+  GraduationCap,
+  Users,
 } from "lucide-react";
 
+import { studentService as userService } from "@/services/student.service";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -51,8 +53,9 @@ import {
 import { Badge } from "@/components/ui/data/badge";
 import { Separator } from "@/components/ui/layout/separator";
 import { Alert, AlertDescription } from "@/components/ui/feedback/alert";
-import { studentService } from "@/services/student.service";
+import { ScrollArea } from "@/components/ui/layout/scroll-area";
 import { UpdateProfilePayload } from "@/types/user.type";
+import { ProfileFormValues, profileSchema } from "@/schemas/profile.schema";
 
 export default function ProfilePage() {
   const { t } = useTranslation();
@@ -60,23 +63,13 @@ export default function ProfilePage() {
   const queryClient = useQueryClient();
   const { refreshUser } = useAuth();
 
-  const profileSchema = z.object({
-    firstName: z.string().min(2, t("profile_page.validations.first_name_short")),
-    lastName: z.string().min(2, t("profile_page.validations.last_name_short")),
-    phone: z.string().optional(),
-    bio: z.string().max(500, t("profile_page.validations.bio_max")).optional(),
-    preferredLanguage: z.enum(["es", "en"]),
-  });
-
-  type ProfileFormValues = z.infer<typeof profileSchema>;
-
   const {
     data: user,
     isLoading,
     error,
   } = useQuery({
     queryKey: ["userProfile"],
-    queryFn: studentService.getMe,
+    queryFn: userService.getMe,
   });
 
   const form = useForm<ProfileFormValues>({
@@ -103,10 +96,9 @@ export default function ProfilePage() {
   }, [user, form]);
 
   const updateMutation = useMutation({
-    mutationFn: (data: UpdateProfilePayload) => studentService.updateMe(data),
+    mutationFn: (data: UpdateProfilePayload) => userService.updateMe(data),
     onSuccess: (updatedUser) => {
       queryClient.setQueryData(["userProfile"], updatedUser);
-
       if (refreshUser) refreshUser();
 
       toast({
@@ -139,13 +131,14 @@ export default function ProfilePage() {
     return (
       <div className="p-6">
         <Alert variant="destructive">
-          <AlertDescription>{t("profile_page.error_loading")}</AlertDescription>
+          <AlertDescription>
+            {t("profile_page.errors.load_error")}
+          </AlertDescription>
         </Alert>
       </div>
     );
   }
 
-  // Iniciales para el avatar
   const initials = `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
 
   return (
@@ -158,14 +151,14 @@ export default function ProfilePage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-8">
-        {/* Columna Izquierda: Tarjeta de Resumen */}
         <div className="space-y-6">
+          {/* Tarjeta de Usuario */}
           <Card>
             <CardHeader className="text-center pb-2">
               <div className="mx-auto mb-4">
-                <Avatar className="h-24 w-24">
+                <Avatar className="h-24 w-24 border-2 border-border">
                   <AvatarImage src={user.profileImageUrl} />
-                  <AvatarFallback className="text-2xl">
+                  <AvatarFallback className="text-2xl bg-muted">
                     {initials}
                   </AvatarFallback>
                 </Avatar>
@@ -183,14 +176,54 @@ export default function ProfilePage() {
             <CardContent>
               <Separator className="my-4" />
               <div className="text-xs text-muted-foreground text-center">
-                {t("profile_page.user_id")}:{" "}
+                {t("profile_page.user_card.id_label")}:{" "}
                 <span className="font-mono">{user.id.substring(0, 8)}...</span>
               </div>
             </CardContent>
           </Card>
+
+          <Card className="flex flex-col h-auto max-h-[400px]">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <GraduationCap className="h-4 w-4 text-primary" />
+                {t("profile_page.sections.academic_info")}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="flex-1 overflow-hidden p-0">
+              <ScrollArea className="h-[300px] w-full px-6 pb-4">
+                {user.enrollments && user.enrollments.length > 0 ? (
+                  <div className="space-y-4 pt-2">
+                    {user.enrollments.map((enrollment, index) => (
+                      <div
+                        key={index}
+                        className="flex flex-col gap-1 pb-3 border-b last:border-0 last:pb-0">
+                        <div className="font-medium text-sm text-foreground">
+                          {enrollment.subjectName}
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <Users className="h-3 w-3" />
+                            {enrollment.groupName}
+                          </span>
+                          <span>•</span>
+                          <span className="font-mono">
+                            {enrollment.academicYear}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-sm text-muted-foreground py-4 text-center">
+                    {t("profile_page.academic.empty")}
+                  </div>
+                )}
+              </ScrollArea>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Columna Derecha: Formulario de Edición */}
+        {/* Columna Derecha: Formulario */}
         <Card>
           <CardHeader>
             <CardTitle>{t("profile_page.sections.personal_info")}</CardTitle>
@@ -309,7 +342,11 @@ export default function ProfilePage() {
                           <SelectTrigger>
                             <div className="flex items-center gap-2">
                               <Globe className="h-4 w-4 text-muted-foreground" />
-                              <SelectValue placeholder={t("profile_page.placeholders.language")} />
+                              <SelectValue
+                                placeholder={t(
+                                  "profile_page.placeholders.language"
+                                )}
+                              />
                             </div>
                           </SelectTrigger>
                         </FormControl>

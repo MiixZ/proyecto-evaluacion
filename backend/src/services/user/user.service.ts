@@ -82,7 +82,18 @@ export class UserService {
       throw new NotFoundError('Usuario no encontrado');
     }
 
-    return userMapper.toDTO(user);
+    const userDTO = userMapper.toDTO(user);
+
+    const enrollments = await userModel.getEnrollments(userId);
+
+    userDTO.enrollments = enrollments.map((e) => ({
+      subjectName: e.subject_name,
+      groupName: e.group_name,
+      academicYear: e.academic_year,
+      role: e.role,
+    }));
+
+    return userDTO;
   }
 
   async updateProfile(
@@ -90,6 +101,7 @@ export class UserService {
     input: UpdateUserInput
   ): Promise<UserDTO> {
     const user = await userModel.getById(userId as UUID);
+
     if (!user) {
       throw new NotFoundError('Usuario no encontrado');
     }
@@ -109,12 +121,22 @@ export class UserService {
     await auditService.log(
       'UPDATE_PROFILE',
       'user',
-      userId as UUID,
+      userId,
       input,
       userId as UUID
     );
 
-    return userMapper.toDTO(updatedUser);
+    const userDTO = userMapper.toDTO(updatedUser);
+
+    const enrollments = await userModel.getEnrollments(userId as UUID);
+    userDTO.enrollments = enrollments.map((e) => ({
+      subjectName: e.subject_name,
+      groupName: e.group_name,
+      academicYear: e.academic_year,
+      role: e.role,
+    }));
+
+    return userDTO;
   }
 
   async changeRole(id: string, role: UserRole): Promise<UserEntity> {

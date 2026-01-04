@@ -8,7 +8,7 @@ import { UserEntity } from './user.entity';
 import { CreateUserInput } from '@validators/user.validator';
 import { NotFoundError } from '@utils/errors';
 import { userMapper } from '@mappers/user.mapper';
-import { UserRow } from './user.row';
+import { EnrollmentRow, UserRow } from './user.row';
 import { CountResult } from '@models/common/count.row';
 import { hashPassword } from '@utils/jwt.utils';
 
@@ -79,6 +79,26 @@ export class UserModel {
     if (rows.length === 0) throw new NotFoundError(`Usuario con id: ${id}`);
 
     return userMapper.toEntity(rows[0]);
+  }
+
+  async getEnrollments(userId: string): Promise<EnrollmentRow[]> {
+    const query = `
+      SELECT 
+        s.name AS subject_name,
+        g.name AS group_name,
+        c.academic_year,
+        ug.role
+      FROM user_groups ug
+      INNER JOIN \`groups\` g ON ug.group_id = g.id
+      INNER JOIN courses c ON g.course_id = c.id
+      INNER JOIN subjects s ON c.subject_id = s.id
+      WHERE ug.user_id = ?
+      ORDER BY c.academic_year DESC, s.name ASC
+    `;
+
+    const [rows] = await this.getPool().query<EnrollmentRow[]>(query, [userId]);
+
+    return rows;
   }
 
   async getByEmail(email: string): Promise<UserEntity> {

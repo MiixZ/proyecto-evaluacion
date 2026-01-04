@@ -17,4 +17,12 @@ export interface UserProfile {
   profileImageUrl?: string;
   preferredLanguage: string;
   createdAt: string;
+  enrollments?: UserEnrollment[];
+}
+
+export interface UserEnrollment {
+  subjectName: string;
+  groupName: string;
+  academicYear: string;
+  role: string;
 }

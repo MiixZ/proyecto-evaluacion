@@ -134,7 +134,8 @@
     "sections": {
       "personal_info": "Información Personal",
       "personal_info_desc": "Actualiza tu información personal y preferencias.",
-      "account_info": "Información de la Cuenta"
+      "account_info": "Información de la Cuenta",
+      "academic_info": "Información Académica"
     },
     "fields": {
       "first_name": "Nombre",
@@ -177,7 +178,16 @@
       "admin": "Administrador"
     },
     "user_id": "ID de usuario",
-    "error_loading": "No se pudo cargar la información del perfil. Por favor, intenta de nuevo."
+    "error_loading": "No se pudo cargar la información del perfil. Por favor, intenta de nuevo.",
+    "user_card": {
+      "id_label": "ID de usuario"
+    },
+    "academic": {
+      "empty": "No estás matriculado en ninguna asignatura"
+    },
+    "errors": {
+      "load_error": "No se pudo cargar la información del perfil. Por favor, intenta de nuevo."
+    }
   },
   "exercises_page": {
     "title": "Mis Ejercicios",
