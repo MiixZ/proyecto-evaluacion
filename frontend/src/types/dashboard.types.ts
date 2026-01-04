@@ -28,6 +28,7 @@ export interface StudentDashboardProgress {
 }
 
 export interface RecentActivityDTO {
+  exerciseTitle: string;
   id: string;
   studentName: string;
   action: string;

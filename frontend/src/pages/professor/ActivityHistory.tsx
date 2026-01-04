@@ -9,9 +9,14 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  MoreHorizontal,
+  FileCode,
+  FileJson,
+  Download,
 } from "lucide-react";
 import { format } from "date-fns";
 import { es, enUS } from "date-fns/locale";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/forms/button";
 import {
@@ -31,6 +36,7 @@ import {
 } from "@/components/ui/data/table";
 import { Badge } from "@/components/ui/data/badge";
 import { dashboardService } from "@/services/dashboard.service";
+import { exportService } from "@/services/export.service";
 import {
   Pagination,
   PaginationContent,
@@ -46,6 +52,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/forms/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/overlay/dropdown-menu";
 
 export default function ActivityHistory() {
   const { groupId } = useParams<{ groupId: string }>();
@@ -60,6 +74,8 @@ export default function ActivityHistory() {
     column: string;
     direction: "ASC" | "DESC";
   }>({ column: "date", direction: "DESC" });
+
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["groupActivity", groupId, page, limit, sorting, filterStatus],
@@ -81,6 +97,22 @@ export default function ActivityHistory() {
       direction:
         prev.column === column && prev.direction === "DESC" ? "ASC" : "DESC",
     }));
+  };
+
+  const handleDownload = async (
+    submissionId: string,
+    format: "zip" | "json"
+  ) => {
+    try {
+      setDownloadingId(submissionId);
+      toast.info("Iniciando descarga...");
+      await exportService.downloadSubmission(submissionId, format);
+      toast.success("Archivo descargado correctamente");
+    } catch (error) {
+      toast.error("Error al descargar el archivo");
+    } finally {
+      setDownloadingId(null);
+    }
   };
 
   const SortIcon = ({ column }: { column: string }) => {
@@ -147,12 +179,11 @@ export default function ActivityHistory() {
             </div>
 
             <div className="flex items-center gap-2">
-              {/* Filtro por Estado */}
               <Select
                 value={filterStatus}
                 onValueChange={(val) => {
                   setFilterStatus(val);
-                  setPage(1); // Reset page on filter
+                  setPage(1);
                 }}>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Estado" />
@@ -165,7 +196,6 @@ export default function ActivityHistory() {
                 </SelectContent>
               </Select>
 
-              {/* Selector de Filas por página */}
               <Select
                 value={limit.toString()}
                 onValueChange={(val) => {
@@ -200,7 +230,7 @@ export default function ActivityHistory() {
                   className="cursor-pointer hover:bg-muted/50 transition-colors"
                   onClick={() => handleSort("exerciseTitle")}>
                   <div className="flex items-center">
-                    Acción <SortIcon column="exerciseTitle" />
+                    Ejercicio <SortIcon column="exerciseTitle" />
                   </div>
                 </TableHead>
                 <TableHead
@@ -217,6 +247,8 @@ export default function ActivityHistory() {
                     Fecha <SortIcon column="date" />
                   </div>
                 </TableHead>
+                {/* Columna de acciones añadida */}
+                <TableHead className="w-[50px]"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -225,7 +257,9 @@ export default function ActivityHistory() {
                   <TableCell className="font-medium">
                     {activity.studentName}
                   </TableCell>
-                  <TableCell>{activity.action}</TableCell>
+                  <TableCell>
+                    {activity.action || activity.exerciseTitle || "Entrega"}
+                  </TableCell>
                   <TableCell>{getStatusBadge(activity.status)}</TableCell>
                   <TableCell className="text-right flex items-center justify-end gap-2 text-muted-foreground">
                     <Calendar className="h-3 w-3" />
@@ -233,11 +267,45 @@ export default function ActivityHistory() {
                       locale: dateLocale,
                     })}
                   </TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <span className="sr-only">Abrir menú</span>
+                          {downloadingId === activity.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <MoreHorizontal className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                        <DropdownMenuItem
+                          onClick={() => handleDownload(activity.id, "zip")}>
+                          <FileCode className="mr-2 h-4 w-4" />
+                          Descargar código fuente
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => handleDownload(activity.id, "json")}>
+                          <FileJson className="mr-2 h-4 w-4" />
+                          Descargar informe JSON
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={() =>
+                            navigate(`/submissions/${activity.id}`)
+                          }>
+                          Ver detalles
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
                 </TableRow>
               ))}
               {data?.items.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={4} className="h-24 text-center">
+                  <TableCell colSpan={5} className="h-24 text-center">
                     No se encontraron resultados con los filtros actuales.
                   </TableCell>
                 </TableRow>
