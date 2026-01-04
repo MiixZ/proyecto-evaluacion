@@ -6,13 +6,14 @@ import {
   UUID,
   SubmissionVerdict,
   EfficiencyOrder,
+  UserRole,
 } from '@CustomTypes/common.types';
 import {
   ExecutionRequest,
   ExecutionResult,
   Veredict as EngineVerdict,
 } from '@CustomTypes/submission.types';
-import { ValidationError, ForbiddenError } from '@utils/errors';
+import { ValidationError, ForbiddenError, NotFoundError } from '@utils/errors';
 import { logger } from '@utils/logger';
 import {
   SubmissionTestResultEntity,
@@ -38,6 +39,25 @@ export class SubmissionService {
       return await submissionModel.findAllByUser(userId);
     }
   }
+
+  async getSubmissionById(
+    submissionId: UUID,
+    userId: UUID,
+    userRole: UserRole
+  ) {
+    const submission = await submissionModel.getDetailsById(submissionId);
+
+    if (!submission) {
+      throw new NotFoundError('Entrega no encontrada');
+    }
+
+    if (userRole === UserRole.STUDENT && submission.student.id !== userId) {
+      throw new ForbiddenError('No tienes permiso para ver esta entrega');
+    }
+
+    return submission;
+  }
+  // --------------------
 
   async processSubmission(
     userId: UUID,

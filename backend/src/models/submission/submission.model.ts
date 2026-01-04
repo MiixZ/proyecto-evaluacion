@@ -32,6 +32,36 @@ interface SubmissionJoinRow extends RowDataPacket {
   tr_hint_text: string | null;
 }
 
+// Nueva interfaz para los detalles completos (join masivo)
+interface SubmissionDetailRow extends RowDataPacket {
+  id: string;
+  code: string;
+  language: string;
+  status: string;
+  verdict: string;
+  score: number;
+  created_at: Date;
+
+  student_id: string;
+  student_name: string;
+  student_email: string;
+  student_avatar: string;
+
+  exercise_id: string;
+  exercise_title: string;
+  exercise_difficulty: string;
+
+  tr_id: string;
+  tr_status: string;
+  tr_actual: string;
+  tr_time: number;
+  tr_memory: number;
+  tr_error_msg: string;
+
+  tc_input: string;
+  tc_expected: string;
+}
+
 interface SubmissionListRow extends RowDataPacket {
   id: string;
   exercise_id: string;
@@ -53,6 +83,74 @@ export class SubmissionModel {
 
     if (rows.length === 0) return null;
     return submissionMapper.toEntity(rows[0]);
+  }
+
+  async getDetailsById(id: string): Promise<any | null> {
+    const query = `
+      SELECT 
+        s.id, s.code, s.language, s.status, s.verdict, s.score, s.created_at,
+        u.id as student_id, CONCAT(u.first_name, ' ', u.last_name) as student_name, u.email as student_email, u.profile_image_url as student_avatar,
+        e.id as exercise_id, e.title as exercise_title, e.difficulty as exercise_difficulty,
+
+        str.id as tr_id, str.status as tr_status, str.actual_output as tr_actual, 
+        str.execution_time_ms as tr_time, str.memory_used_mb as tr_memory,
+        se.error_message as tr_error_msg,
+
+        tc.input as tc_input, tc.expected_output as tc_expected
+
+      FROM submissions s
+      JOIN users u ON s.student_id = u.id
+      JOIN exercises e ON s.exercise_id = e.id
+      LEFT JOIN submission_test_results str ON s.id = str.submission_id
+      LEFT JOIN test_cases tc ON str.test_case_id = tc.id
+      LEFT JOIN submission_errors se ON str.error_id = se.id
+      WHERE s.id = ?
+      ORDER BY tc.order_index ASC
+    `;
+
+    const [rows] = await getPool().query<SubmissionDetailRow[]>(query, [id]);
+
+    if (rows.length === 0) return null;
+
+    const base = rows[0];
+
+    return {
+      id: base.id,
+      code: base.code,
+      language: base.language,
+      status: base.status,
+      verdict: base.verdict,
+      score: base.score,
+      createdAt: base.created_at,
+      executionTimeMs: rows.reduce((acc, r) => acc + (r.tr_time || 0), 0),
+      memoryUsedMb: Math.max(...rows.map((r) => r.tr_memory || 0)),
+
+      student: {
+        id: base.student_id,
+        name: base.student_name,
+        email: base.student_email,
+        avatarUrl: base.student_avatar,
+      },
+
+      exercise: {
+        id: base.exercise_id,
+        title: base.exercise_title,
+        difficulty: base.exercise_difficulty,
+      },
+
+      testResults: rows
+        .filter((r) => r.tr_id)
+        .map((r) => ({
+          id: r.tr_id,
+          status: r.tr_status,
+          input: r.tc_input,
+          expectedOutput: r.tc_expected,
+          actualOutput: r.tr_actual,
+          executionTimeMs: r.tr_time,
+          memoryUsedMb: r.tr_memory,
+          errorMessage: r.tr_error_msg,
+        })),
+    };
   }
 
   async create(submission: SubmissionEntity): Promise<void> {

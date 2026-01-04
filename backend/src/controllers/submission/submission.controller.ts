@@ -10,7 +10,7 @@ export class SubmissionController {
   submitCode = catchAsync(async (req: AuthRequest, res: Response) => {
     const userId = req.user!.id;
 
-    const input = req.body as CreateSubmissionInput & { courseId: string };
+    const input = req.body as CreateSubmissionInput;
 
     const resultDTO = await submissionService.processSubmission(
       userId as UUID,
@@ -37,6 +37,16 @@ export class SubmissionController {
     );
 
     return ApiResponse.success(res, history, 200, 'Historial recuperado');
+  });
+
+  getById = catchAsync(async (req: AuthRequest, res: Response) => {
+    const result = await submissionService.getSubmissionById(
+      req.params.id as UUID,
+      req.user!.id as UUID,
+      req.user!.role
+    );
+
+    return ApiResponse.success(res, result);
   });
 }
 

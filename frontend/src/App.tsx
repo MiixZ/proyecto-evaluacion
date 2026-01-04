@@ -20,6 +20,7 @@ import ActivityHistory from "./pages/professor/ActivityHistory";
 import PlagiarismHistory from "./pages/professor/PlagiarismHistory";
 import CreateExercise from "./pages/professor/CreateExercise";
 import ExercisesList from "./pages/professor/ExerciseList";
+import SubmissionDetails from "./pages/professor/SubmissionDetail";
 
 const queryClient = new QueryClient();
 
@@ -78,6 +79,7 @@ const App = () => (
                 path="/dashboard/edit-exercise/:exerciseId"
                 element={<CreateExercise />}
               />
+              <Route path="/submissions/:id" element={<SubmissionDetails />} />
 
               {/* Alias/Redirecciones */}
               <Route
