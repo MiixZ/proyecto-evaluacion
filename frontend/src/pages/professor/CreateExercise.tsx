@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -34,16 +34,15 @@ import { Checkbox } from "@/components/ui/forms/checkbox";
 import { toast } from "@/hooks/use-toast";
 import { CodeEditor } from "@/components/code/CodeEditor";
 
-import { groupService } from "@/services/group.service";
 import { syllabusService } from "@/services/syllabus.service";
 import {
   exerciseService,
   CreateExercisePayload,
 } from "@/services/exercise.service";
+import { dashboardService } from "@/services/dashboard.service";
 
-// Tipo auxiliar para el formulario
 type TestCaseForm = {
-  id: string; // ID temporal para la UI
+  id: string;
   input: string;
   expectedOutput: string;
   isHidden: boolean;
@@ -57,24 +56,24 @@ export default function CreateExercise() {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  // 1. Obtener el contexto del grupo actual
-  const currentGroupId = localStorage.getItem("professorLastGroupId");
+  const initialGroupId = localStorage.getItem("professorLastGroupId");
 
-  // Estado del formulario
+  const [selectedGroupId, setSelectedGroupId] = useState<string>(
+    initialGroupId || ""
+  );
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [syllabusId, setSyllabusId] = useState<string>("");
   const [difficulty, setDifficulty] = useState<
     "beginner" | "intermediate" | "advanced"
   >("beginner");
-  const [language, setLanguage] = useState("python"); // Default
+  const [language, setLanguage] = useState("python");
   const [points, setPoints] = useState(10);
   const [maxAttempts, setMaxAttempts] = useState(10);
   const [deadline, setDeadline] = useState("");
   const [latePenalty, setLatePenalty] = useState(0);
   const [templateCode, setTemplateCode] = useState("");
 
-  // Casos de prueba
   const [testCases, setTestCases] = useState<TestCaseForm[]>([
     {
       id: crypto.randomUUID(),
@@ -88,19 +87,36 @@ export default function CreateExercise() {
     },
   ]);
 
-  // 2. Obtener detalles del grupo para saber el courseId
-  const { data: groupDetails, isLoading: isLoadingGroup } = useQuery({
-    queryKey: ["groupDetails", currentGroupId],
-    queryFn: () => groupService.getById(currentGroupId!),
-    enabled: !!currentGroupId,
+  const { data: dashboardData, isLoading: isLoadingGroups } = useQuery({
+    queryKey: ["professorStats"],
+    queryFn: () => dashboardService.getProfessorStats(),
   });
 
-  // 3. Obtener temarios (syllabi) del curso
+  const groups = useMemo(
+    () => dashboardData?.groups || [],
+    [dashboardData?.groups]
+  );
+
+  const selectedGroup = groups.find((g) => g.groupId === selectedGroupId);
+
+  // 3. Obtener temarios (syllabi) BASADO en el grupo seleccionado
   const { data: syllabi, isLoading: isLoadingSyllabi } = useQuery({
-    queryKey: ["syllabi", groupDetails?.courseId],
-    queryFn: () => syllabusService.getByCourse(groupDetails!.courseId),
-    enabled: !!groupDetails?.courseId,
+    queryKey: ["syllabi", selectedGroup?.courseId], // Usamos courseId del grupo
+    queryFn: () => syllabusService.getByCourse(selectedGroup!.courseId),
+    enabled: !!selectedGroup?.courseId,
   });
+
+  // Si cambiamos de grupo, limpiamos el syllabus seleccionado
+  useEffect(() => {
+    setSyllabusId("");
+  }, [selectedGroupId]);
+
+  // Si no había grupo inicial y cargan los grupos, seleccionar el primero
+  useEffect(() => {
+    if (!selectedGroupId && groups.length > 0) {
+      setSelectedGroupId(groups[0].groupId);
+    }
+  }, [groups, selectedGroupId]);
 
   const createMutation = useMutation({
     mutationFn: (payload: CreateExercisePayload) =>
@@ -177,29 +193,13 @@ export default function CreateExercise() {
       maxAttempts,
       lateSubmissionPenaltyPercent: latePenalty,
       deadline: deadline ? new Date(deadline).toISOString() : undefined,
-      testCases: testCases.map(({ id, ...rest }) => rest), // Quitar ID temporal
+      testCases: testCases.map(({ id, ...rest }) => rest),
     };
 
     createMutation.mutate(payload);
   };
 
-  if (!currentGroupId) {
-    return (
-      <div className="p-8 text-center">
-        <p className="text-muted-foreground">
-          Por favor, selecciona un grupo en el Dashboard primero.
-        </p>
-        <Button
-          variant="outline"
-          className="mt-4"
-          onClick={() => navigate("/dashboard")}>
-          Volver al Dashboard
-        </Button>
-      </div>
-    );
-  }
-
-  if (isLoadingGroup || isLoadingSyllabi) {
+  if (isLoadingGroups) {
     return (
       <div className="flex h-[50vh] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -210,7 +210,7 @@ export default function CreateExercise() {
   return (
     <div className="max-w-5xl mx-auto space-y-6 pb-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <Button variant="ghost" onClick={() => navigate(-1)}>
             <ArrowLeft className="mr-2 h-4 w-4" />
@@ -221,10 +221,7 @@ export default function CreateExercise() {
               Crear Nuevo Ejercicio
             </h1>
             <p className="text-muted-foreground">
-              Asignatura:{" "}
-              {
-                groupDetails?.courseId /* Idealmente mostrar nombre asignatura si estuviera disponible */
-              }
+              Define el enunciado y las pruebas automáticas
             </p>
           </div>
         </div>
@@ -241,7 +238,7 @@ export default function CreateExercise() {
       <form
         onSubmit={handleSubmit}
         className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* COLUMNA IZQUIERDA: Detalles principales */}
+        {/* Detalles principales */}
         <div className="lg:col-span-2 space-y-6">
           <Card>
             <CardHeader>
@@ -249,6 +246,28 @@ export default function CreateExercise() {
               <CardDescription>Detalles básicos del problema</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* SELECTOR DE CURSO/ASIGNATURA */}
+              <div className="space-y-2">
+                <Label>Asignatura / Grupo</Label>
+                <Select
+                  value={selectedGroupId}
+                  onValueChange={setSelectedGroupId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona una asignatura" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {groups.map((g) => (
+                      <SelectItem key={g.groupId} value={g.groupId}>
+                        {g.subjectName} ({g.groupName})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  El ejercicio se creará en el curso asociado a este grupo.
+                </p>
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="title">Título del Ejercicio</Label>
                 <Input
@@ -277,9 +296,18 @@ export default function CreateExercise() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Temario / Unidad</Label>
-                  <Select value={syllabusId} onValueChange={setSyllabusId}>
+                  <Select
+                    value={syllabusId}
+                    onValueChange={setSyllabusId}
+                    disabled={!selectedGroupId || isLoadingSyllabi}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Seleccionar tema..." />
+                      <SelectValue
+                        placeholder={
+                          isLoadingSyllabi
+                            ? "Cargando..."
+                            : "Seleccionar tema..."
+                        }
+                      />
                     </SelectTrigger>
                     <SelectContent>
                       {syllabi?.map((s) => (
@@ -339,6 +367,7 @@ export default function CreateExercise() {
                   initialCode={templateCode}
                   onChange={(val) => setTemplateCode(val || "")}
                   readOnly={false}
+                  showSubmitButton={false}
                 />
               </div>
             </CardContent>
@@ -430,7 +459,6 @@ export default function CreateExercise() {
                     </div>
                   </div>
 
-                  {/* Configuración Avanzada del Caso */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-2">
                     <div className="space-y-1">
                       <Label className="text-xs">Tiempo (s)</Label>

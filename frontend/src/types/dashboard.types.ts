@@ -1,4 +1,5 @@
 export interface GroupStatsDTO {
+  courseId: string;
   groupId: string;
   groupName: string;
   academicYear: string;

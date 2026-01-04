@@ -27,6 +27,7 @@ interface CodeEditorProps {
   readOnly?: boolean;
   isSubmitting?: boolean;
   onChange?: (code: string) => void;
+  showSubmitButton?: boolean;
 }
 
 const defaultCode = `# Escribe tu solución aquí
@@ -45,6 +46,7 @@ export const CodeEditor = ({
   readOnly = false,
   isSubmitting = false,
   onChange,
+  showSubmitButton = true,
 }: CodeEditorProps) => {
   const { t } = useTranslation();
   const [code, setCode] = useState(initialCode);
@@ -203,23 +205,25 @@ export const CodeEditor = ({
                 <RotateCcw className="h-3 w-3 mr-1.5" />
                 {t("editor.reset")}
               </Button>
-              <Button
-                size="sm"
-                className="h-8 text-xs px-4"
-                onClick={handleSubmit}
-                disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />
-                    {t("editor.submitting")}
-                  </>
-                ) : (
-                  <>
-                    <Upload className="h-3 w-3 mr-1.5" />
-                    {t("editor.submit")}
-                  </>
-                )}
-              </Button>
+              {showSubmitButton && (
+                <Button
+                  size="sm"
+                  className="h-8 text-xs px-4"
+                  onClick={handleSubmit}
+                  disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />
+                      {t("editor.submitting")}
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="h-3 w-3 mr-1.5" />
+                      {t("editor.submit")}
+                    </>
+                  )}
+                </Button>
+              )}
             </>
           )}
         </div>
