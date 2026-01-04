@@ -15,9 +15,10 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  History,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 import {
   Card,
@@ -84,6 +85,7 @@ export default function GroupsPage() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const location = useLocation();
+  const navigate = useNavigate();
 
   const [selectedGroupId, setSelectedGroupId] = useState<string>(() => {
     if (location.state?.selectedGroupId) {
@@ -542,7 +544,7 @@ export default function GroupsPage() {
                           Progreso <SortIcon column="progress" />
                         </div>
                       </TableHead>
-                      <TableHead className="w-[50px]"></TableHead>
+                      <TableHead className="w-[100px] text-right">Acciones</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -574,44 +576,69 @@ export default function GroupsPage() {
                             {Math.round(student.progress)}%
                           </TableCell>
                           <TableCell>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" className="h-8 w-8 p-0">
-                                  <MoreVertical className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem
-                                  onClick={() => openEditModal(student)}>
-                                  <Pencil className="mr-2 h-4 w-4" /> Editar
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() =>
-                                    toggleStatusMutation.mutate(student.id)
-                                  }>
-                                  {student.status === "inactive" ? (
-                                    <>
-                                      <Power className="mr-2 h-4 w-4 text-green-600" />{" "}
-                                      Activar
-                                    </>
-                                  ) : (
-                                    <>
-                                      <PowerOff className="mr-2 h-4 w-4 text-orange-600" />{" "}
-                                      Desactivar
-                                    </>
-                                  )}
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                  className="text-destructive focus:text-destructive cursor-pointer"
-                                  onClick={() =>
-                                    removeStudentMutation.mutate(student.id)
-                                  }>
-                                  <Trash2 className="mr-2 h-4 w-4" /> Eliminar
-                                  del grupo
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+                            <div className="flex justify-end items-center gap-1">
+                              {/* Botón para ver historial de actividad */}
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-muted-foreground hover:text-primary"
+                                title="Ver entregas y feedback"
+                                onClick={() =>
+                                  navigate(
+                                    `/dashboard/group/${selectedGroupId}/activity?studentId=${student.id}`
+                                  )
+                                }>
+                                <History className="h-4 w-4" />
+                              </Button>
+
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" className="h-8 w-8 p-0">
+                                    <MoreVertical className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      navigate(
+                                        `/dashboard/group/${selectedGroupId}/activity?studentId=${student.id}`
+                                      )
+                                    }>
+                                    <History className="mr-2 h-4 w-4" /> Ver
+                                    Actividad
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => openEditModal(student)}>
+                                    <Pencil className="mr-2 h-4 w-4" /> Editar
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      toggleStatusMutation.mutate(student.id)
+                                    }>
+                                    {student.status === "inactive" ? (
+                                      <>
+                                        <Power className="mr-2 h-4 w-4 text-green-600" />{" "}
+                                        Activar
+                                      </>
+                                    ) : (
+                                      <>
+                                        <PowerOff className="mr-2 h-4 w-4 text-orange-600" />{" "}
+                                        Desactivar
+                                      </>
+                                    )}
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    className="text-destructive focus:text-destructive cursor-pointer"
+                                    onClick={() =>
+                                      removeStudentMutation.mutate(student.id)
+                                    }>
+                                    <Trash2 className="mr-2 h-4 w-4" /> Eliminar
+                                    del grupo
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))
