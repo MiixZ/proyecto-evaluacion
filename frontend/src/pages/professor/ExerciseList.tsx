@@ -86,9 +86,12 @@ export default function ExercisesList() {
       toast({ title: "Ejercicio eliminado" });
     },
     onError: (err: any) => {
+      const serverMessage = err.response?.data?.message;
+      const description = serverMessage || "No se pudo realizar la acción.";
+
       toast({
-        title: "No se pudo eliminar",
-        description: err.response?.data?.message || "Error desconocido",
+        title: "Error",
+        description: description,
         variant: "destructive",
       });
     },

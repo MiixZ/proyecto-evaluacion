@@ -204,7 +204,11 @@ export class ExerciseService {
 
     try {
       const [originalEx]: any[] = await connection.execute(
-        'SELECT * FROM exercises WHERE id = ?',
+        `SELECT 
+          id, syllabus_id, title, description, difficulty, language, 
+          template_code, points, max_attempts, late_submission_penalty_percent, 
+          deadline 
+         FROM exercises WHERE id = ?`,
         [exerciseId]
       );
 
@@ -213,6 +217,9 @@ export class ExerciseService {
 
       const newId = uuidv4() as UUID;
       const newTitle = `Copia de ${source.title}`;
+
+      const templateCode =
+        source.template_code !== undefined ? source.template_code : null;
 
       await connection.execute(
         `
@@ -229,7 +236,7 @@ export class ExerciseService {
           source.description,
           source.difficulty,
           source.language,
-          source.template_code,
+          templateCode,
           source.points,
           source.max_attempts,
           source.late_submission_penalty_percent,
