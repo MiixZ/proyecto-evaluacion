@@ -6,14 +6,13 @@ import {
   ArrowLeft,
   Calendar,
   Clock,
-  Cpu,
   Download,
   FileCode,
   HardDrive,
-  User,
+  Loader2,
   AlertCircle,
 } from "lucide-react";
-import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/forms/button";
 import { Badge } from "@/components/ui/data/badge";
@@ -36,9 +35,10 @@ import {
 } from "@/components/ui/feedback/alert";
 
 import { CodeEditor } from "@/components/code/CodeEditor";
+import FeedbackPanel from "@/components/feedback/FeedbackPanel";
+
 import { submissionService } from "@/services/submission.service";
 import { exportService } from "@/services/export.service";
-import { toast } from "sonner";
 
 export default function SubmissionDetails() {
   const { id } = useParams<{ id: string }>();
@@ -61,6 +61,7 @@ export default function SubmissionDetails() {
       await exportService.downloadSubmission(submission.id, format);
       toast.success("Descarga completada");
     } catch (err) {
+      console.error(err);
       toast.error("Error en la descarga");
     }
   };
@@ -119,7 +120,7 @@ export default function SubmissionDetails() {
 
   return (
     <div className="space-y-6 h-[calc(100vh-4rem)] flex flex-col animate-in fade-in duration-500">
-      {/* HEADER */}
+      {/* HEADER SUPERIOR */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shrink-0">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
@@ -157,25 +158,26 @@ export default function SubmissionDetails() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-auto">
-        {/* COLUMNA IZQUIERDA: EDITOR DE CÓDIGO (Read Only) */}
-        <Card className="lg:col-span-2 flex flex-col overflow-hidden border-muted">
+      {/* GRID PRINCIPAL */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0">
+        {/* COLUMNA IZQUIERDA: EDITOR DE CÓDIGO (Sólo lectura) */}
+        <Card className="lg:col-span-2 flex flex-col overflow-hidden border-muted h-full">
           <CardHeader className="py-3 px-4 bg-muted/30 border-b flex flex-row items-center justify-between shrink-0">
             <div className="flex items-center gap-2 text-sm font-medium">
               <span className="uppercase bg-primary/10 text-primary px-2 py-0.5 rounded text-xs">
                 {submission.language}
               </span>
-              <span>
+              <span className="text-muted-foreground">
                 main.
                 {submission.language === "python"
                   ? "py"
                   : submission.language === "javascript"
                   ? "js"
-                  : "java"}
+                  : "txt"}
               </span>
             </div>
           </CardHeader>
-          <div className=" min-h-0 relative bg-[#1e1e1e]">
+          <div className="flex-1 min-h-0 relative bg-[#1e1e1e]">
             <CodeEditor
               initialCode={submission.code}
               language={submission.language}
@@ -185,19 +187,21 @@ export default function SubmissionDetails() {
           </div>
         </Card>
 
-        {/* COLUMNA DERECHA: INFORMACIÓN Y RESULTADOS */}
-        <div className="flex flex-col gap-6 overflow-hidden">
-          {/* INFO DEL ESTUDIANTE */}
-          <Card className="shrink-0">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium uppercase tracking-wider text-muted-foreground">
+        {/* COLUMNA DERECHA: DATOS + FEEDBACK + TESTS */}
+        <div className="flex flex-col gap-6 overflow-hidden h-full">
+          {/* TARJETA DE ESTUDIANTE (Fija arriba) */}
+          <Card className="shrink-0 border-muted">
+            <CardHeader className="py-3 px-4 bg-muted/10 border-b">
+              <CardTitle className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                 Estudiante
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-4">
               <div className="flex items-center gap-3">
                 <Avatar>
-                  <AvatarImage src={submission.student.avatarUrl} />
+                  <AvatarImage
+                    src={submission.student.avatarUrl || undefined}
+                  />
                   <AvatarFallback>
                     {submission.student.name.substring(0, 2).toUpperCase()}
                   </AvatarFallback>
@@ -214,119 +218,129 @@ export default function SubmissionDetails() {
             </CardContent>
           </Card>
 
-          {/* MÉTRICAS */}
-          <div className="grid grid-cols-2 gap-4 shrink-0">
-            <Card>
-              <CardContent className="p-4 flex flex-col items-center justify-center text-center">
-                <div className="text-2xl font-bold">{submission.score}</div>
-                <div className="text-xs text-muted-foreground uppercase mt-1">
-                  Puntuación
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4 flex flex-col gap-2">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="flex items-center gap-1 text-muted-foreground">
-                    <Clock className="h-3 w-3" /> Tiempo
-                  </span>
-                  <span className="font-medium">
-                    {submission.executionTimeMs || 0} ms
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-xs">
-                  <span className="flex items-center gap-1 text-muted-foreground">
-                    <HardDrive className="h-3 w-3" /> Memoria
-                  </span>
-                  <span className="font-medium">
-                    {submission.memoryUsedMb || 0} MB
-                  </span>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          {/* AREA SCROLLABLE PARA EL RESTO DE CONTENIDO */}
+          <ScrollArea className="flex-1 pr-3 -mr-3">
+            <div className="flex flex-col gap-6 pb-2">
+              {/* MÉTRICAS DE EJECUCIÓN */}
+              <div className="grid grid-cols-2 gap-4">
+                <Card>
+                  <CardContent className="p-4 flex flex-col items-center justify-center text-center">
+                    <div className="text-2xl font-bold">{submission.score}</div>
+                    <div className="text-[10px] text-muted-foreground uppercase mt-1 tracking-wider">
+                      Puntuación
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-4 flex flex-col justify-center gap-2 h-full">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="flex items-center gap-1 text-muted-foreground">
+                        <Clock className="h-3 w-3" /> Tiempo
+                      </span>
+                      <span className="font-mono font-medium">
+                        {submission.executionTimeMs || 0}ms
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="flex items-center gap-1 text-muted-foreground">
+                        <HardDrive className="h-3 w-3" /> Memoria
+                      </span>
+                      <span className="font-mono font-medium">
+                        {submission.memoryUsedMb || 0}MB
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
 
-          {/* RESULTADOS DE LOS TESTS */}
-          <Card className="flex-1 flex flex-col min-h-0 border-muted">
-            <CardHeader className="py-3 px-4 border-b shrink-0">
-              <CardTitle className="text-sm font-medium flex items-center justify-between">
-                <span>Casos de Prueba</span>
-                <Badge variant="secondary">
-                  {
-                    submission.testResults.filter((t) => t.status === "passed")
-                      .length
-                  }{" "}
-                  / {submission.testResults.length} Pasados
-                </Badge>
-              </CardTitle>
-            </CardHeader>
-            <ScrollArea className="flex-1">
-              <div className="p-0">
-                {submission.testResults.map((test, index) => (
-                  <div
-                    key={test.id || index}
-                    className={`p-3 border-b last:border-0 text-sm flex items-start gap-3 hover:bg-muted/50 transition-colors ${
-                      test.status === "failed" || test.status === "error"
-                        ? "bg-red-50/50 dark:bg-red-900/10"
-                        : ""
-                    }`}>
+              {/* PANEL DE FEEDBACK (Componente Nuevo) */}
+              <FeedbackPanel submissionId={submission.id} />
+
+              {/* RESULTADOS DE LOS TESTS */}
+              <Card className="border-muted">
+                <CardHeader className="py-3 px-4 border-b">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-sm font-medium">
+                      Casos de Prueba
+                    </CardTitle>
+                    <Badge variant="secondary" className="text-xs">
+                      {
+                        submission.testResults.filter(
+                          (t) => t.status === "passed"
+                        ).length
+                      }{" "}
+                      / {submission.testResults.length}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <div className="divide-y divide-border">
+                  {submission.testResults.map((test, index) => (
                     <div
-                      className={`mt-0.5 h-2 w-2 rounded-full shrink-0 ${
-                        test.status === "passed" ? "bg-green-500" : "bg-red-500"
-                      }`}
-                    />
-
-                    <div className="flex-1 space-y-1 overflow-hidden">
+                      key={test.id || index}
+                      className={`p-3 text-sm flex flex-col gap-2 transition-colors ${
+                        test.status === "failed" || test.status === "error"
+                          ? "bg-red-50/30"
+                          : "hover:bg-muted/30"
+                      }`}>
                       <div className="flex items-center justify-between">
-                        <span className="font-medium">Test #{index + 1}</span>
-                        <span className="text-xs text-muted-foreground lowercase">
+                        <div className="flex items-center gap-2">
+                          <div
+                            className={`h-2 w-2 rounded-full ${
+                              test.status === "passed"
+                                ? "bg-green-500"
+                                : "bg-red-500"
+                            }`}
+                          />
+                          <span className="font-medium">Test #{index + 1}</span>
+                        </div>
+                        <span className="text-xs text-muted-foreground font-mono">
                           {test.executionTimeMs}ms
                         </span>
                       </div>
 
-                      {/* Mostrar detalles solo si falló */}
+                      {/* Detalles del error (solo si falló) */}
                       {(test.status === "failed" ||
                         test.status === "error") && (
-                        <div className="mt-2 space-y-2 bg-background p-2 rounded border text-xs font-mono overflow-x-auto">
+                        <div className="mt-1 text-xs bg-background border rounded p-2 space-y-2">
                           {test.errorMessage && (
-                            <div className="text-red-600 font-semibold mb-1">
-                              Error: {test.errorMessage}
+                            <div className="text-red-600 font-medium mb-1">
+                              {test.errorMessage}
                             </div>
                           )}
-                          <div>
-                            <span className="text-muted-foreground block mb-0.5">
-                              Entrada:
-                            </span>
-                            <div className="bg-muted p-1 rounded">
-                              {test.input}
+                          <div className="grid grid-cols-1 gap-1">
+                            <div className="flex gap-2">
+                              <span className="text-muted-foreground w-16 shrink-0">
+                                Entrada:
+                              </span>
+                              <code className="bg-muted px-1 rounded flex-1 truncate">
+                                {test.input}
+                              </code>
                             </div>
-                          </div>
-                          <div className="grid grid-cols-2 gap-2">
-                            <div>
-                              <span className="text-green-600 block mb-0.5">
+                            <div className="flex gap-2">
+                              <span className="text-green-600 w-16 shrink-0">
                                 Esperado:
                               </span>
-                              <div className="bg-green-50 dark:bg-green-900/20 p-1 rounded text-green-700 dark:text-green-300">
+                              <code className="bg-green-50 text-green-700 px-1 rounded flex-1 truncate">
                                 {test.expectedOutput}
-                              </div>
+                              </code>
                             </div>
-                            <div>
-                              <span className="text-red-600 block mb-0.5">
+                            <div className="flex gap-2">
+                              <span className="text-red-600 w-16 shrink-0">
                                 Obtenido:
                               </span>
-                              <div className="bg-red-50 dark:bg-red-900/20 p-1 rounded text-red-700 dark:text-red-300">
+                              <code className="bg-red-50 text-red-700 px-1 rounded flex-1 truncate">
                                 {test.actualOutput || "(vacío)"}
-                              </div>
+                              </code>
                             </div>
                           </div>
                         </div>
                       )}
                     </div>
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
-          </Card>
+                  ))}
+                </div>
+              </Card>
+            </div>
+          </ScrollArea>
         </div>
       </div>
     </div>
