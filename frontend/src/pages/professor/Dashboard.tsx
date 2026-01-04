@@ -49,16 +49,18 @@ import { Progress } from "@/components/ui/feedback/progress";
 import { Alert, AlertDescription } from "@/components/ui/feedback/alert";
 import { Input } from "@/components/ui/forms/input";
 import { Button } from "@/components/ui/forms/button";
-import { ScrollArea } from "@/components/ui/layout/scroll-area"; //
+import { ScrollArea } from "@/components/ui/layout/scroll-area";
 import { dashboardService } from "@/services/dashboard.service";
 
 export default function ProfessorDashboard() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const dateLocale = i18n.language === "en" ? enUS : es;
+
   const [selectedGroupId, setSelectedGroupId] = useState<string | undefined>(
-    undefined
+    localStorage.getItem("professorLastGroupId") || undefined
   );
+
   const [studentFilter, setStudentFilter] = useState("");
 
   const {
@@ -69,6 +71,12 @@ export default function ProfessorDashboard() {
     queryKey: ["professorOverview", selectedGroupId],
     queryFn: () => dashboardService.getProfessorStats(selectedGroupId),
   });
+
+  useEffect(() => {
+    if (selectedGroupId) {
+      localStorage.setItem("professorLastGroupId", selectedGroupId);
+    }
+  }, [selectedGroupId]);
 
   useEffect(() => {
     if (
@@ -141,7 +149,10 @@ export default function ProfessorDashboard() {
               className="flex-1 sm:flex-none"
               onClick={() =>
                 navigate("/dashboard/groups", {
-                  state: { openAddStudent: true },
+                  state: {
+                    openAddStudent: true,
+                    selectedGroupId: selectedGroupId,
+                  },
                 })
               }>
               <UserPlus className="mr-2 h-4 w-4" />
@@ -264,9 +275,8 @@ export default function ProfessorDashboard() {
               </div>
             </div>
           </CardHeader>
-          <CardContent className="p-3 sm:p-6 sm:pt-0">
-            {" "}
-            <ScrollArea className="h-[800px] pr-4">
+          <CardContent className="p-0 sm:p-6 sm:pt-0">
+            <ScrollArea className="h-[600px] pr-4">
               <Table>
                 <TableHeader>
                   <TableRow>

@@ -12,7 +12,7 @@ import {
   Pencil,
   Power,
   PowerOff,
-  ArrowUpDown, // Iconos para ordenación
+  ArrowUpDown,
   ArrowUp,
   ArrowDown,
 } from "lucide-react";
@@ -77,14 +77,19 @@ export default function GroupsPage() {
   const queryClient = useQueryClient();
   const location = useLocation();
 
-  const [selectedGroupId, setSelectedGroupId] = useState<string>("");
+  const [selectedGroupId, setSelectedGroupId] = useState<string>(() => {
+    if (location.state?.selectedGroupId) {
+      return location.state.selectedGroupId;
+    }
+    return localStorage.getItem("professorLastGroupId") || "";
+  });
+
   const [searchTerm, setSearchTerm] = useState("");
 
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
 
-  // Estado para la ordenación
   const [sorting, setSorting] = useState<{
     column: keyof GroupStudentDTO | string;
     direction: "ASC" | "DESC";
@@ -110,6 +115,13 @@ export default function GroupsPage() {
     [dashboardData?.groups]
   );
 
+  // CAMBIO 5: Persistir cambios de selección
+  useEffect(() => {
+    if (selectedGroupId) {
+      localStorage.setItem("professorLastGroupId", selectedGroupId);
+    }
+  }, [selectedGroupId]);
+
   useEffect(() => {
     if (!selectedGroupId && groups.length > 0) {
       setSelectedGroupId(groups[0].groupId);
@@ -119,7 +131,10 @@ export default function GroupsPage() {
   useEffect(() => {
     if (location.state?.openAddStudent) {
       setIsAddOpen(true);
-      window.history.replaceState({}, document.title);
+      window.history.replaceState(
+        { ...window.history.state, openAddStudent: false },
+        document.title
+      );
     }
   }, [location]);
 
@@ -224,36 +239,26 @@ export default function GroupsPage() {
     },
   });
 
-  // Lógica de filtrado y ordenación
   const processedStudents = useMemo(() => {
     if (!students) return [];
-
-    // 1. Filtrar
     let result = students.filter(
       (s) =>
         s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         s.email.toLowerCase().includes(searchTerm.toLowerCase())
     );
-
-    // 2. Ordenar
     result = result.sort((a, b) => {
       const valA = a[sorting.column as keyof GroupStudentDTO];
       const valB = b[sorting.column as keyof GroupStudentDTO];
-
-      // Manejo simple de strings y números
       if (typeof valA === "string" && typeof valB === "string") {
         return sorting.direction === "ASC"
           ? valA.localeCompare(valB)
           : valB.localeCompare(valA);
       }
-
       if (typeof valA === "number" && typeof valB === "number") {
         return sorting.direction === "ASC" ? valA - valB : valB - valA;
       }
-
       return 0;
     });
-
     return result;
   }, [students, searchTerm, sorting]);
 
@@ -283,10 +288,8 @@ export default function GroupsPage() {
   const handleEditSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingStudent) return;
-
     const [firstName, ...rest] = editingStudent.name.split(" ");
     const lastName = rest.join(" ");
-
     updateStudentMutation.mutate({
       id: editingStudent.id,
       data: {
@@ -434,7 +437,6 @@ export default function GroupsPage() {
                         Formato: email, firstName, lastName
                       </DialogDescription>
                     </DialogHeader>
-                    {/* (Formulario de importación igual al anterior) */}
                     <div className="grid w-full max-w-sm items-center gap-1.5 py-4">
                       <Input
                         type="file"
@@ -467,7 +469,6 @@ export default function GroupsPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    {/* Cabeceras interactivas para ordenar */}
                     <TableHead
                       className="cursor-pointer hover:bg-muted/50 transition-colors"
                       onClick={() => handleSort("name")}>
@@ -592,7 +593,6 @@ export default function GroupsPage() {
               <form onSubmit={handleEditSubmit} className="space-y-4">
                 <div className="space-y-2">
                   <Label>Nombre Completo</Label>
-                  {/* Nota: En un caso real, pediríamos nombre y apellido por separado en el DTO */}
                   <Input
                     value={editingStudent.name}
                     onChange={(e) =>
