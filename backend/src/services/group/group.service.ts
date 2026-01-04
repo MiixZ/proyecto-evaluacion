@@ -7,7 +7,7 @@ import { UUID } from '@CustomTypes/common.types';
 import { courseModel } from '@models/course/course.model';
 import { userModel } from '@models/user/user.model';
 import { NotFoundError, ConflictError, ForbiddenError } from '@utils/errors';
-import { parseStudentCsv, escapeCsvField } from '@utils/csv.parser';
+import { escapeCsvField, parseStudentCsv } from '@utils/csv.parser';
 import { UserStatus, UserRole } from '@CustomTypes/common.types';
 import { auditService } from '@services/audit/audit.service';
 import crypto from 'crypto';
@@ -91,7 +91,7 @@ export class GroupService {
       }
     }
 
-    const students = parseStudentCsv(csvContent);
+    const students = parseStudentCsv(Buffer.from(csvContent));
     const results = {
       total: students.length,
       imported: 0,
@@ -136,12 +136,7 @@ export class GroupService {
 
           const isMember = await groupModel.isMember(groupId as UUID, userId);
           if (!isMember) {
-            await groupModel.addMember(
-              groupId as UUID,
-              userId,
-              'student',
-              connection
-            );
+            await groupModel.addMember(userId, groupId as UUID, 'student');
             results.imported++;
           }
 

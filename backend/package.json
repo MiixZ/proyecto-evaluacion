@@ -17,6 +17,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@types/multer": "^2.0.0",
     "@types/nodemailer": "^7.0.4",
     "@types/string-similarity": "^4.0.2",
     "axios": "^1.6.2",
@@ -26,6 +27,7 @@
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "jsonwebtoken": "^9.0.2",
+    "multer": "^2.0.2",
     "mysql2": "^3.6.5",
     "nodemailer": "^7.0.12",
     "string-similarity": "^4.0.4",

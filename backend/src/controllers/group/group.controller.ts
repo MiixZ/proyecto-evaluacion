@@ -5,7 +5,12 @@ import { ApiResponse } from '@utils/response.handler';
 import { groupService } from '@services/group/group.service';
 import { groupMapper } from '@mappers/group.mapper';
 import { AppError } from '@utils/errors';
-import { UserRole } from '@CustomTypes/common.types';
+import { UserRole, UUID } from '@CustomTypes/common.types';
+import { groupModel } from '@models/group/group.model';
+import { dashboardModel } from '@models/dashboard/dashboard.model';
+import { dashboardMapper } from '@mappers/dashboard.mapper';
+import { userService } from '@services/user/user.service';
+import { parseStudentCsv } from '@utils/csv.parser';
 
 export class GroupController {
   create = catchAsync(async (req: AuthRequest, res: Response) => {
@@ -16,6 +21,57 @@ export class GroupController {
     const result = await groupService.createGroup(req.body);
 
     return ApiResponse.created(res, groupMapper.toDTO(result), 'Grupo creado');
+  });
+
+  getGroupStudents = catchAsync(async (req: AuthRequest, res: Response) => {
+    const { groupId } = req.params;
+
+    if (req.user?.role === UserRole.TEACHER) {
+      const isOwner = await groupModel.isTeacherOfGroup(
+        req.user.id,
+        groupId as UUID
+      );
+
+      if (!isOwner)
+        throw new AppError(
+          'FORBIDDEN',
+          403,
+          'No tienes permiso sobre este grupo'
+        );
+    }
+
+    const students = await dashboardModel.getStudentsByGroup(groupId as UUID);
+
+    return ApiResponse.success(
+      res,
+      students.map(dashboardMapper.toGroupStudentDTO)
+    );
+  });
+
+  addStudent = catchAsync(async (req: AuthRequest, res: Response) => {
+    const { groupId } = req.params;
+    const { email, firstName, lastName } = req.body;
+
+    if (req.user?.role === UserRole.TEACHER) {
+      const isOwner = await groupModel.isTeacherOfGroup(
+        req.user.id,
+        groupId as UUID
+      );
+
+      if (!isOwner) throw new AppError('FORBIDDEN', 403, 'No tienes permiso');
+    }
+
+    const user = await userService.findOrCreateStudent(
+      email,
+      firstName,
+      lastName
+    );
+
+    await groupModel.addMember(user.id as UUID, groupId as UUID);
+
+    return ApiResponse.created(res, {
+      message: 'Estudiante añadido correctamente',
+    });
   });
 
   getById = catchAsync(async (req: Request, res: Response) => {
@@ -48,22 +104,69 @@ export class GroupController {
     );
   });
 
-  importMembers = catchAsync(async (req: AuthRequest, res: Response) => {
-    if (req.user?.role === UserRole.STUDENT) {
-      throw new AppError('FORBIDDEN', 403, 'No autorizado para importar');
+  importStudentsCsv = catchAsync(async (req: AuthRequest, res: Response) => {
+    const { groupId } = req.params;
+
+    if (!req.file) {
+      throw new AppError(
+        'VALIDATION_ERROR',
+        400,
+        'No se ha subido ningún archivo CSV'
+      );
     }
 
-    const { id } = req.params;
-    const { csvContent } = req.body;
+    if (req.user?.role === UserRole.TEACHER) {
+      const isOwner = await groupModel.isTeacherOfGroup(
+        req.user.id,
+        groupId as UUID
+      );
 
-    const result = await groupService.importStudentsFromCsv(id, csvContent);
+      if (!isOwner) throw new AppError('FORBIDDEN', 403, 'No tienes permiso');
+    }
 
-    return ApiResponse.success(
-      res,
-      result,
-      200,
-      'Proceso de importación finalizado'
-    );
+    const students = parseStudentCsv(req.file.buffer);
+    const results = { added: 0, errors: 0 };
+
+    for (const student of students) {
+      try {
+        if (!student.email) continue;
+        const user = await userService.findOrCreateStudent(
+          student.email,
+          student.firstName || 'Estudiante',
+          student.lastName || ''
+        );
+
+        await groupModel.addMember(user.id as UUID, groupId as UUID);
+        results.added++;
+      } catch (error) {
+        results.errors++;
+        console.error(`Error importando estudiante ${student.email}:`, error);
+      }
+    }
+
+    return ApiResponse.success(res, {
+      message: `Proceso completado. Añadidos: ${results.added}. Errores: ${results.errors}`,
+      stats: results,
+    });
+  });
+
+  removeStudent = catchAsync(async (req: AuthRequest, res: Response) => {
+    const { groupId, studentId } = req.params;
+
+    if (req.user?.role === UserRole.TEACHER) {
+      const isOwner = await groupModel.isTeacherOfGroup(
+        req.user.id,
+        groupId as UUID
+      );
+
+      if (!isOwner) throw new AppError('FORBIDDEN', 403, 'No tienes permiso');
+    }
+
+    await groupModel.removeMember(studentId as UUID, groupId as UUID);
+
+    return ApiResponse.success(res, {
+      message: 'Estudiante eliminado del grupo',
+    });
   });
 
   getMembers = catchAsync(async (req: AuthRequest, res: Response) => {

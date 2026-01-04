@@ -9,6 +9,7 @@ import NotFound from "./pages/NotFound";
 import StudentExercises from "./pages/student/Exercises";
 import StudentSubjects from "./pages/student/Subjects";
 import StudentProgressPage from "./pages/student/Progress";
+import GroupsPage from "./pages/professor/Groups";
 import StudentExerciseView from "./pages/student/ExerciseView";
 import StudentSubmissionsPage from "./pages/student/Submissions";
 import { AuthProvider } from "./context/AuthProvider";
@@ -65,6 +66,7 @@ const App = () => (
                 path="/dashboard/group/:groupId/plagiarism"
                 element={<PlagiarismHistory />}
               />
+              <Route path="/dashboard/groups" element={<GroupsPage />} />
 
               {/* Alias/Redirecciones */}
               <Route

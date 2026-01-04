@@ -8,10 +8,10 @@ import {
   UpdateGroupInput,
 } from '@validators/group.validator';
 import { UUID } from '@CustomTypes/common.types';
-import { NotFoundError, ConflictError } from '@utils/errors';
+import { NotFoundError } from '@utils/errors';
 import { CountResult } from '@models/common/count.row';
 import { StudentProgressRow } from '@models/dashboard/dashboard.row';
-import { PoolConnection } from 'mysql2/promise';
+import { RowDataPacket } from 'mysql2/promise';
 
 export class GroupModel {
   async create(input: CreateGroupInput): Promise<GroupEntity> {
@@ -57,26 +57,14 @@ export class GroupModel {
   // --- MEMBERSHIP (user_groups) ---
 
   async addMember(
-    groupId: UUID,
     userId: UUID,
-    role: string,
-    connection?: PoolConnection
+    groupId: UUID,
+    role: string = 'student'
   ): Promise<void> {
-    const query = `
-      INSERT INTO user_groups (user_id, group_id, role, enrolled_at)
-      VALUES (?, ?, ?, NOW())
-    `;
-
-    const db = connection || getPool();
-
-    try {
-      await db.execute(query, [userId, groupId, role]);
-    } catch (error: any) {
-      if (error.code === 'ER_DUP_ENTRY') {
-        throw new ConflictError('El usuario ya es miembro de este grupo');
-      }
-      throw error;
-    }
+    await getPool().execute(
+      'INSERT IGNORE INTO user_groups (user_id, group_id, role, enrolled_at) VALUES (?, ?, ?, NOW())',
+      [userId, groupId, role]
+    );
   }
 
   async countMembers(groupId: UUID, role: string = 'student'): Promise<number> {
@@ -106,13 +94,11 @@ export class GroupModel {
     return rows.length > 0;
   }
 
-  async removeMember(groupId: UUID, userId: UUID): Promise<void> {
-    const query = 'DELETE FROM user_groups WHERE group_id = ? AND user_id = ?';
-    const [result] = await getPool().execute<any>(query, [groupId, userId]);
-    if (result.affectedRows === 0)
-      throw new NotFoundError(
-        'Usuario con id: ' + userId + ' en el grupo con id: ' + groupId
-      );
+  async removeMember(userId: UUID, groupId: UUID): Promise<void> {
+    await getPool().execute(
+      'DELETE FROM user_groups WHERE user_id = ? AND group_id = ?',
+      [userId, groupId]
+    );
   }
 
   async getStudentGroupInCourse(
@@ -215,6 +201,26 @@ export class GroupModel {
     ]);
 
     return rows;
+  }
+
+  async isTeacherOfGroup(userId: UUID, groupId: UUID): Promise<boolean> {
+    const [rows] = await getPool().execute<RowDataPacket[]>(
+      'SELECT 1 FROM user_groups WHERE user_id = ? AND group_id = ? AND role = "teacher"',
+      [userId, groupId]
+    );
+
+    return rows.length > 0;
+  }
+
+  async isStudentInGroup(email: string, groupId: UUID): Promise<boolean> {
+    const [rows] = await getPool().execute<RowDataPacket[]>(
+      `SELECT 1 FROM users u 
+       JOIN user_groups ug ON u.id = ug.user_id 
+       WHERE u.email = ? AND ug.group_id = ?`,
+      [email, groupId]
+    );
+
+    return rows.length > 0;
   }
 }
 

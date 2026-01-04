@@ -96,6 +96,40 @@ export class UserService {
     return userDTO;
   }
 
+  async findOrCreateStudent(
+    email: string,
+    firstName: string,
+    lastName: string
+  ): Promise<UserDTO> {
+    const existingUser = await userModel.getByEmail(email);
+
+    if (existingUser) {
+      return userMapper.toDTO(existingUser);
+    }
+
+    const password = crypto.randomBytes(8).toString('hex');
+
+    const newUser = await userModel.create(
+      {
+        email,
+        firstName,
+        lastName,
+        role: UserRole.STUDENT,
+        status: UserStatus.ACTIVE,
+        preferredLanguage: 'es',
+      },
+      password
+    );
+
+    await emailService.sendWelcomeEmail(
+      newUser.email,
+      newUser.firstName,
+      password
+    );
+
+    return userMapper.toDTO(newUser);
+  }
+
   async updateProfile(
     userId: string,
     input: UpdateUserInput
