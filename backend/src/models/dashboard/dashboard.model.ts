@@ -304,6 +304,76 @@ export class DashboardModel {
       total: countRows[0].total,
     };
   }
+
+  async getGroupActivity(
+    groupId: string,
+    page: number,
+    limit: number,
+    sortBy: string,
+    sortOrder: 'ASC' | 'DESC',
+    status?: string,
+    studentId?: string
+  ): Promise<any> {
+    const offset = (page - 1) * limit;
+
+    let whereClause = 'WHERE g.id = ?';
+    const params: any[] = [groupId];
+
+    if (status && status !== 'all') {
+      whereClause += ' AND s.status = ?';
+      params.push(status);
+    }
+
+    if (studentId) {
+      whereClause += ' AND s.student_id = ?';
+      params.push(studentId);
+    }
+
+    const sortMap: Record<string, string> = {
+      date: 's.created_at',
+      studentName: 'u.first_name',
+      exerciseTitle: 'e.title',
+      score: 's.score',
+      status: 's.status',
+    };
+    const sortCol = sortMap[sortBy] || 's.created_at';
+
+    const query = `
+      SELECT 
+        s.id, s.status, s.score, s.created_at as time, s.verdict,
+        e.title as exerciseTitle,
+        CONCAT(u.first_name, ' ', u.last_name) as studentName,
+        u.profile_image_url as avatarUrl
+      FROM submissions s
+      JOIN exercises e ON s.exercise_id = e.id
+      JOIN users u ON s.student_id = u.id
+      JOIN groups g ON g.course_id = s.course_id -- O la relación que uses para vincular submission a grupo
+      ${whereClause}
+      ORDER BY ${sortCol} ${sortOrder}
+      LIMIT ? OFFSET ?
+    `;
+
+    const countQuery = `
+      SELECT COUNT(*) as total
+      FROM submissions s
+      JOIN groups g ON g.course_id = s.course_id
+      ${whereClause}
+    `;
+
+    const [rows] = await getPool().query<any[]>(query, [
+      ...params,
+      limit,
+      offset,
+    ]);
+    const [countRows] = await getPool().query<any[]>(countQuery, params);
+
+    return {
+      items: rows,
+      total: countRows[0].total,
+      page,
+      totalPages: Math.ceil(countRows[0].total / limit),
+    };
+  }
 }
 
 export const dashboardModel = new DashboardModel();

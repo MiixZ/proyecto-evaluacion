@@ -40,17 +40,25 @@ export const dashboardService = {
 
   getGroupActivity: async (
     groupId: string,
-    page: number = 1,
-    limit: number = 20,
-    sortBy: string = "date",
-    sortOrder: "ASC" | "DESC" = "DESC",
-    status: string = "all"
-  ): Promise<PaginatedResponse<RecentActivityDTO>> => {
-    const { data } = await api.get<
-      ApiResponse<PaginatedResponse<RecentActivityDTO>>
-    >(`/v1/dashboard/teacher/group/${groupId}/activity`, {
-      params: { page, limit, sortBy, sortOrder, status },
+    page: number,
+    limit: number,
+    column: string,
+    direction: string,
+    status?: string,
+    studentId?: string
+  ) => {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+      sortBy: column,
+      sortOrder: direction,
+      ...(status && status !== "all" && { status }),
+      ...(studentId && { studentId }),
     });
+
+    const { data } = await api.get(
+      `/teacher/group/${groupId}/activity?${params}`
+    );
 
     return data.data;
   },

@@ -6,6 +6,7 @@ import { dashboardModel } from '@models/dashboard/dashboard.model';
 import { dashboardMapper } from '@mappers/dashboard.mapper';
 import { UserRole, UUID } from '@CustomTypes/common.types';
 import { AppError } from '@utils/errors';
+import { dashboardService } from '@services/dashboard/dashboard.service';
 
 export class DashboardController {
   getMyProgress = catchAsync(async (req: AuthRequest, res: Response) => {
@@ -72,36 +73,27 @@ export class DashboardController {
   });
 
   getGroupActivity = catchAsync(async (req: AuthRequest, res: Response) => {
-    if (
-      req.user?.role !== UserRole.TEACHER &&
-      req.user?.role !== UserRole.ADMIN
-    ) {
-      throw new AppError('FORBIDDEN', 403, 'Acceso denegado');
-    }
-
     const { groupId } = req.params;
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 20;
-    const sortBy = (req.query.sortBy as string) || 'date';
-    const sortOrder = (req.query.sortOrder as 'ASC' | 'DESC') || 'DESC';
-    const status = req.query.status as string | undefined;
+    const {
+      page = 1,
+      limit = 10,
+      sortBy = 'time',
+      sortOrder = 'DESC',
+      status,
+      studentId,
+    } = req.query;
 
-    const { items, total } = await dashboardModel.getRecentActivityByGroup(
-      groupId as UUID,
-      page,
-      limit,
-      sortBy,
-      sortOrder,
-      status
+    const result = await dashboardService.getGroupActivity(
+      groupId,
+      Number(page),
+      Number(limit),
+      sortBy as string,
+      sortOrder as 'ASC' | 'DESC',
+      status as string,
+      studentId as string
     );
 
-    return ApiResponse.success(res, {
-      items: items.map(dashboardMapper.toRecentActivityDTO),
-      total,
-      page,
-      limit,
-      totalPages: Math.ceil(total / limit),
-    });
+    return ApiResponse.success(res, result);
   });
 
   getGroupPlagiarism = catchAsync(async (req: AuthRequest, res: Response) => {

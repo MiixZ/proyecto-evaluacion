@@ -1,5 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import {
@@ -12,7 +13,7 @@ import {
   MoreHorizontal,
   FileCode,
   FileJson,
-  Download,
+  X,
 } from "lucide-react";
 import { format } from "date-fns";
 import { es, enUS } from "date-fns/locale";
@@ -64,8 +65,11 @@ import {
 export default function ActivityHistory() {
   const { groupId } = useParams<{ groupId: string }>();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { t, i18n } = useTranslation();
   const dateLocale = i18n.language === "en" ? enUS : es;
+
+  const studentIdParam = searchParams.get("studentId");
 
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
@@ -78,7 +82,15 @@ export default function ActivityHistory() {
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["groupActivity", groupId, page, limit, sorting, filterStatus],
+    queryKey: [
+      "groupActivity",
+      groupId,
+      page,
+      limit,
+      sorting,
+      filterStatus,
+      studentIdParam,
+    ],
     queryFn: () =>
       dashboardService.getGroupActivity(
         groupId!,
@@ -86,7 +98,8 @@ export default function ActivityHistory() {
         limit,
         sorting.column,
         sorting.direction,
-        filterStatus
+        filterStatus,
+        studentIdParam || undefined
       ),
     enabled: !!groupId,
   });
@@ -109,10 +122,18 @@ export default function ActivityHistory() {
       await exportService.downloadSubmission(submissionId, format);
       toast.success("Archivo descargado correctamente");
     } catch (error) {
+      console.error(error);
       toast.error("Error al descargar el archivo");
     } finally {
       setDownloadingId(null);
     }
+  };
+
+  const clearStudentFilter = () => {
+    const newParams = new URLSearchParams(searchParams);
+    newParams.delete("studentId");
+    setSearchParams(newParams);
+    setPage(1); // Resetear a página 1 al quitar filtro
   };
 
   const SortIcon = ({ column }: { column: string }) => {
@@ -128,8 +149,10 @@ export default function ActivityHistory() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "success":
+      case "completed":
         return <Badge variant="default">Aceptado</Badge>;
       case "error":
+      case "failed":
         return <Badge variant="destructive">Error</Badge>;
       case "warning":
         return (
@@ -137,6 +160,8 @@ export default function ActivityHistory() {
             Incorrecto
           </Badge>
         );
+      case "pending":
+        return <Badge variant="outline">Pendiente</Badge>;
       default:
         return <Badge variant="outline">Info</Badge>;
     }
@@ -166,6 +191,26 @@ export default function ActivityHistory() {
           </p>
         </div>
       </div>
+
+      {/* BANNER DE FILTRO ACTIVO */}
+      {studentIdParam && (
+        <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-md flex items-center justify-between shadow-sm">
+          <div className="flex flex-col">
+            <span className="font-semibold text-sm">Filtro activo</span>
+            <span className="text-xs opacity-90">
+              Mostrando solo las entregas del estudiante seleccionado.
+            </span>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={clearStudentFilter}
+            className="h-auto py-1 px-3 hover:bg-blue-100 text-blue-800 hover:text-blue-900 transition-colors">
+            <X className="h-3 w-3 mr-2" />
+            Ver todo el grupo
+          </Button>
+        </div>
+      )}
 
       <Card>
         <CardHeader>
@@ -247,18 +292,20 @@ export default function ActivityHistory() {
                     Fecha <SortIcon column="date" />
                   </div>
                 </TableHead>
-                {/* Columna de acciones añadida */}
                 <TableHead className="w-[50px]"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data?.items.map((activity) => (
+              {data?.items.map((activity: any) => (
                 <TableRow key={activity.id}>
                   <TableCell className="font-medium">
                     {activity.studentName}
                   </TableCell>
                   <TableCell>
-                    {activity.action || activity.exerciseTitle || "Entrega"}
+                    {/* Fallback para mostrar título o acción genérica */}
+                    {activity.exerciseTitle ||
+                      activity.action ||
+                      "Entrega de código"}
                   </TableCell>
                   <TableCell>{getStatusBadge(activity.status)}</TableCell>
                   <TableCell className="text-right flex items-center justify-end gap-2 text-muted-foreground">
