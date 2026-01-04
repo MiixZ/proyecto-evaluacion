@@ -79,27 +79,29 @@ export function AppSidebar() {
     professor: [
       {
         title: t("sidebar.menu.professor_panel"),
-        url: "/professor",
+        url: "/dashboard",
         icon: GraduationCap,
+        exact: true,
       },
       {
         title: t("sidebar.menu.groups"),
-        url: "/professor/groups",
+        url: "/dashboard/groups",
         icon: Users,
       },
       {
         title: t("sidebar.menu.create_exercise"),
-        url: "/professor/create",
+        url: "/dashboard/create",
         icon: BookOpen,
       },
     ],
     admin: [
       {
         title: t("sidebar.menu.admin_panel"),
-        url: "/admin",
+        url: "/dashboard",
         icon: ShieldAlert,
+        exact: true,
       },
-      { title: t("sidebar.menu.users"), url: "/admin/users", icon: Users },
+      { title: t("sidebar.menu.users"), url: "/dashboard/users", icon: Users },
     ],
   };
 
@@ -114,10 +116,10 @@ export function AppSidebar() {
 
   const displayName = user ? `${user.firstName} ${user.lastName}` : "Usuario";
 
-  const showStudentMenu = true;
   const showProfessorMenu =
     user?.role === UserRole.TEACHER || user?.role === UserRole.ADMIN;
   const showAdminMenu = user?.role === UserRole.ADMIN;
+  const showStudentMenu = user?.role === UserRole.STUDENT;
 
   const isActiveLink = (url: string, exact: boolean = false) => {
     if (exact) return pathname === url;
@@ -183,7 +185,7 @@ export function AppSidebar() {
                   <SidebarMenuItem key={item.url}>
                     <SidebarMenuButton
                       asChild
-                      isActive={isActiveLink(item.url)}
+                      isActive={isActiveLink(item.url, item.exact)}
                       tooltip={item.title}>
                       <Link to={item.url}>
                         <item.icon />
@@ -207,7 +209,7 @@ export function AppSidebar() {
                   <SidebarMenuItem key={item.url}>
                     <SidebarMenuButton
                       asChild
-                      isActive={isActiveLink(item.url)}
+                      isActive={isActiveLink(item.url, item.exact)}
                       tooltip={item.title}>
                       <Link to={item.url}>
                         <item.icon />

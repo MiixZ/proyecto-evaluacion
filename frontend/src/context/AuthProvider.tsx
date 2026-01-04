@@ -1,6 +1,6 @@
 import { useState, useEffect, ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
-import { User, UserRole } from "@/types/auth.types";
+import { User } from "@/types/auth.types";
 import { authService } from "@/services/auth.service";
 import { LoginFormValues } from "@/schemas/auth.schema";
 import { AuthContext } from "./AuthContext";
@@ -13,7 +13,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const storedToken = localStorage.getItem("token");
-    const storedUser = authService.getCurrentUser();
+    const storedUserStr = localStorage.getItem("user");
+    let storedUser: User | null = null;
+
+    try {
+      if (storedUserStr) {
+        storedUser = JSON.parse(storedUserStr);
+      }
+    } catch (e) {
+      console.error("Error parsing stored user", e);
+    }
 
     if (storedToken && storedUser) {
       setToken(storedToken);
@@ -34,19 +43,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
 
-      switch (data.user.role) {
-        case UserRole.STUDENT:
-          navigate("/dashboard");
-          break;
-        case UserRole.TEACHER:
-          navigate("/professor");
-          break;
-        case UserRole.ADMIN:
-          navigate("/admin");
-          break;
-        default:
-          navigate("/");
-      }
+      navigate("/dashboard");
     } finally {
       setIsLoading(false);
     }
@@ -56,6 +53,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     authService.logout();
     setUser(null);
     setToken(null);
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
     navigate("/login");
   };
 

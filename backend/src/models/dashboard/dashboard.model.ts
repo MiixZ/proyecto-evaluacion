@@ -120,7 +120,7 @@ export class DashboardModel {
         COUNT(DISTINCT CASE WHEN s.verdict = 'accepted' THEN s.exercise_id END) as exercises_completed,
         COALESCE(AVG(s.score), 0) as avg_score,
         MAX(s.created_at) as last_access,
-        'active' as status -- Simplificado, podría ser logica compleja
+        'active' as status
       FROM users u
       JOIN user_groups ug ON u.id = ug.user_id
       LEFT JOIN submissions s ON u.id = s.student_id
@@ -140,6 +140,8 @@ export class DashboardModel {
     groupId: UUID,
     limit: number = 5
   ): Promise<Rows.RecentActivityRow[]> {
+    const safeLimit = Math.max(1, Math.floor(limit));
+
     const query = `
       SELECT 
         s.id as submission_id,
@@ -151,15 +153,14 @@ export class DashboardModel {
       FROM submissions s
       JOIN users u ON s.student_id = u.id
       JOIN exercises e ON s.exercise_id = e.id
-      JOIN user_groups ug ON u.id = ug.user_id -- Estudiante pertenece al grupo
+      JOIN user_groups ug ON u.id = ug.user_id 
       WHERE ug.group_id = ?
       ORDER BY s.created_at DESC
-      LIMIT ?
+      LIMIT ${safeLimit} 
     `;
 
     const [rows] = await getPool().execute<Rows.RecentActivityRow[]>(query, [
       groupId,
-      limit,
     ]);
 
     return rows;
@@ -169,6 +170,8 @@ export class DashboardModel {
     groupId: UUID,
     limit: number = 5
   ): Promise<Rows.PlagiarismAlertRow[]> {
+    const safeLimit = Math.max(1, Math.floor(limit));
+
     const query = `
       SELECT 
         pc.id as check_id,
@@ -184,12 +187,11 @@ export class DashboardModel {
       JOIN user_groups ug ON u.id = ug.user_id
       WHERE ug.group_id = ? AND pc.is_flagged = TRUE
       ORDER BY pc.created_at DESC
-      LIMIT ?
+      LIMIT ${safeLimit}
     `;
 
     const [rows] = await getPool().execute<Rows.PlagiarismAlertRow[]>(query, [
       groupId,
-      limit,
     ]);
 
     return rows;
