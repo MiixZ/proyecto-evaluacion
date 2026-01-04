@@ -257,11 +257,11 @@ export default function ExercisesList() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            {/* TODO: Implementar Edit Page */}
                             <DropdownMenuItem
                               onClick={() =>
-                                navigate(`/dashboard/edit/${ex.id}`)
+                                navigate(`/dashboard/edit-exercise/${ex.id}`)
                               }>
+                              {" "}
                               <Pencil className="mr-2 h-4 w-4" /> Editar
                             </DropdownMenuItem>
 

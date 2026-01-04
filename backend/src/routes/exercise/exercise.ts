@@ -38,5 +38,6 @@ router.put(
   validateRequest(createExerciseRequest),
   exerciseController.update
 );
+router.delete('/:id', exerciseController.delete);
 
 export default router;
