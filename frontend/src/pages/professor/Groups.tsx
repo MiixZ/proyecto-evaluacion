@@ -12,6 +12,9 @@ import {
   Pencil,
   Power,
   PowerOff,
+  ArrowUpDown, // Iconos para ordenación
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "react-router-dom";
@@ -80,6 +83,12 @@ export default function GroupsPage() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
+
+  // Estado para la ordenación
+  const [sorting, setSorting] = useState<{
+    column: keyof GroupStudentDTO | string;
+    direction: "ASC" | "DESC";
+  }>({ column: "name", direction: "ASC" });
 
   const [newStudent, setNewStudent] = useState({
     firstName: "",
@@ -215,12 +224,56 @@ export default function GroupsPage() {
     },
   });
 
-  const filteredStudents =
-    students?.filter(
+  // Lógica de filtrado y ordenación
+  const processedStudents = useMemo(() => {
+    if (!students) return [];
+
+    // 1. Filtrar
+    let result = students.filter(
       (s) =>
         s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         s.email.toLowerCase().includes(searchTerm.toLowerCase())
-    ) || [];
+    );
+
+    // 2. Ordenar
+    result = result.sort((a, b) => {
+      const valA = a[sorting.column as keyof GroupStudentDTO];
+      const valB = b[sorting.column as keyof GroupStudentDTO];
+
+      // Manejo simple de strings y números
+      if (typeof valA === "string" && typeof valB === "string") {
+        return sorting.direction === "ASC"
+          ? valA.localeCompare(valB)
+          : valB.localeCompare(valA);
+      }
+
+      if (typeof valA === "number" && typeof valB === "number") {
+        return sorting.direction === "ASC" ? valA - valB : valB - valA;
+      }
+
+      return 0;
+    });
+
+    return result;
+  }, [students, searchTerm, sorting]);
+
+  const handleSort = (column: string) => {
+    setSorting((prev) => ({
+      column,
+      direction:
+        prev.column === column && prev.direction === "DESC" ? "ASC" : "DESC",
+    }));
+  };
+
+  const SortIcon = ({ column }: { column: string }) => {
+    if (sorting.column !== column)
+      return <ArrowUpDown className="ml-2 h-4 w-4 text-muted-foreground/50" />;
+    return sorting.direction === "ASC" ? (
+      <ArrowUp className="ml-2 h-4 w-4 text-primary" />
+    ) : (
+      <ArrowDown className="ml-2 h-4 w-4 text-primary" />
+    );
+  };
 
   const handleAddSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -237,7 +290,7 @@ export default function GroupsPage() {
     updateStudentMutation.mutate({
       id: editingStudent.id,
       data: {
-        firstName: firstName, // Aproximación simple, idealmente el DTO debería traerlos separados
+        firstName: firstName,
         lastName: lastName,
         email: editingStudent.email,
       },
@@ -285,7 +338,7 @@ export default function GroupsPage() {
               <div className="w-full">
                 <CardTitle>Listado de Estudiantes</CardTitle>
                 <CardDescription>
-                  {filteredStudents.length} estudiantes matriculados
+                  {processedStudents.length} estudiantes matriculados
                 </CardDescription>
               </div>
 
@@ -414,16 +467,41 @@ export default function GroupsPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Estudiante</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Estado</TableHead>
-                    <TableHead className="text-right">Progreso</TableHead>
+                    {/* Cabeceras interactivas para ordenar */}
+                    <TableHead
+                      className="cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={() => handleSort("name")}>
+                      <div className="flex items-center">
+                        Estudiante <SortIcon column="name" />
+                      </div>
+                    </TableHead>
+                    <TableHead
+                      className="cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={() => handleSort("email")}>
+                      <div className="flex items-center">
+                        Email <SortIcon column="email" />
+                      </div>
+                    </TableHead>
+                    <TableHead
+                      className="cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={() => handleSort("status")}>
+                      <div className="flex items-center">
+                        Estado <SortIcon column="status" />
+                      </div>
+                    </TableHead>
+                    <TableHead
+                      className="text-right cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={() => handleSort("progress")}>
+                      <div className="flex items-center justify-end">
+                        Progreso <SortIcon column="progress" />
+                      </div>
+                    </TableHead>
                     <TableHead className="w-[50px]"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredStudents.length > 0 ? (
-                    filteredStudents.map((student) => (
+                  {processedStudents.length > 0 ? (
+                    processedStudents.map((student) => (
                       <TableRow key={student.id}>
                         <TableCell className="flex items-center gap-3">
                           <Avatar className="h-8 w-8">

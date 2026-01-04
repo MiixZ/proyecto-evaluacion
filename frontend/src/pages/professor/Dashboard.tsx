@@ -49,6 +49,7 @@ import { Progress } from "@/components/ui/feedback/progress";
 import { Alert, AlertDescription } from "@/components/ui/feedback/alert";
 import { Input } from "@/components/ui/forms/input";
 import { Button } from "@/components/ui/forms/button";
+import { ScrollArea } from "@/components/ui/layout/scroll-area"; //
 import { dashboardService } from "@/services/dashboard.service";
 
 export default function ProfessorDashboard() {
@@ -263,8 +264,9 @@ export default function ProfessorDashboard() {
               </div>
             </div>
           </CardHeader>
-          <CardContent>
-            <div className="max-h-[600px] overflow-auto">
+          <CardContent className="p-3 sm:p-6 sm:pt-0">
+            {" "}
+            <ScrollArea className="h-[800px] pr-4">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -334,7 +336,7 @@ export default function ProfessorDashboard() {
                   )}
                 </TableBody>
               </Table>
-            </div>
+            </ScrollArea>
           </CardContent>
         </Card>
 
