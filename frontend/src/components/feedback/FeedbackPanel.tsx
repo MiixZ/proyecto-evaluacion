@@ -58,7 +58,10 @@ export default function FeedbackPanel({
       feedbackService.create(newFeedback),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["feedback", submissionId] });
-      toast.success("Feedback añadido correctamente");
+
+      queryClient.invalidateQueries({ queryKey: ["submission", submissionId] });
+
+      toast.success("Feedback añadido y nota actualizada");
       setContent("");
       setScoreAdjustment("0");
     },
@@ -71,7 +74,10 @@ export default function FeedbackPanel({
     mutationFn: (id: string) => feedbackService.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["feedback", submissionId] });
-      toast.success("Feedback eliminado");
+
+      queryClient.invalidateQueries({ queryKey: ["submission", submissionId] });
+
+      toast.success("Feedback eliminado y nota recalculada");
     },
   });
 

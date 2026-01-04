@@ -32,7 +32,6 @@ interface SubmissionJoinRow extends RowDataPacket {
   tr_hint_text: string | null;
 }
 
-// Nueva interfaz para los detalles completos (join masivo)
 interface SubmissionDetailRow extends RowDataPacket {
   id: string;
   code: string;
@@ -91,13 +90,10 @@ export class SubmissionModel {
         s.id, s.code, s.language, s.status, s.verdict, s.score, s.created_at,
         u.id as student_id, CONCAT(u.first_name, ' ', u.last_name) as student_name, u.email as student_email, u.profile_image_url as student_avatar,
         e.id as exercise_id, e.title as exercise_title, e.difficulty as exercise_difficulty,
-
         str.id as tr_id, str.status as tr_status, str.actual_output as tr_actual, 
         str.execution_time_ms as tr_time, str.memory_used_mb as tr_memory,
         se.error_message as tr_error_msg,
-
         tc.input as tc_input, tc.expected_output as tc_expected
-
       FROM submissions s
       JOIN users u ON s.student_id = u.id
       JOIN exercises e ON s.exercise_id = e.id
@@ -124,20 +120,17 @@ export class SubmissionModel {
       createdAt: base.created_at,
       executionTimeMs: rows.reduce((acc, r) => acc + (r.tr_time || 0), 0),
       memoryUsedMb: Math.max(...rows.map((r) => r.tr_memory || 0)),
-
       student: {
         id: base.student_id,
         name: base.student_name,
         email: base.student_email,
         avatarUrl: base.student_avatar,
       },
-
       exercise: {
         id: base.exercise_id,
         title: base.exercise_title,
         difficulty: base.exercise_difficulty,
       },
-
       testResults: rows
         .filter((r) => r.tr_id)
         .map((r) => ({
@@ -151,6 +144,13 @@ export class SubmissionModel {
           errorMessage: r.tr_error_msg,
         })),
     };
+  }
+
+  async updateScore(id: string, score: number): Promise<void> {
+    await getPool().query('UPDATE submissions SET score = ? WHERE id = ?', [
+      score,
+      id,
+    ]);
   }
 
   async create(submission: SubmissionEntity): Promise<void> {
