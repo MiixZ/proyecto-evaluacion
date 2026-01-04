@@ -1,17 +1,50 @@
-export interface StudentDashboardProgress {
-  studentId: string;
-  studentName: string;
-  courseId: string;
+export interface GroupStatsDTO {
+  groupId: string;
+  groupName: string;
   academicYear: string;
   subjectName: string;
-  exerciseId: string;
+  studentCount: number;
+  exerciseCount: number;
+  avgScore: number;
+  completionPercentage: number;
+}
+
+export interface GroupStudentDTO {
+  id: string;
+  name: string;
+  email: string;
+  avatarUrl: string | null;
+  progress: number;
+  averageScore: number;
+  lastActive: string;
+  status: "active" | "inactive" | "risk";
+}
+
+export interface RecentActivityDTO {
+  id: string;
+  studentName: string;
+  action: string;
+  time: string;
+  status: "success" | "warning" | "error" | "info";
+}
+
+export interface PlagiarismAlertDTO {
+  id: string;
+  studentName: string;
   exerciseTitle: string;
-  difficulty: "beginner" | "intermediate" | "advanced";
-  deadline?: string;
-  attempts: number;
-  isCompleted: boolean;
-  bestScore: number;
-  lastAttempt?: string;
+  similarity: number;
+  type: string;
+  date: string;
+}
+
+export interface ProfessorDashboardResponse {
+  groups: GroupStatsDTO[];
+  activeGroup: {
+    info: GroupStatsDTO;
+    students: GroupStudentDTO[];
+    recentActivity: RecentActivityDTO[];
+    plagiarismAlerts: PlagiarismAlertDTO[];
+  } | null;
 }
 
 export interface StudentStats {
@@ -27,32 +60,12 @@ export interface StudentProgress {
   grade: number;
 }
 
-export interface ProfessorStats {
-  totalStudents: number;
-  activeExercises: number;
-  passRate: number;
-  pendingSubmissions: number;
-}
-
-export interface AdminStats {
-  totalStudents: number;
-  totalProfessors: number;
-  totalExercises: number;
-  totalSubmissions: number;
-}
-
 export interface DashboardSubmission {
   id: string;
   studentId: string;
   exerciseId: string;
   status: "pending" | "running" | "completed" | "failed";
-  verdict?:
-    | "accepted"
-    | "wrong_answer"
-    | "time_limit"
-    | "memory_limit"
-    | "compilation_error"
-    | "runtime_error";
+  verdict?: string;
   grade?: number;
   score?: number;
   createdAt: string;
@@ -67,33 +80,4 @@ export interface PaginatedResponse<T> {
   page: number;
   limit: number;
   totalPages: number;
-}
-
-export interface ProfessorDashboardResponse {
-  stats: {
-    totalStudents: number;
-    totalGroups: number;
-    activeExercises: number;
-    avgCompletion: number;
-    pendingEvaluation: number;
-    pendingFeedback: number;
-  };
-  workload: {
-    teacherId: string;
-    teacherName: string;
-    groupsAssigned: number;
-    subjectsCount: number;
-    pendingFeedback: number;
-    pendingEvaluation: number;
-  } | null;
-  groups: Array<{
-    groupId: string;
-    groupName: string;
-    academicYear: string;
-    subjectName: string;
-    studentCount: number;
-    exerciseCount: number;
-    avgScore: number;
-    completionPercentage: number;
-  }>;
 }

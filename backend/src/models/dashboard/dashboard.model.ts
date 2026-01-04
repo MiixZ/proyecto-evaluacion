@@ -99,6 +99,101 @@ export class DashboardModel {
 
     return rows;
   }
+
+  async getGroupDetails(groupId: UUID): Promise<Rows.GroupStatsRow | null> {
+    const [rows] = await getPool().execute<Rows.GroupStatsRow[]>(
+      'SELECT * FROM v_group_statistics WHERE group_id = ?',
+      [groupId]
+    );
+
+    return rows[0] || null;
+  }
+
+  async getStudentsByGroup(groupId: UUID): Promise<Rows.GroupStudentRow[]> {
+    const query = `
+      SELECT 
+        u.id as student_id,
+        u.first_name,
+        u.last_name,
+        u.email,
+        u.profile_image_url,
+        COUNT(DISTINCT CASE WHEN s.verdict = 'accepted' THEN s.exercise_id END) as exercises_completed,
+        COALESCE(AVG(s.score), 0) as avg_score,
+        MAX(s.created_at) as last_access,
+        'active' as status -- Simplificado, podría ser logica compleja
+      FROM users u
+      JOIN user_groups ug ON u.id = ug.user_id
+      LEFT JOIN submissions s ON u.id = s.student_id
+      WHERE ug.group_id = ? AND ug.role = 'student'
+      GROUP BY u.id
+      ORDER BY u.last_name ASC
+    `;
+
+    const [rows] = await getPool().execute<Rows.GroupStudentRow[]>(query, [
+      groupId,
+    ]);
+
+    return rows;
+  }
+
+  async getRecentActivityByGroup(
+    groupId: UUID,
+    limit: number = 5
+  ): Promise<Rows.RecentActivityRow[]> {
+    const query = `
+      SELECT 
+        s.id as submission_id,
+        CONCAT(u.first_name, ' ', u.last_name) as student_name,
+        e.title as exercise_title,
+        s.status,
+        s.verdict,
+        s.created_at
+      FROM submissions s
+      JOIN users u ON s.student_id = u.id
+      JOIN exercises e ON s.exercise_id = e.id
+      JOIN user_groups ug ON u.id = ug.user_id -- Estudiante pertenece al grupo
+      WHERE ug.group_id = ?
+      ORDER BY s.created_at DESC
+      LIMIT ?
+    `;
+
+    const [rows] = await getPool().execute<Rows.RecentActivityRow[]>(query, [
+      groupId,
+      limit,
+    ]);
+
+    return rows;
+  }
+
+  async getPlagiarismAlertsByGroup(
+    groupId: UUID,
+    limit: number = 5
+  ): Promise<Rows.PlagiarismAlertRow[]> {
+    const query = `
+      SELECT 
+        pc.id as check_id,
+        CONCAT(u.first_name, ' ', u.last_name) as student_name,
+        e.title as exercise_title,
+        pc.similarity_percent,
+        pc.plagiarism_type,
+        pc.created_at
+      FROM plagiarism_checks pc
+      JOIN submissions s ON pc.submission_id = s.id
+      JOIN users u ON s.student_id = u.id
+      JOIN exercises e ON s.exercise_id = e.id
+      JOIN user_groups ug ON u.id = ug.user_id
+      WHERE ug.group_id = ? AND pc.is_flagged = TRUE
+      ORDER BY pc.created_at DESC
+      LIMIT ?
+    `;
+
+    const [rows] = await getPool().execute<Rows.PlagiarismAlertRow[]>(query, [
+      groupId,
+      limit,
+    ]);
+
+    return rows;
+  }
 }
 
 export const dashboardModel = new DashboardModel();

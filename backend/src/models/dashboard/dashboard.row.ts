@@ -8,13 +8,13 @@ export interface StudentProgressRow extends RowDataPacket {
   academic_year: string;
   exercise_id: string;
   exercise_title: string;
-  difficulty: string;
-  deadline: Date | null;
   subject_name: string;
   attempts: number;
   is_completed: number;
-  best_score: number | null;
-  last_attempt: Date | null;
+  best_score: number;
+  last_attempt: Date;
+  difficulty: string;
+  deadline: Date;
 }
 
 export interface GroupStatsRow extends RowDataPacket {
@@ -59,4 +59,34 @@ export interface PlagiarismSummaryRow extends RowDataPacket {
   internal_plagiarism: number;
   external_plagiarism: number;
   ai_generated: number;
+}
+
+export interface GroupStudentRow extends RowDataPacket {
+  student_id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  profile_image_url: string | null;
+  exercises_completed: number;
+  avg_score: number;
+  last_access: Date;
+  status: string;
+}
+
+export interface RecentActivityRow extends RowDataPacket {
+  submission_id: string;
+  student_name: string;
+  exercise_title: string;
+  status: string;
+  verdict: string;
+  created_at: Date;
+}
+
+export interface PlagiarismAlertRow extends RowDataPacket {
+  check_id: string;
+  student_name: string;
+  exercise_title: string;
+  similarity_percent: number;
+  plagiarism_type: string;
+  created_at: Date;
 }

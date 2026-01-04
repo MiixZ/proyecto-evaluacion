@@ -32,42 +32,39 @@ export class DashboardController {
     }
 
     const teacherId = req.user!.id;
+    const requestedGroupId = req.query.groupId as UUID | undefined;
 
-    const [workload, groups] = await Promise.all([
-      dashboardModel.getTeacherWorkload(teacherId as UUID),
-      dashboardModel.getGroupStatistics(
-        req.user?.role === UserRole.ADMIN ? undefined : (teacherId as UUID)
-      ),
+    const allGroups = await dashboardModel.getGroupStatistics(
+      req.user?.role === UserRole.ADMIN ? undefined : (teacherId as UUID)
+    );
+
+    if (allGroups.length === 0) {
+      return ApiResponse.success(res, {
+        groups: [],
+        activeGroup: null,
+      });
+    }
+
+    const activeGroupId = requestedGroupId || (allGroups[0].group_id as UUID);
+    const activeGroupInfo =
+      allGroups.find((g) => g.group_id === activeGroupId) || allGroups[0];
+
+    const [students, recentActivity, plagiarismAlerts] = await Promise.all([
+      dashboardModel.getStudentsByGroup(activeGroupId),
+      dashboardModel.getRecentActivityByGroup(activeGroupId, 10),
+      dashboardModel.getPlagiarismAlertsByGroup(activeGroupId, 5),
     ]);
 
-    const totalStudents = groups.reduce(
-      (acc, curr) => acc + curr.student_count,
-      0
-    );
-    const totalActiveExercises = groups.reduce(
-      (acc, curr) => acc + curr.exercise_count,
-      0
-    );
-
-    const avgCompletion =
-      groups.length > 0
-        ? groups.reduce((acc, curr) => acc + curr.completion_percentage, 0) /
-          groups.length
-        : 0;
-
     return ApiResponse.success(res, {
-      stats: {
-        totalStudents,
-        totalGroups: groups.length,
-        activeExercises: totalActiveExercises,
-        avgCompletion: Math.round(avgCompletion * 100) / 100,
-        pendingEvaluation: workload?.pending_evaluation || 0,
-        pendingFeedback: workload?.pending_feedback || 0,
+      groups: allGroups.map(dashboardMapper.toGroupStatsDTO),
+      activeGroup: {
+        info: dashboardMapper.toGroupStatsDTO(activeGroupInfo),
+        students: students.map(dashboardMapper.toGroupStudentDTO),
+        recentActivity: recentActivity.map(dashboardMapper.toRecentActivityDTO),
+        plagiarismAlerts: plagiarismAlerts.map(
+          dashboardMapper.toPlagiarismAlertDTO
+        ),
       },
-      workload: workload
-        ? dashboardMapper.toTeacherWorkloadDTO(workload)
-        : null,
-      groups: groups.map(dashboardMapper.toGroupStatsDTO),
     });
   });
 

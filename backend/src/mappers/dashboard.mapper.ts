@@ -4,6 +4,9 @@ import {
   TeacherWorkloadRow,
   ExerciseMetricsRow,
   PlagiarismSummaryRow,
+  GroupStudentRow,
+  RecentActivityRow,
+  PlagiarismAlertRow,
 } from '@models/dashboard/dashboard.row';
 import {
   StudentProgressDTO,
@@ -11,6 +14,9 @@ import {
   TeacherWorkloadDTO,
   ExerciseMetricsDTO,
   PlagiarismSummaryDTO,
+  GroupStudentDTO,
+  RecentActivityDTO,
+  PlagiarismAlertDTO,
 } from '@models/dashboard/dashboard.entity';
 import { UUID } from '@CustomTypes/common.types';
 
@@ -83,6 +89,52 @@ export const dashboardMapper = {
         external: row.external_plagiarism,
         ai: row.ai_generated,
       },
+    };
+  },
+
+  toGroupStudentDTO(row: GroupStudentRow): GroupStudentDTO {
+    let status: 'active' | 'inactive' | 'risk' = 'active';
+    if (row.avg_score < 5 && row.exercises_completed > 0) status = 'risk';
+    else if (!row.last_access) status = 'inactive';
+
+    return {
+      id: row.student_id as UUID,
+      name: `${row.first_name} ${row.last_name}`,
+      email: row.email,
+      avatarUrl: row.profile_image_url,
+      progress: Math.min(100, (row.exercises_completed / 10) * 100), // Mock calculation relative to max 10 exercises
+      averageScore: Number(row.avg_score),
+      lastActive: row.last_access
+        ? new Date(row.last_access).toISOString()
+        : new Date().toISOString(),
+      status,
+    };
+  },
+
+  toRecentActivityDTO(row: RecentActivityRow): RecentActivityDTO {
+    let status: 'success' | 'warning' | 'error' | 'info' = 'info';
+    if (row.verdict === 'accepted') status = 'success';
+    else if (row.verdict === 'wrong_answer') status = 'warning';
+    else if (['compilation_error', 'runtime_error'].includes(row.verdict))
+      status = 'error';
+
+    return {
+      id: row.submission_id as UUID,
+      studentName: row.student_name,
+      action: `Entregó ${row.exercise_title}`,
+      time: new Date(row.created_at).toISOString(),
+      status,
+    };
+  },
+
+  toPlagiarismAlertDTO(row: PlagiarismAlertRow): PlagiarismAlertDTO {
+    return {
+      id: row.check_id as UUID,
+      studentName: row.student_name,
+      exerciseTitle: row.exercise_title,
+      similarity: Number(row.similarity_percent),
+      type: row.plagiarism_type,
+      date: new Date(row.created_at).toISOString(),
     };
   },
 };

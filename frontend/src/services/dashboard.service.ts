@@ -12,10 +12,17 @@ interface ApiResponse<T> {
 }
 
 export const dashboardService = {
-  getProfessorStats: async (): Promise<ProfessorDashboardResponse> => {
+  getProfessorStats: async (
+    groupId?: string
+  ): Promise<ProfessorDashboardResponse> => {
+    const url = groupId
+      ? `/v1/dashboard/teacher/overview?groupId=${groupId}`
+      : "/v1/dashboard/teacher/overview";
+
     const { data } = await api.get<ApiResponse<ProfessorDashboardResponse>>(
-      "/v1/dashboard/teacher/overview"
+      url
     );
+
     return data.data;
   },
 

@@ -1,18 +1,18 @@
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import {
   Users,
   BookOpen,
-  CheckCircle,
-  Clock,
+  AlertTriangle,
+  Activity,
   Loader2,
-  AlertCircle,
-  MessageSquare,
+  ChevronRight,
+  GraduationCap,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { es, enUS } from "date-fns/locale";
 
-import { StatCard } from "@/components/ui/data/stat-card";
 import {
   Card,
   CardContent,
@@ -28,80 +28,50 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/data/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/forms/select";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/components/ui/data/avatar";
 import { Badge } from "@/components/ui/data/badge";
-import { Alert, AlertDescription } from "@/components/ui/feedback/alert";
 import { Progress } from "@/components/ui/feedback/progress";
-import { useAuth } from "@/hooks/use-auth";
+import { Alert, AlertDescription } from "@/components/ui/feedback/alert";
 import { dashboardService } from "@/services/dashboard.service";
 
 export default function ProfessorDashboard() {
   const { t, i18n } = useTranslation();
-  const { user } = useAuth();
   const dateLocale = i18n.language === "en" ? enUS : es;
+  const [selectedGroupId, setSelectedGroupId] = useState<string | undefined>(
+    undefined
+  );
 
   const {
     data: dashboardData,
-    isLoading: statsLoading,
-    error: statsError,
+    isLoading,
+    error,
   } = useQuery({
-    queryKey: ["professorOverview"],
-    queryFn: dashboardService.getProfessorStats,
+    queryKey: ["professorOverview", selectedGroupId],
+    queryFn: () => dashboardService.getProfessorStats(selectedGroupId),
   });
 
-  const {
-    data: recentSubmissions,
-    isLoading: submissionsLoading,
-    error: submissionsError,
-  } = useQuery({
-    queryKey: ["recentSubmissions"],
-    queryFn: () => dashboardService.getRecentSubmissions(5),
-  });
-
-  const getStatusBadge = (verdict: string | undefined, status: string) => {
-    if (status !== "completed") {
-      return (
-        <Badge variant="outline" className="text-yellow-600 border-yellow-600">
-          {t("dashboard.recent_activity.status.pending")}
-        </Badge>
-      );
+  useEffect(() => {
+    if (
+      !selectedGroupId &&
+      dashboardData?.groups &&
+      dashboardData.groups.length > 0
+    ) {
+      setSelectedGroupId(dashboardData.groups[0].groupId);
     }
+  }, [dashboardData, selectedGroupId]);
 
-    switch (verdict) {
-      case "accepted":
-        return (
-          <Badge variant="default">
-            {t("dashboard.recent_activity.status.passed")}
-          </Badge>
-        );
-      case "wrong_answer":
-        return (
-          <Badge variant="destructive">
-            {t("dashboard.recent_activity.status.failed")}
-          </Badge>
-        );
-      case "compilation_error":
-        return (
-          <Badge variant="destructive">
-            {t("dashboard.compilation_error")}
-          </Badge>
-        );
-      default:
-        return <Badge variant="secondary">{verdict || status}</Badge>;
-    }
-  };
-
-  const formatTimeAgo = (dateString: string) => {
-    try {
-      return formatDistanceToNow(new Date(dateString), {
-        addSuffix: true,
-        locale: dateLocale,
-      });
-    } catch (e) {
-      return dateString;
-    }
-  };
-
-  if (statsLoading || submissionsLoading) {
+  if (isLoading && !dashboardData) {
     return (
       <div className="flex h-[50vh] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -109,7 +79,7 @@ export default function ProfessorDashboard() {
     );
   }
 
-  if (statsError || submissionsError) {
+  if (error) {
     return (
       <div className="p-6">
         <Alert variant="destructive">
@@ -121,225 +91,279 @@ export default function ProfessorDashboard() {
     );
   }
 
-  const { stats, groups, workload } = dashboardData || {
-    stats: {},
-    groups: [],
-    workload: {},
-  };
+  const activeGroup = dashboardData?.activeGroup;
+  const groups = dashboardData?.groups || [];
 
-  const statCards = [
-    {
-      title: t("dashboard.stats.total_students"),
-      value: stats?.totalStudents?.toString() || "0",
-      change: "",
-      trend: { value: 0, isPositive: true },
-      icon: Users,
-      description: t("dashboard.stats.active_students_desc"),
-    },
-    {
-      title: t("dashboard.stats.active_exercises"),
-      value: stats?.activeExercises?.toString() || "0",
-      change: "",
-      trend: { value: 0, isPositive: true },
-      icon: BookOpen,
-      description: t("dashboard.stats.active_exercises_desc"),
-    },
-    {
-      title: t("dashboard.stats.pass_rate"),
-      value: `${stats?.avgCompletion || 0}%`,
-      change: "",
-      trend: {
-        value: stats?.avgCompletion || 0,
-        isPositive: (stats?.avgCompletion || 0) > 50,
-      },
-      icon: CheckCircle,
-      description: t("dashboard.stats.pass_rate_desc"),
-    },
-    {
-      title: t("dashboard.stats.pending_submissions"),
-      value: (
-        (stats?.pendingEvaluation || 0) + (stats?.pendingFeedback || 0)
-      ).toString(),
-      change: "",
-      trend: {
-        value: (stats?.pendingEvaluation || 0) + (stats?.pendingFeedback || 0),
-        isPositive: (stats?.pendingEvaluation || 0) === 0,
-      },
-      icon: Clock,
-      description: t("dashboard.stats.pending_submissions_desc"),
-    },
-  ];
+  if (!activeGroup) {
+    return (
+      <div className="p-6 text-center text-muted-foreground">
+        No tienes grupos asignados. Contacta con el administrador.
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight">
-          {t("dashboard.welcome", { name: user?.firstName })}
-        </h1>
-        <p className="text-muted-foreground">
-          {t("dashboard.welcome_subtitle_professor")}
-        </p>
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      {/* HEADER: Título y Selector de Grupo */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex flex-col gap-1">
+          <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+            <GraduationCap className="h-6 w-6 text-primary" />
+            Panel del Profesor
+          </h1>
+          <p className="text-muted-foreground">
+            {activeGroup.info.groupName} - {activeGroup.info.subjectName} •{" "}
+            {activeGroup.info.studentCount} estudiantes
+          </p>
+        </div>
+
+        <div className="w-full md:w-[300px]">
+          <Select
+            value={selectedGroupId}
+            onValueChange={(value) => setSelectedGroupId(value)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Seleccionar grupo" />
+            </SelectTrigger>
+            <SelectContent>
+              {groups.map((g) => (
+                <SelectItem key={g.groupId} value={g.groupId}>
+                  {g.groupName} - {g.subjectName}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
+      {/* METRICAS RAPIDAS DEL GRUPO */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {statCards.map((stat, index) => {
-          const Icon = stat.icon;
-          return <StatCard key={index} {...stat} icon={<Icon />} />;
-        })}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Nota Media Grupo
+            </CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {activeGroup.info.avgScore.toFixed(1)}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              sobre 10 puntos posibles
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Progreso Curso
+            </CardTitle>
+            <BookOpen className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {activeGroup.info.completionPercentage}%
+            </div>
+            <Progress
+              value={activeGroup.info.completionPercentage}
+              className="mt-2 h-2"
+            />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Alertas de Plagio
+            </CardTitle>
+            <AlertTriangle className="h-4 w-4 text-orange-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {activeGroup.plagiarismAlerts.length}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Detectadas en el último mes
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Actividad Reciente
+            </CardTitle>
+            <Activity className="h-4 w-4 text-blue-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {activeGroup.recentActivity.length}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Entregas en las últimas 24h
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
-      <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-7">
-        {/* Tabla de Entregas Recientes */}
-        <Card className="col-span-1 lg:col-span-4 h-full">
+      <div className="grid gap-6 grid-cols-1 lg:grid-cols-7">
+        {/* PANEL CENTRAL: Lista de Estudiantes */}
+        <Card className="lg:col-span-4 h-fit">
           <CardHeader>
-            <CardTitle>{t("dashboard.recent_submissions")}</CardTitle>
+            <CardTitle>Estudiantes del Grupo</CardTitle>
             <CardDescription>
-              {t("dashboard.recent_submissions_desc")}
+              Progreso y estado de los alumnos matriculados
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {recentSubmissions && recentSubmissions.length > 0 ? (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t("dashboard.table.student")}</TableHead>
-                    <TableHead className="hidden sm:table-cell">
-                      {t("dashboard.table.exercise")}
-                    </TableHead>
-                    <TableHead>{t("dashboard.table.status")}</TableHead>
-                    <TableHead className="text-right">
-                      {t("dashboard.table.date")}
-                    </TableHead>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Estudiante</TableHead>
+                  <TableHead>Estado</TableHead>
+                  <TableHead>Progreso</TableHead>
+                  <TableHead className="text-right">Nota Media</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {activeGroup.students.map((student) => (
+                  <TableRow key={student.id}>
+                    <TableCell className="flex items-center gap-3">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={student.avatarUrl || ""} />
+                        <AvatarFallback>
+                          {student.name.substring(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex flex-col">
+                        <span className="font-medium">{student.name}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {student.email}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {student.status === "active" && (
+                        <Badge
+                          variant="default"
+                          className="bg-green-100 text-green-800 hover:bg-green-100">
+                          Activo
+                        </Badge>
+                      )}
+                      {student.status === "inactive" && (
+                        <Badge variant="secondary">Inactivo</Badge>
+                      )}
+                      {student.status === "risk" && (
+                        <Badge variant="destructive">Riesgo</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="w-[140px]">
+                      <div className="flex items-center gap-2">
+                        <Progress value={student.progress} className="h-2" />
+                        <span className="text-xs text-muted-foreground">
+                          {Math.round(student.progress)}%
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right font-medium">
+                      {student.averageScore.toFixed(1)}
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {recentSubmissions.map((submission) => (
-                    <TableRow key={submission.id}>
-                      <TableCell>
-                        <div className="font-medium">
-                          {submission.studentName || t("dashboard.unknown")}
-                        </div>
-                        <div className="text-xs text-muted-foreground sm:hidden">
-                          {submission.exerciseTitle}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {submission.groupName}
-                        </div>
-                      </TableCell>
-                      <TableCell className="hidden sm:table-cell">
-                        {submission.exerciseTitle || t("dashboard.untitled")}
-                      </TableCell>
-                      <TableCell>
-                        {getStatusBadge(submission.verdict, submission.status)}
-                      </TableCell>
-                      <TableCell className="text-right text-muted-foreground whitespace-nowrap">
-                        {formatTimeAgo(submission.createdAt)}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            ) : (
-              <div className="flex h-32 items-center justify-center text-muted-foreground">
-                {t("dashboard.no_submissions")}
-              </div>
-            )}
+                ))}
+              </TableBody>
+            </Table>
           </CardContent>
         </Card>
 
-        {/* Columna Derecha: Pendientes y Grupos */}
-        <div className="col-span-1 lg:col-span-3 space-y-4">
-          {/* Card: Tareas Pendientes */}
+        {/* PANEL DERECHO: Actividad y Alertas */}
+        <div className="lg:col-span-3 space-y-6">
+          {/* Actividad Reciente */}
           <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base font-medium flex items-center gap-2">
-                <AlertCircle className="h-4 w-4 text-orange-500" />
-                {t("dashboard.pending_tasks")}
-              </CardTitle>
+            <CardHeader>
+              <CardTitle>Actividad Reciente</CardTitle>
+              <CardDescription>Últimas entregas del grupo</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between border-b pb-2 last:border-0 last:pb-0">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-100 text-orange-600 dark:bg-orange-900/20">
-                    <Clock className="h-5 w-5" />
+            <CardContent>
+              <div className="space-y-4">
+                {activeGroup.recentActivity.map((activity) => (
+                  <div
+                    key={activity.id}
+                    className="flex items-start gap-4 border-b pb-4 last:border-0 last:pb-0">
+                    <div
+                      className={`mt-1 h-2 w-2 rounded-full ${
+                        activity.status === "success"
+                          ? "bg-green-500"
+                          : activity.status === "error"
+                          ? "bg-red-500"
+                          : "bg-blue-500"
+                      }`}
+                    />
+                    <div className="space-y-1 flex-1">
+                      <p className="text-sm font-medium leading-none">
+                        {activity.studentName}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {activity.action}
+                      </p>
+                      <p className="text-xs text-muted-foreground pt-1">
+                        Hace{" "}
+                        {formatDistanceToNow(new Date(activity.time), {
+                          locale: dateLocale,
+                        })}
+                      </p>
+                    </div>
                   </div>
-                  <div className="space-y-0.5">
-                    <p className="text-sm font-medium leading-none">
-                      {t("dashboard.exercises_to_correct")}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {t("dashboard.exercises_to_correct_desc")}
-                    </p>
-                  </div>
-                </div>
-                <div className="font-bold">
-                  {workload?.pendingEvaluation || 0}
-                </div>
+                ))}
+                {activeGroup.recentActivity.length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    Sin actividad reciente.
+                  </p>
+                )}
               </div>
-
-              <div className="flex items-center justify-between border-b pb-2 last:border-0 last:pb-0">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-100 text-blue-600 dark:bg-blue-900/20">
-                    <MessageSquare className="h-5 w-5" />
-                  </div>
-                  <div className="space-y-0.5">
-                    <p className="text-sm font-medium leading-none">
-                      {t("dashboard.pending_feedback")}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {t("dashboard.pending_feedback_desc")}
-                    </p>
-                  </div>
-                </div>
-                <div className="font-bold">
-                  {workload?.pendingFeedback || 0}
-                </div>
-              </div>
-
-              {!workload?.pendingEvaluation && !workload?.pendingFeedback && (
-                <p className="text-sm text-muted-foreground text-center py-2">
-                  {t("dashboard.all_caught_up")}
-                </p>
-              )}
             </CardContent>
           </Card>
 
-          {/* Card: Rendimiento por Grupos */}
-          <Card>
+          {/* Alertas de Plagio */}
+          <Card className="border-l-4 border-l-orange-500">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base font-medium">
-                {t("dashboard.performance_by_groups")}
+              <CardTitle className="flex items-center gap-2 text-orange-700">
+                <AlertTriangle className="h-5 w-5" />
+                Alertas de Plagio
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              {groups && groups.length > 0 ? (
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                groups.map((group: any) => (
-                  <div key={group.groupId} className="space-y-1">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="font-medium">{group.groupName}</span>
-                      <span className="text-muted-foreground">
-                        {group.avgScore.toFixed(1)} / 10
-                      </span>
+            <CardContent>
+              <div className="space-y-4">
+                {activeGroup.plagiarismAlerts.map((alert) => (
+                  <div
+                    key={alert.id}
+                    className="flex items-center justify-between rounded-lg bg-orange-50 p-3">
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium text-orange-900">
+                        {alert.studentName}
+                      </p>
+                      <p className="text-xs text-orange-700">
+                        {alert.exerciseTitle}
+                      </p>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Progress
-                        value={group.completionPercentage}
-                        className="h-2"
-                      />
-                      <span className="text-xs w-[3rem] text-right text-muted-foreground">
-                        {Math.round(group.completionPercentage)}%
-                      </span>
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {group.subjectName} • {group.studentCount}{" "}
-                      {t("dashboard.students")}
+                    <div className="text-right">
+                      <Badge
+                        variant="outline"
+                        className="bg-white text-orange-700 border-orange-200">
+                        {alert.similarity}% Similitud
+                      </Badge>
                     </div>
                   </div>
-                ))
-              ) : (
-                <div className="text-sm text-muted-foreground text-center py-4">
-                  {t("dashboard.no_assigned_groups")}
+                ))}
+                {activeGroup.plagiarismAlerts.length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-2">
+                    No se han detectado plagios recientes.
+                  </p>
+                )}
+              </div>
+              {activeGroup.plagiarismAlerts.length > 0 && (
+                <div className="mt-4 flex justify-end">
+                  <button className="text-xs text-orange-700 font-medium flex items-center hover:underline">
+                    Ver todos los casos{" "}
+                    <ChevronRight className="h-3 w-3 ml-1" />
+                  </button>
                 </div>
               )}
             </CardContent>
