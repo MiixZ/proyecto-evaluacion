@@ -13,6 +13,7 @@ import {
   Loader2,
   FileCode,
   Filter,
+  Trash2,
 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -73,6 +74,21 @@ export default function ExercisesList() {
       toast({
         title: "Error",
         description: "No se pudo cambiar el estado.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => exerciseService.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["my-exercises"] });
+      toast({ title: "Ejercicio eliminado" });
+    },
+    onError: (err: any) => {
+      toast({
+        title: "No se pudo eliminar",
+        description: err.response?.data?.message || "Error desconocido",
         variant: "destructive",
       });
     },
@@ -274,6 +290,22 @@ export default function ExercisesList() {
                                   Publicar
                                 </>
                               )}
+                            </DropdownMenuItem>
+
+                            <DropdownMenuSeparator />
+
+                            <DropdownMenuItem
+                              className="text-destructive focus:text-destructive"
+                              onClick={() => {
+                                if (
+                                  confirm(
+                                    "¿Estás seguro? Esta acción no se puede deshacer."
+                                  )
+                                ) {
+                                  deleteMutation.mutate(ex.id);
+                                }
+                              }}>
+                              <Trash2 className="mr-2 h-4 w-4" /> Eliminar
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
