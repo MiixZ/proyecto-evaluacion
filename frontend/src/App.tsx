@@ -63,7 +63,7 @@ const App = () => (
               />
 
               <Route
-                path="compare/:exerciseId"
+                path="/dashboard/compare/:exerciseId"
                 element={<SubmissionComparison />}
               />
 

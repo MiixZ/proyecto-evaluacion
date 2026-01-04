@@ -1,3 +1,6 @@
+import { UUID } from "crypto";
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export interface GroupStatsDTO {
   courseId: string;
   groupId: string;
@@ -22,6 +25,14 @@ export interface GroupStudentDTO {
 }
 
 export interface StudentDashboardProgress {
+  difficulty: string;
+  exerciseId: UUID;
+  courseId: string;
+  deadline: any;
+  isCompleted: any;
+  attempts: number;
+  subjectName: any;
+  exerciseTitle: any;
   stats: StudentStats;
   progressBySubject: StudentProgress[];
   recentSubmissions: DashboardSubmission[];

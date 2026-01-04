@@ -44,7 +44,7 @@ export const SubmissionHistory = ({
   const handleCompare = () => {
     if (selectedIds.length === 2) {
       const [id1, id2] = selectedIds;
-      navigate(`/student/compare/${exerciseId}?source=${id2}&target=${id1}`);
+      navigate(`/dashboard/compare/${exerciseId}?source=${id2}&target=${id1}`);
     }
   };
 

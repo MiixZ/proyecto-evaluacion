@@ -321,6 +321,7 @@ export default function ExerciseView() {
                   <SubmissionHistory
                     history={history}
                     onSelectSubmission={handleSelectSubmission}
+                    exerciseId={id}
                   />
                 </CardContent>
               </Card>
