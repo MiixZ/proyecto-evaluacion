@@ -67,7 +67,7 @@ export class PlagiarismService {
     );
     const similarityPercent = Math.round(similarityScore * 100);
 
-    const SIMILARITY_THRESHOLD = 80;
+    const SIMILARITY_THRESHOLD = 50;
     const isFlagged = similarityPercent >= SIMILARITY_THRESHOLD;
 
     const check = await this.createCheck({
