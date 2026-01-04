@@ -56,7 +56,7 @@ export class UserModel {
     ]);
 
     return {
-      id: id as any,
+      id: id as UUID,
       authId: passwordHash || `auth_${id}`,
       email: input.email,
       firstName: input.firstName,
@@ -109,6 +109,19 @@ export class UserModel {
 
     if (rows.length === 0)
       throw new NotFoundError(`Usuario con email: ${email}`);
+
+    return userMapper.toEntity(rows[0]);
+  }
+
+  async findByEmail(email: string): Promise<UserEntity | null> {
+    const [rows] = await getPool().execute<UserRow[]>(
+      'SELECT * FROM users WHERE email = ? AND deleted_at IS NULL',
+      [email]
+    );
+
+    if (rows.length === 0) {
+      return null;
+    }
 
     return userMapper.toEntity(rows[0]);
   }

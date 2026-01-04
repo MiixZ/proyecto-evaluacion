@@ -101,7 +101,7 @@ export class UserService {
     firstName: string,
     lastName: string
   ): Promise<UserDTO> {
-    const existingUser = await userModel.getByEmail(email);
+    const existingUser = await userModel.findByEmail(email);
 
     if (existingUser) {
       return userMapper.toDTO(existingUser);
