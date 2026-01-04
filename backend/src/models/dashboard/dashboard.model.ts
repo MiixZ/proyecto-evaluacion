@@ -3,24 +3,57 @@ import { UUID } from '@CustomTypes/common.types';
 import * as Rows from './dashboard.row';
 
 export class DashboardModel {
-  // ... (métodos anteriores sin cambios: getStudentProgress, getGroupStatistics, getTeacherWorkload, getExerciseMetrics, getPlagiarismSummary, getGroupDetails) ...
   async getStudentProgress(
     studentId?: UUID,
     courseId?: UUID
   ): Promise<Rows.StudentProgressRow[]> {
-    let query = 'SELECT * FROM v_student_progress WHERE 1=1';
-    const params: any[] = [];
+    let query = `
+      SELECT 
+        u.id AS student_id,
+        u.first_name,
+        u.last_name,
+        c.id AS course_id,
+        c.academic_year,
+        e.id AS exercise_id,
+        e.title AS exercise_title,
+        s.name AS subject_name,
+        COALESCE(sub_stats.attempts, 0) as attempts,
+        COALESCE(sub_stats.is_completed, 0) as is_completed,
+        COALESCE(sub_stats.best_score, 0) as best_score,
+        sub_stats.last_attempt,
+        e.difficulty,
+        e.deadline
+      FROM users u
+      JOIN user_groups ug ON u.id = ug.user_id
+      JOIN \`groups\` g ON ug.group_id = g.id
+      JOIN courses c ON g.course_id = c.id
+      JOIN subjects s ON c.subject_id = s.id
+      JOIN syllabi syl ON c.id = syl.course_id
+      JOIN exercises e ON syl.id = e.syllabus_id
+      LEFT JOIN (
+          SELECT 
+              exercise_id, 
+              student_id,
+              COUNT(id) as attempts,
+              MAX(CASE WHEN verdict = 'accepted' THEN 1 ELSE 0 END) as is_completed,
+              MAX(score) as best_score,
+              MAX(created_at) as last_attempt
+          FROM submissions
+          GROUP BY exercise_id, student_id
+      ) sub_stats ON e.id = sub_stats.exercise_id AND u.id = sub_stats.student_id
+      
+      WHERE u.id = ? 
+      AND e.is_published = TRUE
+    `;
 
-    if (studentId) {
-      query += ' AND student_id = ?';
-      params.push(studentId);
-    }
+    const params: any[] = [studentId];
+
     if (courseId) {
-      query += ' AND course_id = ?';
+      query += ' AND c.id = ?';
       params.push(courseId);
     }
 
-    query += ' ORDER BY last_attempt DESC';
+    query += ' ORDER BY sub_stats.last_attempt DESC, e.deadline ASC';
 
     const [rows] = await getPool().execute<Rows.StudentProgressRow[]>(
       query,

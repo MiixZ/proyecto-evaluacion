@@ -12,9 +12,9 @@ export interface StudentProgressRow extends RowDataPacket {
   attempts: number;
   is_completed: number;
   best_score: number;
-  last_attempt: Date;
+  last_attempt: Date | null;
   difficulty: string;
-  deadline: Date;
+  deadline: Date | null;
 }
 
 export interface GroupStatsRow extends RowDataPacket {
