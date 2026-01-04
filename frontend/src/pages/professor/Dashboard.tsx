@@ -135,7 +135,14 @@ export default function ProfessorDashboard() {
         <div className="flex flex-col sm:flex-row gap-3">
           {/* Botones de Acción */}
           <div className="flex gap-2">
-            <Button variant="outline" className="flex-1 sm:flex-none">
+            <Button
+              variant="outline"
+              className="flex-1 sm:flex-none"
+              onClick={() =>
+                navigate("/dashboard/groups", {
+                  state: { openAddStudent: true },
+                })
+              }>
               <UserPlus className="mr-2 h-4 w-4" />
               Agregar estudiante
             </Button>

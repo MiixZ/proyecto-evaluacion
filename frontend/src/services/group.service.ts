@@ -7,6 +7,12 @@ interface AddStudentData {
   email: string;
 }
 
+interface UpdateStudentData {
+  firstName: string;
+  lastName: string;
+  email: string;
+}
+
 export const groupService = {
   getGroupStudents: async (groupId: string): Promise<GroupStudentDTO[]> => {
     const { data } = await api.get(`/v1/groups/${groupId}/students`);
@@ -40,6 +46,26 @@ export const groupService = {
   removeStudent: async (groupId: string, studentId: string) => {
     const { data } = await api.delete(
       `/v1/groups/${groupId}/students/${studentId}`
+    );
+
+    return data;
+  },
+
+  updateStudent: async (
+    groupId: string,
+    studentId: string,
+    student: UpdateStudentData
+  ) => {
+    const { data } = await api.put(
+      `/v1/groups/${groupId}/students/${studentId}`,
+      student
+    );
+    return data;
+  },
+
+  toggleStudentStatus: async (groupId: string, studentId: string) => {
+    const { data } = await api.patch(
+      `/v1/groups/${groupId}/students/${studentId}/status`
     );
 
     return data;

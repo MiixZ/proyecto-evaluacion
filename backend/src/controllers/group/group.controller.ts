@@ -5,12 +5,13 @@ import { ApiResponse } from '@utils/response.handler';
 import { groupService } from '@services/group/group.service';
 import { groupMapper } from '@mappers/group.mapper';
 import { AppError } from '@utils/errors';
-import { UserRole, UUID } from '@CustomTypes/common.types';
+import { UserRole, UserStatus, UUID } from '@CustomTypes/common.types';
 import { groupModel } from '@models/group/group.model';
 import { dashboardModel } from '@models/dashboard/dashboard.model';
 import { dashboardMapper } from '@mappers/dashboard.mapper';
 import { userService } from '@services/user/user.service';
 import { parseStudentCsv } from '@utils/csv.parser';
+import { userModel } from '@models/user/user.model';
 
 export class GroupController {
   create = catchAsync(async (req: AuthRequest, res: Response) => {
@@ -205,6 +206,63 @@ export class GroupController {
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
 
     res.status(200).send(csvData);
+  });
+
+  updateStudent = catchAsync(async (req: AuthRequest, res: Response) => {
+    const { groupId, studentId } = req.params;
+    const { firstName, lastName, email } = req.body;
+
+    if (req.user?.role === UserRole.TEACHER) {
+      const isOwner = await groupModel.isTeacherOfGroup(
+        req.user.id,
+        groupId as UUID
+      );
+
+      if (!isOwner) throw new AppError('FORBIDDEN', 403, 'No tienes permiso');
+    }
+
+    try {
+      await userModel.update(studentId as UUID, { firstName, lastName, email });
+    } catch (error: any) {
+      if (error.code === 'ER_DUP_ENTRY') {
+        throw new AppError(
+          'VALIDATION_ERROR',
+          400,
+          'El email ya está en uso por otro usuario'
+        );
+      }
+      throw error;
+    }
+
+    return ApiResponse.success(res, {
+      message: 'Datos del estudiante actualizados',
+    });
+  });
+
+  toggleStudentStatus = catchAsync(async (req: AuthRequest, res: Response) => {
+    const { groupId, studentId } = req.params;
+
+    if (req.user?.role === UserRole.TEACHER) {
+      const isOwner = await groupModel.isTeacherOfGroup(
+        req.user.id,
+        groupId as UUID
+      );
+      if (!isOwner) throw new AppError('FORBIDDEN', 403, 'No tienes permiso');
+    }
+
+    const student = await userModel.getById(studentId as UUID);
+    if (!student)
+      throw new AppError('NOT_FOUND', 404, 'Estudiante no encontrado');
+
+    const newStatus =
+      student.status === UserStatus.ACTIVE
+        ? UserStatus.INACTIVE
+        : UserStatus.ACTIVE;
+    await userModel.update(studentId as UUID, { status: newStatus });
+
+    return ApiResponse.success(res, {
+      message: `Estudiante ${newStatus === UserStatus.ACTIVE ? 'activado' : 'desactivado'}`,
+    });
   });
 }
 

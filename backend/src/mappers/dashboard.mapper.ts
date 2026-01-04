@@ -21,6 +21,7 @@ import {
 import { UUID } from '@CustomTypes/common.types';
 
 export const dashboardMapper = {
+  // ... (métodos existentes: toStudentProgressDTO, toGroupStatsDTO, toTeacherWorkloadDTO, toExerciseMetricsDTO, toPlagiarismSummaryDTO) ...
   toStudentProgressDTO(row: StudentProgressRow): StudentProgressDTO {
     return {
       studentId: row.student_id as UUID,
@@ -94,15 +95,19 @@ export const dashboardMapper = {
 
   toGroupStudentDTO(row: GroupStudentRow): GroupStudentDTO {
     let status: 'active' | 'inactive' | 'risk' = 'active';
-    if (row.avg_score < 5 && row.exercises_completed > 0) status = 'risk';
-    else if (!row.last_access) status = 'inactive';
+
+    if (row.status === 'inactive' || row.status === 'suspended') {
+      status = 'inactive';
+    } else if (row.avg_score < 5 && row.exercises_completed > 0) {
+      status = 'risk';
+    }
 
     return {
       id: row.student_id as UUID,
       name: `${row.first_name} ${row.last_name}`,
       email: row.email,
       avatarUrl: row.profile_image_url,
-      progress: Math.min(100, (row.exercises_completed / 10) * 100), // Mock calculation relative to max 10 exercises
+      progress: Math.min(100, (row.exercises_completed / 10) * 100),
       averageScore: Number(row.avg_score),
       lastActive: row.last_access
         ? new Date(row.last_access).toISOString()

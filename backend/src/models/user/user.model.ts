@@ -135,45 +135,33 @@ export class UserModel {
     return rows[0].count > 0;
   }
 
-  async update(
-    id: string,
-    data: Partial<UserEntity>
-  ): Promise<UserEntity | null> {
+  async update(id: UUID, data: Partial<UserEntity>): Promise<void> {
     const fields: string[] = [];
     const values: any[] = [];
 
-    if (data.firstName !== undefined) {
+    if (data.firstName) {
       fields.push('first_name = ?');
       values.push(data.firstName);
     }
-    if (data.lastName !== undefined) {
+    if (data.lastName) {
       fields.push('last_name = ?');
       values.push(data.lastName);
     }
-    if (data.phone !== undefined) {
-      fields.push('phone = ?');
-      values.push(data.phone);
+    if (data.email) {
+      fields.push('email = ?');
+      values.push(data.email);
     }
-    if (data.bio !== undefined) {
-      fields.push('bio = ?');
-      values.push(data.bio);
-    }
-    if (data.preferredLanguage !== undefined) {
-      fields.push('preferred_language = ?');
-      values.push(data.preferredLanguage);
+    if (data.status) {
+      fields.push('status = ?');
+      values.push(data.status);
     }
 
-    if (fields.length === 0) return this.getById(id as UUID);
-
-    fields.push('updated_at = NOW()');
+    if (fields.length === 0) return;
 
     values.push(id);
+    const query = `UPDATE users SET ${fields.join(', ')}, updated_at = NOW() WHERE id = ?`;
 
-    const query = `UPDATE users SET ${fields.join(', ')} WHERE id = ?`;
-
-    await this.getPool().query(query, values);
-
-    return this.getById(id as UUID);
+    await getPool().execute(query, values);
   }
 
   async softDelete(id: UUID): Promise<void> {

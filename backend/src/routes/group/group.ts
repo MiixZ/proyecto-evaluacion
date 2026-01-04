@@ -36,6 +36,12 @@ router.post(
 );
 router.post('/:groupId/students', groupController.addStudent);
 
+router.put('/:groupId/students/:studentId', groupController.updateStudent);
+router.patch(
+  '/:groupId/students/:studentId/status',
+  groupController.toggleStudentStatus
+);
+
 router.delete('/:groupId/students/:studentId', groupController.removeStudent);
 
 export default router;

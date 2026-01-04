@@ -3,6 +3,7 @@ import { UUID } from '@CustomTypes/common.types';
 import * as Rows from './dashboard.row';
 
 export class DashboardModel {
+  // ... (métodos anteriores sin cambios: getStudentProgress, getGroupStatistics, getTeacherWorkload, getExerciseMetrics, getPlagiarismSummary, getGroupDetails) ...
   async getStudentProgress(
     studentId?: UUID,
     courseId?: UUID
@@ -120,7 +121,7 @@ export class DashboardModel {
         COUNT(DISTINCT CASE WHEN s.verdict = 'accepted' THEN s.exercise_id END) as exercises_completed,
         COALESCE(AVG(s.score), 0) as avg_score,
         MAX(s.created_at) as last_access,
-        'active' as status
+        u.status
       FROM users u
       JOIN user_groups ug ON u.id = ug.user_id
       LEFT JOIN submissions s ON u.id = s.student_id
@@ -128,9 +129,11 @@ export class DashboardModel {
       GROUP BY u.id
       ORDER BY u.last_name ASC
     `;
+
     const [rows] = await getPool().execute<Rows.GroupStudentRow[]>(query, [
       groupId,
     ]);
+
     return rows;
   }
 
