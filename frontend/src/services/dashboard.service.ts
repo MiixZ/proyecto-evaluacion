@@ -1,6 +1,6 @@
 import api from "@/lib/api";
 import {
-  ProfessorStats,
+  ProfessorDashboardResponse,
   DashboardSubmission,
   PaginatedResponse,
 } from "@/types/dashboard.types";
@@ -12,9 +12,9 @@ interface ApiResponse<T> {
 }
 
 export const dashboardService = {
-  getProfessorStats: async (): Promise<ProfessorStats> => {
-    const { data } = await api.get<ApiResponse<ProfessorStats>>(
-      "/v1/dashboard/professor/stats"
+  getProfessorStats: async (): Promise<ProfessorDashboardResponse> => {
+    const { data } = await api.get<ApiResponse<ProfessorDashboardResponse>>(
+      "/v1/dashboard/teacher/overview"
     );
     return data.data;
   },

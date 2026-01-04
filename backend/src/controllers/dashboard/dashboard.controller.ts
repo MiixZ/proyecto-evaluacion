@@ -24,7 +24,10 @@ export class DashboardController {
   });
 
   getTeacherOverview = catchAsync(async (req: AuthRequest, res: Response) => {
-    if (req.user?.role === UserRole.STUDENT) {
+    if (
+      req.user?.role !== UserRole.TEACHER &&
+      req.user?.role !== UserRole.ADMIN
+    ) {
       throw new AppError('FORBIDDEN', 403, 'Acceso denegado');
     }
 
@@ -37,7 +40,30 @@ export class DashboardController {
       ),
     ]);
 
+    const totalStudents = groups.reduce(
+      (acc, curr) => acc + curr.student_count,
+      0
+    );
+    const totalActiveExercises = groups.reduce(
+      (acc, curr) => acc + curr.exercise_count,
+      0
+    );
+
+    const avgCompletion =
+      groups.length > 0
+        ? groups.reduce((acc, curr) => acc + curr.completion_percentage, 0) /
+          groups.length
+        : 0;
+
     return ApiResponse.success(res, {
+      stats: {
+        totalStudents,
+        totalGroups: groups.length,
+        activeExercises: totalActiveExercises,
+        avgCompletion: Math.round(avgCompletion * 100) / 100,
+        pendingEvaluation: workload?.pending_evaluation || 0,
+        pendingFeedback: workload?.pending_feedback || 0,
+      },
       workload: workload
         ? dashboardMapper.toTeacherWorkloadDTO(workload)
         : null,
@@ -46,7 +72,10 @@ export class DashboardController {
   });
 
   getExerciseAnalytics = catchAsync(async (req: AuthRequest, res: Response) => {
-    if (req.user?.role === UserRole.STUDENT) {
+    if (
+      req.user?.role !== UserRole.TEACHER &&
+      req.user?.role !== UserRole.ADMIN
+    ) {
       throw new AppError('FORBIDDEN', 403, 'Acceso denegado');
     }
 
@@ -61,7 +90,10 @@ export class DashboardController {
 
   getPlagiarismAnalytics = catchAsync(
     async (req: AuthRequest, res: Response) => {
-      if (req.user?.role === UserRole.STUDENT) {
+      if (
+        req.user?.role !== UserRole.TEACHER &&
+        req.user?.role !== UserRole.ADMIN
+      ) {
         throw new AppError('FORBIDDEN', 403, 'Acceso denegado');
       }
 
