@@ -1,5 +1,5 @@
 import api from "@/lib/api";
-import { StudentProgress } from "@/types/dashboard.types";
+import { StudentDashboardProgress } from "@/types/dashboard.types";
 import { StudentSubmission } from "@/types/exercise.types";
 import { UpdateProfilePayload, UserProfile } from "@/types/user.type";
 
@@ -10,8 +10,8 @@ interface ApiResponse<T> {
 }
 
 export const studentService = {
-  getProgress: async (): Promise<StudentProgress[]> => {
-    const { data } = await api.get<ApiResponse<StudentProgress[]>>(
+  getProgress: async (): Promise<StudentDashboardProgress[]> => {
+    const { data } = await api.get<ApiResponse<StudentDashboardProgress[]>>(
       "v1/dashboard/student/progress"
     );
 
