@@ -65,6 +65,14 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/overlay/dropdown-menu";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/data/pagination"; //
 import { Label } from "@/components/ui/forms/label";
 import { toast } from "@/hooks/use-toast";
 
@@ -85,6 +93,9 @@ export default function GroupsPage() {
   });
 
   const [searchTerm, setSearchTerm] = useState("");
+
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
 
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
@@ -115,10 +126,10 @@ export default function GroupsPage() {
     [dashboardData?.groups]
   );
 
-  // CAMBIO 5: Persistir cambios de selección
   useEffect(() => {
     if (selectedGroupId) {
       localStorage.setItem("professorLastGroupId", selectedGroupId);
+      setPage(1);
     }
   }, [selectedGroupId]);
 
@@ -137,6 +148,10 @@ export default function GroupsPage() {
       );
     }
   }, [location]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [searchTerm]);
 
   const { data: students, isLoading } = useQuery({
     queryKey: ["groupStudents", selectedGroupId],
@@ -262,6 +277,15 @@ export default function GroupsPage() {
     return result;
   }, [students, searchTerm, sorting]);
 
+  const paginatedStudents = useMemo(() => {
+    const start = (page - 1) * limit;
+    const end = start + limit;
+
+    return processedStudents.slice(start, end);
+  }, [processedStudents, page, limit]);
+
+  const totalPages = Math.ceil(processedStudents.length / limit);
+
   const handleSort = (column: string) => {
     setSorting((prev) => ({
       column,
@@ -337,15 +361,33 @@ export default function GroupsPage() {
       <div className="grid gap-6">
         <Card>
           <CardHeader>
-            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-              <div className="w-full">
+            <div className="flex flex-col xl:flex-row justify-between xl:items-center gap-4">
+              <div className="flex flex-col gap-1">
                 <CardTitle>Listado de Estudiantes</CardTitle>
                 <CardDescription>
-                  {processedStudents.length} estudiantes matriculados
+                  Mostrando {processedStudents.length} estudiantes matriculados
                 </CardDescription>
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+              <div className="flex flex-col sm:flex-row gap-2 w-full xl:w-auto items-start sm:items-center">
+                {/* Selector de límite por página */}
+                <Select
+                  value={limit.toString()}
+                  onValueChange={(val) => {
+                    setLimit(Number(val));
+                    setPage(1);
+                  }}>
+                  <SelectTrigger className="w-[130px]">
+                    <SelectValue placeholder="Filas" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="5">5 por pág.</SelectItem>
+                    <SelectItem value="10">10 por pág.</SelectItem>
+                    <SelectItem value="20">20 por pág.</SelectItem>
+                    <SelectItem value="50">50 por pág.</SelectItem>
+                  </SelectContent>
+                </Select>
+
                 <div className="relative w-full sm:w-64">
                   <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -356,107 +398,109 @@ export default function GroupsPage() {
                   />
                 </div>
 
-                <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-                  <DialogTrigger asChild>
-                    <Button>
-                      <UserPlus className="mr-2 h-4 w-4" /> Añadir
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Añadir Estudiante</DialogTitle>
-                      <DialogDescription>
-                        Matricula a un estudiante manualmente.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <form onSubmit={handleAddSubmit} className="space-y-4">
-                      <div className="space-y-2">
-                        <Label>Nombre</Label>
+                <div className="flex gap-2 w-full sm:w-auto">
+                  <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+                    <DialogTrigger asChild>
+                      <Button className="flex-1 sm:flex-none">
+                        <UserPlus className="mr-2 h-4 w-4" /> Añadir
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Añadir Estudiante</DialogTitle>
+                        <DialogDescription>
+                          Matricula a un estudiante manualmente.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <form onSubmit={handleAddSubmit} className="space-y-4">
+                        <div className="space-y-2">
+                          <Label>Nombre</Label>
+                          <Input
+                            required
+                            value={newStudent.firstName}
+                            onChange={(e) =>
+                              setNewStudent({
+                                ...newStudent,
+                                firstName: e.target.value,
+                              })
+                            }
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Apellidos</Label>
+                          <Input
+                            required
+                            value={newStudent.lastName}
+                            onChange={(e) =>
+                              setNewStudent({
+                                ...newStudent,
+                                lastName: e.target.value,
+                              })
+                            }
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Email</Label>
+                          <Input
+                            required
+                            type="email"
+                            value={newStudent.email}
+                            onChange={(e) =>
+                              setNewStudent({
+                                ...newStudent,
+                                email: e.target.value,
+                              })
+                            }
+                          />
+                        </div>
+                        <DialogFooter>
+                          <Button
+                            type="submit"
+                            disabled={addStudentMutation.isPending}>
+                            {addStudentMutation.isPending && (
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            )}{" "}
+                            Añadir
+                          </Button>
+                        </DialogFooter>
+                      </form>
+                    </DialogContent>
+                  </Dialog>
+
+                  <Dialog open={isImportOpen} onOpenChange={setIsImportOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" className="flex-1 sm:flex-none">
+                        <Upload className="mr-2 h-4 w-4" /> CSV
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Importación Masiva</DialogTitle>
+                        <DialogDescription>
+                          Formato: email, firstName, lastName
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="grid w-full max-w-sm items-center gap-1.5 py-4">
                         <Input
-                          required
-                          value={newStudent.firstName}
+                          type="file"
+                          accept=".csv"
                           onChange={(e) =>
-                            setNewStudent({
-                              ...newStudent,
-                              firstName: e.target.value,
-                            })
-                          }
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Apellidos</Label>
-                        <Input
-                          required
-                          value={newStudent.lastName}
-                          onChange={(e) =>
-                            setNewStudent({
-                              ...newStudent,
-                              lastName: e.target.value,
-                            })
-                          }
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Email</Label>
-                        <Input
-                          required
-                          type="email"
-                          value={newStudent.email}
-                          onChange={(e) =>
-                            setNewStudent({
-                              ...newStudent,
-                              email: e.target.value,
-                            })
+                            setCsvFile(e.target.files?.[0] || null)
                           }
                         />
                       </div>
                       <DialogFooter>
                         <Button
-                          type="submit"
-                          disabled={addStudentMutation.isPending}>
-                          {addStudentMutation.isPending && (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          )}{" "}
-                          Añadir
+                          onClick={() =>
+                            csvFile && importCsvMutation.mutate(csvFile)
+                          }
+                          disabled={!csvFile || importCsvMutation.isPending}>
+                          Importar
                         </Button>
                       </DialogFooter>
-                    </form>
-                  </DialogContent>
-                </Dialog>
-
-                <Dialog open={isImportOpen} onOpenChange={setIsImportOpen}>
-                  <DialogTrigger asChild>
-                    <Button variant="outline">
-                      <Upload className="mr-2 h-4 w-4" /> Importar CSV
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Importación Masiva</DialogTitle>
-                      <DialogDescription>
-                        Formato: email, firstName, lastName
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="grid w-full max-w-sm items-center gap-1.5 py-4">
-                      <Input
-                        type="file"
-                        accept=".csv"
-                        onChange={(e) =>
-                          setCsvFile(e.target.files?.[0] || null)
-                        }
-                      />
-                    </div>
-                    <DialogFooter>
-                      <Button
-                        onClick={() =>
-                          csvFile && importCsvMutation.mutate(csvFile)
-                        }
-                        disabled={!csvFile || importCsvMutation.isPending}>
-                        Importar
-                      </Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
+                    </DialogContent>
+                  </Dialog>
+                </div>
               </div>
             </div>
           </CardHeader>
@@ -466,124 +510,192 @@ export default function GroupsPage() {
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead
-                      className="cursor-pointer hover:bg-muted/50 transition-colors"
-                      onClick={() => handleSort("name")}>
-                      <div className="flex items-center">
-                        Estudiante <SortIcon column="name" />
-                      </div>
-                    </TableHead>
-                    <TableHead
-                      className="cursor-pointer hover:bg-muted/50 transition-colors"
-                      onClick={() => handleSort("email")}>
-                      <div className="flex items-center">
-                        Email <SortIcon column="email" />
-                      </div>
-                    </TableHead>
-                    <TableHead
-                      className="cursor-pointer hover:bg-muted/50 transition-colors"
-                      onClick={() => handleSort("status")}>
-                      <div className="flex items-center">
-                        Estado <SortIcon column="status" />
-                      </div>
-                    </TableHead>
-                    <TableHead
-                      className="text-right cursor-pointer hover:bg-muted/50 transition-colors"
-                      onClick={() => handleSort("progress")}>
-                      <div className="flex items-center justify-end">
-                        Progreso <SortIcon column="progress" />
-                      </div>
-                    </TableHead>
-                    <TableHead className="w-[50px]"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {processedStudents.length > 0 ? (
-                    processedStudents.map((student) => (
-                      <TableRow key={student.id}>
-                        <TableCell className="flex items-center gap-3">
-                          <Avatar className="h-8 w-8">
-                            <AvatarImage src={student.avatarUrl || ""} />
-                            <AvatarFallback>
-                              {student.name.substring(0, 2).toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span className="font-medium">{student.name}</span>
-                        </TableCell>
-                        <TableCell>{student.email}</TableCell>
-                        <TableCell>
-                          {student.status === "active" && (
-                            <Badge variant="default">Activo</Badge>
-                          )}
-                          {student.status === "inactive" && (
-                            <Badge variant="secondary">Inactivo</Badge>
-                          )}
-                          {student.status === "risk" && (
-                            <Badge variant="destructive">Riesgo</Badge>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right font-medium">
-                          {Math.round(student.progress)}%
-                        </TableCell>
-                        <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" className="h-8 w-8 p-0">
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem
-                                onClick={() => openEditModal(student)}>
-                                <Pencil className="mr-2 h-4 w-4" /> Editar
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() =>
-                                  toggleStatusMutation.mutate(student.id)
-                                }>
-                                {student.status === "inactive" ? (
-                                  <>
-                                    <Power className="mr-2 h-4 w-4 text-green-600" />{" "}
-                                    Activar
-                                  </>
-                                ) : (
-                                  <>
-                                    <PowerOff className="mr-2 h-4 w-4 text-orange-600" />{" "}
-                                    Desactivar
-                                  </>
-                                )}
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                className="text-destructive focus:text-destructive cursor-pointer"
-                                onClick={() =>
-                                  removeStudentMutation.mutate(student.id)
-                                }>
-                                <Trash2 className="mr-2 h-4 w-4" /> Eliminar del
-                                grupo
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+              <>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead
+                        className="cursor-pointer hover:bg-muted/50 transition-colors"
+                        onClick={() => handleSort("name")}>
+                        <div className="flex items-center">
+                          Estudiante <SortIcon column="name" />
+                        </div>
+                      </TableHead>
+                      <TableHead
+                        className="cursor-pointer hover:bg-muted/50 transition-colors"
+                        onClick={() => handleSort("email")}>
+                        <div className="flex items-center">
+                          Email <SortIcon column="email" />
+                        </div>
+                      </TableHead>
+                      <TableHead
+                        className="cursor-pointer hover:bg-muted/50 transition-colors"
+                        onClick={() => handleSort("status")}>
+                        <div className="flex items-center">
+                          Estado <SortIcon column="status" />
+                        </div>
+                      </TableHead>
+                      <TableHead
+                        className="text-right cursor-pointer hover:bg-muted/50 transition-colors"
+                        onClick={() => handleSort("progress")}>
+                        <div className="flex items-center justify-end">
+                          Progreso <SortIcon column="progress" />
+                        </div>
+                      </TableHead>
+                      <TableHead className="w-[50px]"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedStudents.length > 0 ? (
+                      paginatedStudents.map((student) => (
+                        <TableRow key={student.id}>
+                          <TableCell className="flex items-center gap-3">
+                            <Avatar className="h-8 w-8">
+                              <AvatarImage src={student.avatarUrl || ""} />
+                              <AvatarFallback>
+                                {student.name.substring(0, 2).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span className="font-medium">{student.name}</span>
+                          </TableCell>
+                          <TableCell>{student.email}</TableCell>
+                          <TableCell>
+                            {student.status === "active" && (
+                              <Badge variant="default">Activo</Badge>
+                            )}
+                            {student.status === "inactive" && (
+                              <Badge variant="secondary">Inactivo</Badge>
+                            )}
+                            {student.status === "risk" && (
+                              <Badge variant="destructive">Riesgo</Badge>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right font-medium">
+                            {Math.round(student.progress)}%
+                          </TableCell>
+                          <TableCell>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" className="h-8 w-8 p-0">
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem
+                                  onClick={() => openEditModal(student)}>
+                                  <Pencil className="mr-2 h-4 w-4" /> Editar
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    toggleStatusMutation.mutate(student.id)
+                                  }>
+                                  {student.status === "inactive" ? (
+                                    <>
+                                      <Power className="mr-2 h-4 w-4 text-green-600" />{" "}
+                                      Activar
+                                    </>
+                                  ) : (
+                                    <>
+                                      <PowerOff className="mr-2 h-4 w-4 text-orange-600" />{" "}
+                                      Desactivar
+                                    </>
+                                  )}
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  className="text-destructive focus:text-destructive cursor-pointer"
+                                  onClick={() =>
+                                    removeStudentMutation.mutate(student.id)
+                                  }>
+                                  <Trash2 className="mr-2 h-4 w-4" /> Eliminar
+                                  del grupo
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={5} className="h-24 text-center">
+                          {processedStudents.length === 0
+                            ? "No hay estudiantes que coincidan con la búsqueda."
+                            : "No hay estudiantes en esta página."}
                         </TableCell>
                       </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={5} className="h-24 text-center">
-                        No hay estudiantes
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+                    )}
+                  </TableBody>
+                </Table>
+
+                {/* Controles de Paginación */}
+                {totalPages > 1 && (
+                  <div className="mt-4 flex justify-center">
+                    <Pagination>
+                      <PaginationContent>
+                        <PaginationItem>
+                          <PaginationPrevious
+                            onClick={() => setPage((p) => Math.max(1, p - 1))}
+                            className={
+                              page === 1
+                                ? "pointer-events-none opacity-50"
+                                : "cursor-pointer"
+                            }
+                          />
+                        </PaginationItem>
+
+                        {/* Lógica simplificada de visualización de páginas */}
+                        {Array.from({ length: totalPages }, (_, i) => i + 1)
+                          .filter(
+                            (pageNum) =>
+                              pageNum === 1 ||
+                              pageNum === totalPages ||
+                              (pageNum >= page - 1 && pageNum <= page + 1)
+                          )
+                          .map((pageNum, i, arr) => {
+                            const prev = arr[i - 1];
+                            const showEllipsis = prev && pageNum - prev > 1;
+
+                            return (
+                              <div key={pageNum} className="flex items-center">
+                                {showEllipsis && (
+                                  <span className="px-2 text-muted-foreground">
+                                    ...
+                                  </span>
+                                )}
+                                <PaginationItem>
+                                  <PaginationLink
+                                    onClick={() => setPage(pageNum)}
+                                    isActive={page === pageNum}
+                                    className="cursor-pointer">
+                                    {pageNum}
+                                  </PaginationLink>
+                                </PaginationItem>
+                              </div>
+                            );
+                          })}
+
+                        <PaginationItem>
+                          <PaginationNext
+                            onClick={() =>
+                              setPage((p) => Math.min(totalPages, p + 1))
+                            }
+                            className={
+                              page === totalPages
+                                ? "pointer-events-none opacity-50"
+                                : "cursor-pointer"
+                            }
+                          />
+                        </PaginationItem>
+                      </PaginationContent>
+                    </Pagination>
+                  </div>
+                )}
+              </>
             )}
           </CardContent>
         </Card>
 
-        {/* Modal de Edición */}
+        {/* Modal de Edición (sin cambios) */}
         <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
           <DialogContent>
             <DialogHeader>
