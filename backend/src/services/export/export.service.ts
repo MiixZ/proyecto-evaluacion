@@ -24,7 +24,7 @@ export class ExportService {
       input.format
     );
     const fileSizeBytes = Buffer.byteLength(content, 'utf8');
-    const virtualPath = `virtual://${input.format}/${submission.id}.${extension}`;
+    const virtualPath = `virtual://${input.format}/${submission?.id}.${extension}`;
 
     const exportEntity = await exportModel.create(
       input,
@@ -37,7 +37,7 @@ export class ExportService {
       entity: exportEntity,
       content,
       mimeType,
-      filename: `export_sub_${submission.attemptNumber}_${submission.studentId}.${extension}`,
+      filename: `export_sub_${submission?.attemptNumber}_${submission?.studentId}.${extension}`,
     };
   }
 
@@ -73,7 +73,7 @@ export class ExportService {
       entity: exportEntity,
       content,
       mimeType,
-      filename: `export_sub_${submission.attemptNumber}_${submission.studentId}.${extension}`,
+      filename: `export_sub_${submission?.attemptNumber}_${submission?.studentId}.${extension}`,
     };
   }
 

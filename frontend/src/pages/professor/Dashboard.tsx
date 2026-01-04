@@ -51,6 +51,7 @@ import { Input } from "@/components/ui/forms/input";
 import { Button } from "@/components/ui/forms/button";
 import { ScrollArea } from "@/components/ui/layout/scroll-area";
 import { dashboardService } from "@/services/dashboard.service";
+import { toast } from "sonner";
 
 export default function ProfessorDashboard() {
   const { t, i18n } = useTranslation();
@@ -62,6 +63,7 @@ export default function ProfessorDashboard() {
   );
 
   const [studentFilter, setStudentFilter] = useState("");
+  const [isExporting, setIsExporting] = useState(false);
 
   const {
     data: dashboardData,
@@ -87,6 +89,64 @@ export default function ProfessorDashboard() {
       setSelectedGroupId(dashboardData.groups[0].groupId);
     }
   }, [dashboardData, selectedGroupId]);
+
+  const handleExportData = () => {
+    if (!dashboardData?.activeGroup) {
+      toast.error("No hay datos de grupo para exportar.");
+      return;
+    }
+
+    try {
+      setIsExporting(true);
+      const groupInfo = dashboardData.activeGroup.info;
+      const students = dashboardData.activeGroup.students;
+
+      const headers = [
+        "ID Estudiante",
+        "Nombre",
+        "Email",
+        "Estado",
+        "Progreso (%)",
+        "Nota Media",
+      ];
+
+      const rows = students.map((student) => [
+        student.id,
+        `"${student.name.replace(/"/g, '""')}"`,
+        student.email,
+        student.status,
+        student.progress.toFixed(2),
+        student.averageScore.toFixed(2),
+      ]);
+
+      const csvContent = [
+        headers.join(","),
+        ...rows.map((r) => r.join(",")),
+      ].join("\n");
+
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+
+      const timestamp = new Date().toISOString().split("T")[0];
+      const fileName = `Reporte_${groupInfo.groupName}_${timestamp}.csv`;
+
+      link.setAttribute("download", fileName);
+      link.style.visibility = "hidden";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast.success("Datos exportados correctamente");
+    } catch (err) {
+      console.error(err);
+      toast.error("Error al generar el archivo de exportación");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+  // -----------------------------------
 
   if (isLoading && !dashboardData) {
     return (
@@ -158,9 +218,18 @@ export default function ProfessorDashboard() {
               <UserPlus className="mr-2 h-4 w-4" />
               Agregar estudiante
             </Button>
-            <Button variant="outline" className="flex-1 sm:flex-none">
-              <Download className="mr-2 h-4 w-4" />
-              Exportar datos
+
+            <Button
+              variant="outline"
+              className="flex-1 sm:flex-none"
+              onClick={handleExportData}
+              disabled={isExporting || isLoading}>
+              {isExporting ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Download className="mr-2 h-4 w-4" />
+              )}
+              {isExporting ? "Exportando..." : "Exportar datos"}
             </Button>
           </div>
 
