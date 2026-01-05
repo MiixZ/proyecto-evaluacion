@@ -5,6 +5,7 @@ import {
   SubmissionHistoryItem,
   HintResponse,
 } from "@/types/exercise.types";
+import { PaginatedResponse } from "@/types/dashboard.types";
 
 interface ApiResponse<T> {
   success: boolean;
@@ -48,6 +49,24 @@ export interface ExerciseListItem {
 export const exerciseService = {
   getById: async (id: string): Promise<Exercise> => {
     const { data } = await api.get<ApiResponse<Exercise>>(`v1/exercises/${id}`);
+    return data.data;
+  },
+
+  // Método para Admin: Listar todos los ejercicios paginados
+  getAll: async (
+    page: number = 1,
+    limit: number = 20,
+    search?: string
+  ): Promise<PaginatedResponse<ExerciseListItem>> => {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+      ...(search && { search }),
+    });
+
+    const { data } = await api.get<
+      ApiResponse<PaginatedResponse<ExerciseListItem>>
+    >(`v1/exercises?${params}`);
     return data.data;
   },
 

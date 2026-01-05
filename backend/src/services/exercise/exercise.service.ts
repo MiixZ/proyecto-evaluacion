@@ -140,6 +140,19 @@ export class ExerciseService {
     };
   }
 
+  async listAllExercises(
+    page: number,
+    limit: number,
+    search?: string
+  ): Promise<PaginatedResponse<ExerciseDTO>> {
+    const result = await exerciseModel.listAll(page, limit, search);
+
+    return {
+      ...result,
+      items: result.items.map(exerciseMapper.toDTO),
+    };
+  }
+
   async publishExercise(id: UUID): Promise<ExerciseDTO> {
     const exercise = await exerciseModel.setPublishedStatus(id, true);
 

@@ -92,3 +92,35 @@ export interface PlagiarismAlertRow extends RowDataPacket {
   created_at: Date;
   reviewed_at: Date | null;
 }
+
+export interface AdminStatsRow {
+  activeDegrees: number;
+  activeSubjects: number;
+  activeTeachers: number;
+  totalExercises: number;
+}
+
+export interface AcademicStructureRow {
+  degree_id: string;
+  degree_name: string;
+  subject_id: string;
+  subject_name: string;
+  group_count: number;
+  student_count: number;
+  exercise_count: number;
+}
+
+export interface TeacherStatsRow {
+  user_id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  subject_count: number;
+  group_count: number;
+}
+
+export interface GlobalStatsRow {
+  activeStudents: number;
+  submissionsToday: number;
+  successRate: number;
+}

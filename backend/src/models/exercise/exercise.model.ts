@@ -248,6 +248,47 @@ export class ExerciseModel {
     };
   }
 
+  async listAll(
+    page: number,
+    limit: number,
+    search?: string
+  ): Promise<PaginatedResponse<ExerciseEntity>> {
+    const offset = (page - 1) * limit;
+    const params: any[] = [];
+    let whereClause = '1=1';
+
+    if (search) {
+      whereClause += ' AND title LIKE ?';
+      params.push(`%${search}%`);
+    }
+
+    const countQuery = `SELECT COUNT(*) as total FROM exercises WHERE ${whereClause}`;
+    const [countRows] = await getPool().execute<any[]>(countQuery, params);
+    const total = countRows[0].total;
+
+    const query = `
+      SELECT * FROM exercises 
+      WHERE ${whereClause}
+      ORDER BY created_at DESC 
+      LIMIT ? OFFSET ?
+    `;
+
+    const [rows] = await getPool().execute<ExerciseRow[]>(query, [
+      ...params,
+      limit,
+      offset,
+    ]);
+
+    return {
+      items: rows.map((row) => exerciseMapper.toEntity(row)),
+      total,
+      page,
+      limit,
+      hasMore: offset + limit < total,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
   async setPublishedStatus(
     id: UUID,
     isPublished: boolean

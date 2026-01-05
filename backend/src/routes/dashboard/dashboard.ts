@@ -19,6 +19,8 @@ router.get(
   dashboardController.getGroupPlagiarism
 );
 
+router.get('/admin', dashboardController.getAdminOverview);
+
 // Analíticas
 router.get('/analytics/exercises', dashboardController.getExerciseAnalytics);
 router.get('/analytics/plagiarism', dashboardController.getPlagiarismAnalytics);

@@ -68,6 +68,55 @@ export interface ProfessorDashboardResponse {
   } | null;
 }
 
+// --- TIPOS DE ADMIN ---
+
+export interface AdminStatsKPI {
+  activeDegrees: number;
+  activeSubjects: number;
+  activeTeachers: number;
+  totalExercises: number;
+}
+
+export interface AdminSubjectDTO {
+  id: string;
+  name: string;
+  stats: {
+    groups: number;
+    students: number;
+    exercises: number;
+  };
+}
+
+export interface AdminDegreeDTO {
+  id: string;
+  name: string;
+  subjects: AdminSubjectDTO[];
+}
+
+export interface AdminTeacherDTO {
+  user_id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  subject_count: number;
+  group_count: number;
+}
+
+export interface AdminGlobalStats {
+  activeStudents: number;
+  submissionsToday: number;
+  successRate: number;
+}
+
+export interface AdminDashboardResponse {
+  kpis: AdminStatsKPI;
+  academicStructure: AdminDegreeDTO[];
+  teachers: AdminTeacherDTO[];
+  globalStats: AdminGlobalStats;
+}
+
+// ---------------------
+
 export interface StudentStats {
   completedExercises: number;
   totalSubmissions: number;

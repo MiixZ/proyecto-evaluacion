@@ -25,6 +25,7 @@ import {
   FileCode,
   Library,
   BarChart3,
+  Lock,
 } from "lucide-react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
@@ -107,6 +108,26 @@ export function AppSidebar() {
         exact: true,
       },
       { title: t("sidebar.menu.users"), url: "/dashboard/users", icon: Users },
+      {
+        title: "Titulaciones",
+        url: "/dashboard/degrees",
+        icon: GraduationCap,
+      },
+      {
+        title: "Asignaturas",
+        url: "/dashboard/subjects",
+        icon: Library,
+      },
+      {
+        title: "Ejercicios",
+        url: "/dashboard/exercises-admin",
+        icon: FileCode,
+      },
+      {
+        title: "Seguridad",
+        url: "/dashboard/audit",
+        icon: Lock,
+      },
     ],
   };
 

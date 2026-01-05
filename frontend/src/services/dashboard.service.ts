@@ -4,6 +4,7 @@ import {
   DashboardSubmission,
   PaginatedResponse,
   PlagiarismAlertDTO,
+  AdminDashboardResponse,
 } from "@/types/dashboard.types";
 
 interface ApiResponse<T> {
@@ -22,6 +23,21 @@ export const dashboardService = {
 
     const { data } = await api.get<ApiResponse<ProfessorDashboardResponse>>(
       url
+    );
+
+    return data.data;
+  },
+
+  getAdminStats: async (
+    academicYear?: string,
+    search?: string
+  ): Promise<AdminDashboardResponse> => {
+    const params = new URLSearchParams();
+    if (academicYear) params.append("academicYear", academicYear);
+    if (search) params.append("search", search);
+
+    const { data } = await api.get<ApiResponse<AdminDashboardResponse>>(
+      `/v1/dashboard/admin?${params.toString()}`
     );
 
     return data.data;

@@ -12,6 +12,8 @@ const router = Router();
 
 router.use(authMiddleware);
 
+router.get('/', exerciseController.listAll);
+
 router.post(
   '/',
   validateRequest(createExerciseRequest),

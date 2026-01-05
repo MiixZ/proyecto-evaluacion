@@ -32,6 +32,48 @@ export class DashboardService {
       studentId
     );
   }
+
+  async getAdminDashboard(academicYear: string, search?: string) {
+    const kpis = await dashboardModel.getAdminKPIs(academicYear);
+    const structureRows = await dashboardModel.getAcademicStructure(
+      academicYear,
+      search
+    );
+    const teachers = await dashboardModel.getTeacherStatsList(academicYear);
+    const globalStats = await dashboardModel.getGlobalStats();
+
+    const degreesMap = new Map<string, any>();
+
+    structureRows.forEach((row) => {
+      if (!degreesMap.has(row.degree_id)) {
+        degreesMap.set(row.degree_id, {
+          id: row.degree_id,
+          name: row.degree_name,
+          subjects: [],
+        });
+      }
+
+      const degree = degreesMap.get(row.degree_id);
+      if (row.subject_id) {
+        degree.subjects.push({
+          id: row.subject_id,
+          name: row.subject_name,
+          stats: {
+            groups: row.group_count,
+            students: row.student_count,
+            exercises: row.exercise_count,
+          },
+        });
+      }
+    });
+
+    return {
+      kpis,
+      academicStructure: Array.from(degreesMap.values()),
+      teachers,
+      globalStats,
+    };
+  }
 }
 
 export const dashboardService = new DashboardService();

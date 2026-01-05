@@ -1,6 +1,12 @@
 import { getPool } from '@config/database';
 import { UUID } from '@CustomTypes/common.types';
 import * as Rows from './dashboard.row';
+import {
+  AcademicStructureRow,
+  AdminStatsRow,
+  GlobalStatsRow,
+  TeacherStatsRow,
+} from './dashboard.row';
 
 export class DashboardModel {
   async getStudentProgress(
@@ -404,6 +410,120 @@ export class DashboardModel {
       console.error('Error en getGroupActivity:', error);
       throw error;
     }
+  }
+
+  async getAdminKPIs(academicYear: string): Promise<AdminStatsRow> {
+    const query = `
+      SELECT
+        (SELECT COUNT(DISTINCT d.id) 
+         FROM degrees d 
+         JOIN subjects s ON d.id = s.degree_id 
+         JOIN courses c ON s.id = c.subject_id 
+         WHERE c.academic_year = ?) as activeDegrees,
+         
+        (SELECT COUNT(DISTINCT s.id) 
+         FROM subjects s 
+         JOIN courses c ON s.id = c.subject_id 
+         WHERE c.academic_year = ?) as activeSubjects,
+         
+        (SELECT COUNT(DISTINCT ug.user_id) 
+         FROM user_groups ug 
+         JOIN \`groups\` g ON ug.group_id = g.id 
+         JOIN courses c ON g.course_id = c.id 
+         WHERE c.academic_year = ? AND ug.role = 'teacher') as activeTeachers,
+         
+        (SELECT COUNT(DISTINCT e.id) 
+         FROM exercises e 
+         JOIN syllabi syl ON e.syllabus_id = syl.id 
+         JOIN courses c ON syl.course_id = c.id 
+         WHERE c.academic_year = ?) as totalExercises
+    `;
+
+    const [rows] = await getPool().execute<any[]>(query, [
+      academicYear,
+      academicYear,
+      academicYear,
+      academicYear,
+    ]);
+
+    return rows[0] as AdminStatsRow;
+  }
+
+  async getAcademicStructure(
+    academicYear: string,
+    search: string = ''
+  ): Promise<AcademicStructureRow[]> {
+    let searchClause = '';
+    const params: any[] = [academicYear];
+
+    if (search) {
+      searchClause = 'AND d.name LIKE ?';
+      params.push(`%${search}%`);
+    }
+
+    const query = `
+      SELECT 
+        d.id as degree_id,
+        d.name as degree_name,
+        s.id as subject_id,
+        s.name as subject_name,
+        COUNT(DISTINCT g.id) as group_count,
+        COUNT(DISTINCT ug_student.user_id) as student_count,
+        COUNT(DISTINCT e.id) as exercise_count
+      FROM degrees d
+      JOIN subjects s ON d.id = s.degree_id
+      JOIN courses c ON s.id = c.subject_id
+      LEFT JOIN \`groups\` g ON c.id = g.course_id
+      LEFT JOIN user_groups ug_student ON g.id = ug_student.group_id AND ug_student.role = 'student'
+      LEFT JOIN syllabi syl ON c.id = syl.course_id
+      LEFT JOIN exercises e ON syl.id = e.syllabus_id
+      WHERE c.academic_year = ? ${searchClause}
+      GROUP BY d.id, s.id
+      ORDER BY d.name, s.name
+    `;
+
+    const [rows] = await getPool().execute<any[]>(query, params);
+
+    return rows as AcademicStructureRow[];
+  }
+
+  async getTeacherStatsList(academicYear: string): Promise<TeacherStatsRow[]> {
+    const query = `
+      SELECT 
+        u.id as user_id,
+        u.first_name,
+        u.last_name,
+        u.email,
+        COUNT(DISTINCT c.subject_id) as subject_count,
+        COUNT(DISTINCT ug.group_id) as group_count
+      FROM users u
+      JOIN user_groups ug ON u.id = ug.user_id
+      JOIN \`groups\` g ON ug.group_id = g.id
+      JOIN courses c ON g.course_id = c.id
+      WHERE ug.role = 'teacher' AND c.academic_year = ?
+      GROUP BY u.id
+      ORDER BY u.last_name ASC
+    `;
+
+    const [rows] = await getPool().execute<any[]>(query, [academicYear]);
+
+    return rows as TeacherStatsRow[];
+  }
+
+  async getGlobalStats(): Promise<GlobalStatsRow> {
+    const query = `
+      SELECT
+        (SELECT COUNT(*) FROM users WHERE role = 'student' AND status = 'active') as activeStudents,
+        (SELECT COUNT(*) FROM submissions WHERE DATE(created_at) = CURDATE()) as submissionsToday,
+        (SELECT COALESCE(
+            (SUM(CASE WHEN verdict = 'accepted' THEN 1 ELSE 0 END) / COUNT(*)) * 100, 
+            0
+         ) FROM submissions) as successRate
+    `;
+
+    const [rows] = await getPool().execute<any[]>(query);
+
+    return rows[0] as GlobalStatsRow;
   }
 }
 

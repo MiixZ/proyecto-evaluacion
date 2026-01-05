@@ -148,6 +148,28 @@ export class DashboardController {
     );
   });
 
+  getAdminOverview = catchAsync(async (req: AuthRequest, res: Response) => {
+    if (req.user?.role !== UserRole.ADMIN) {
+      throw new AppError(
+        'FORBIDDEN',
+        403,
+        'Acceso exclusivo para administradores'
+      );
+    }
+
+    const currentYear = new Date().getFullYear();
+    const nextYear = currentYear + 1;
+    const defaultAcademicYear = `${currentYear}-${nextYear}`;
+
+    const academicYear =
+      (req.query.academicYear as string) || defaultAcademicYear;
+    const search = req.query.search as string;
+
+    const data = await dashboardService.getAdminDashboard(academicYear, search);
+
+    return ApiResponse.success(res, data);
+  });
+
   getPlagiarismAnalytics = catchAsync(
     async (req: AuthRequest, res: Response) => {
       if (

@@ -48,6 +48,24 @@ export class ExerciseController {
     return ApiResponse.success(res, result);
   });
 
+  listAll = catchAsync(async (req: AuthRequest, res: Response) => {
+    if (req.user?.role !== UserRole.ADMIN) {
+      throw new AppError(
+        'FORBIDDEN',
+        403,
+        'Acceso permitido solo a administradores'
+      );
+    }
+
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const search = req.query.search as string;
+
+    const result = await exerciseService.listAllExercises(page, limit, search);
+
+    return ApiResponse.success(res, result);
+  });
+
   togglePublish = catchAsync(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     const { isPublished } = req.body;
