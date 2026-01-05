@@ -1,14 +1,16 @@
+// frontend/src/services/academic.service.ts
 import api from "@/lib/api";
 import {
   Degree,
   Subject,
   Course,
+  Syllabus,
   CreateDegreeDTO,
   CreateSubjectDTO,
   CreateCourseDTO,
+  CreateSyllabusDTO,
 } from "@/types/academic.types";
 
-// Interfaces para manejar la estructura de respuesta del backend (wrapper)
 interface ApiResponse<T> {
   success: boolean;
   data: T;
@@ -35,6 +37,7 @@ export const academicService = {
   },
   createDegree: async (data: CreateDegreeDTO) => {
     const response = await api.post<ApiResponse<Degree>>("/v1/degrees", data);
+
     return response.data.data;
   },
   updateDegree: async (id: string, data: Partial<CreateDegreeDTO>) => {
@@ -58,6 +61,7 @@ export const academicService = {
   },
   createSubject: async (data: CreateSubjectDTO) => {
     const response = await api.post<ApiResponse<Subject>>("/v1/subjects", data);
+
     return response.data.data;
   },
   updateSubject: async (id: string, data: Partial<CreateSubjectDTO>) => {
@@ -74,11 +78,11 @@ export const academicService = {
     const response = await api.get<ApiResponse<PaginatedResponse<Course>>>(
       "/v1/courses?limit=100"
     );
+
     return response.data.data.items;
   },
   createCourse: async (data: CreateCourseDTO) => {
     const response = await api.post<ApiResponse<Course>>("/v1/courses", data);
-
     return response.data.data;
   },
   updateCourse: async (id: string, data: Partial<CreateCourseDTO>) => {
@@ -87,6 +91,27 @@ export const academicService = {
       data
     );
 
+    return response.data.data;
+  },
+
+  // --- SYLLABI (Temarios) ---
+  getSyllabi: async (courseId?: string) => {
+    const params = courseId ? { courseId, limit: 100 } : { limit: 100 };
+    const response = await api.get<ApiResponse<PaginatedResponse<Syllabus>>>(
+      "/v1/syllabi",
+      { params }
+    );
+    return response.data.data.items;
+  },
+  createSyllabus: async (data: CreateSyllabusDTO) => {
+    const response = await api.post<ApiResponse<Syllabus>>("/v1/syllabi", data);
+    return response.data.data;
+  },
+  updateSyllabus: async (id: string, data: Partial<CreateSyllabusDTO>) => {
+    const response = await api.patch<ApiResponse<Syllabus>>(
+      `/v1/syllabi/${id}`,
+      data
+    );
     return response.data.data;
   },
 };

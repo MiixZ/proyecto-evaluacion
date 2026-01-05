@@ -1,3 +1,5 @@
+// frontend/src/types/academic.types.ts
+
 export interface Degree {
   id: string;
   name: string;
@@ -31,6 +33,18 @@ export interface Course {
   subject?: Subject;
 }
 
+export interface Syllabus {
+  id: string;
+  courseId: string;
+  title: string;
+  description?: string;
+  contentType: "module" | "topic" | "lesson";
+  orderIndex: number;
+  isPublic: boolean;
+  course?: Course;
+}
+
 export type CreateDegreeDTO = Omit<Degree, "id" | "status">;
 export type CreateSubjectDTO = Omit<Subject, "id" | "status" | "degree">;
 export type CreateCourseDTO = Omit<Course, "id" | "status" | "subject">;
+export type CreateSyllabusDTO = Omit<Syllabus, "id" | "course">;
