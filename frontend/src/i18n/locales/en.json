@@ -33,6 +33,15 @@
       "bio_max": "Maximum 500 characters"
     }
   },
+  "unauthorized": {
+    "title": "Access Denied",
+    "description": "You don't have permission to access this page. Your current role doesn't allow you to view this content.",
+    "current_user": "Current user:",
+    "current_role": "Role",
+    "go_to_dashboard": "Go to My Dashboard",
+    "go_back": "Go Back",
+    "contact_admin": "If you believe this is an error, please contact the administrator."
+  },
   "dashboard": {
     "welcome": "Welcome, {{name}}!",
     "student": "Student",

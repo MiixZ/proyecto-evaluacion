@@ -33,6 +33,15 @@
       "bio_max": "Máximo 500 caracteres"
     }
   },
+  "unauthorized": {
+    "title": "Acceso Denegado",
+    "description": "No tienes permisos para acceder a esta página. Tu rol actual no te permite visualizar este contenido.",
+    "current_user": "Usuario actual:",
+    "current_role": "Rol",
+    "go_to_dashboard": "Ir a mi Panel",
+    "go_back": "Volver atrás",
+    "contact_admin": "Si crees que esto es un error, contacta con el administrador."
+  },
   "dashboard": {
     "welcome": "¡Bienvenido/a, {{name}}!",
     "student": "Estudiante",
