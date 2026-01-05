@@ -21,6 +21,7 @@
     },
     "roles": {
       "student": "Student",
+      "teacher": "Teacher",
       "professor": "Professor",
       "admin": "Administrator"
     },
@@ -59,6 +60,30 @@
     "quickActions": "Quick Actions",
     "solveExercises": "Solve Exercises",
     "viewProgress": "View My Progress"
+  },
+  "student": {
+    "charts": {
+      "submissions_by_day": {
+        "title": "My Submission Activity",
+        "description": "Submission history over the last 30 days",
+        "submissions": "Submissions"
+      },
+      "success_rate": {
+        "title": "Success Rate by Difficulty",
+        "description": "Performance by exercise level",
+        "rate": "Success Rate"
+      },
+      "progress_by_syllabus": {
+        "title": "Progress by Syllabus",
+        "description": "Completion percentage in each module",
+        "progress": "Progress"
+      },
+      "score_evolution": {
+        "title": "My Score Evolution",
+        "description": "Average score progress over time",
+        "score": "Average Score"
+      }
+    }
   },
   "subjects_page": {
     "title": "My Subjects",
@@ -558,6 +583,29 @@
       "no_submissions": "No recent submissions",
       "no_exercises": "No active exercises",
       "loading": "Loading..."
+    },
+    "charts": {
+      "submissions_by_day": {
+        "title": "Submissions by Day",
+        "description": "Submission activity in the last 30 days",
+        "submissions": "Submissions"
+      },
+      "acceptance_rate": {
+        "title": "Acceptance Rate by Exercise",
+        "description": "Success percentage for each exercise",
+        "rate": "Acceptance Rate",
+        "all_exercises": "All exercises"
+      },
+      "student_progress": {
+        "title": "Student Progress",
+        "description": "Top 10 students by completion rate",
+        "completion": "Completion"
+      },
+      "submission_trend": {
+        "title": "Peak Activity Hours",
+        "description": "Distribution of submissions by hour of day",
+        "submissions": "Submissions"
+      }
     }
   },
   "feedback": {
@@ -899,7 +947,29 @@
       "global_stats": "Global Statistics",
       "active_students": "Active students",
       "submissions_today": "Submissions today",
-      "success_rate": "Global success rate"
+      "success_rate": "Global success rate",
+      "analytics": "Analytics",
+      "charts": {
+        "submissions_by_day": {
+          "title": "Submissions by Day",
+          "description": "Last 30 days submission activity",
+          "submissions": "Submissions"
+        },
+        "language_distribution": {
+          "title": "Language Distribution",
+          "description": "Most used languages in submissions",
+          "submissions": "Submissions"
+        },
+        "acceptance_rate": {
+          "title": "Acceptance Rate by Difficulty",
+          "description": "Success percentage by exercise level",
+          "rate": "Rate"
+        },
+        "users_by_role": {
+          "title": "Users by Role",
+          "description": "User distribution across platform"
+        }
+      }
     },
     "syllabus": {
       "title": "Syllabi and Modules",
@@ -1061,5 +1131,105 @@
     "next": "Next",
     "page": "Page",
     "of": "of"
+  },
+  "security": {
+    "title": "Security & Audit",
+    "subtitle": "Activity log and actions performed in the system",
+    "filters": {
+      "title": "Filters",
+      "user": "User",
+      "all_users": "All users",
+      "entity_type": "Entity Type",
+      "all_entities": "All entities",
+      "action": "Action",
+      "all_actions": "All actions",
+      "date_range": "Date Range",
+      "start_date": "Start Date",
+      "end_date": "End Date",
+      "clear_filters": "Clear Filters",
+      "apply_filters": "Apply Filters"
+    },
+    "table": {
+      "date": "Date & Time",
+      "user": "User",
+      "action": "Action",
+      "entity": "Entity",
+      "entity_id": "Entity ID",
+      "changes": "Changes",
+      "ip_address": "IP Address",
+      "user_agent": "Browser",
+      "no_logs": "No audit logs found",
+      "show_changes": "Show changes",
+      "hide_changes": "Hide changes",
+      "no_changes": "No changes recorded"
+    },
+    "actions": {
+      "CREATE": "Create",
+      "UPDATE": "Update",
+      "DELETE": "Delete",
+      "LOGIN": "Login",
+      "LOGOUT": "Logout",
+      "EXPORT": "Export",
+      "VIEW": "View",
+      "DOWNLOAD": "Download",
+      "CREATE_USER": "Create User",
+      "UPDATE_USER": "Update User",
+      "DELETE_USER": "Delete User",
+      "UPDATE_PROFILE": "Update Profile",
+      "CREATE_EXERCISE": "Create Exercise",
+      "UPDATE_EXERCISE": "Update Exercise",
+      "DELETE_EXERCISE": "Delete Exercise",
+      "CLONE_EXERCISE": "Clone Exercise",
+      "PUBLISH_EXERCISE": "Publish Exercise",
+      "UNPUBLISH_EXERCISE": "Unpublish Exercise",
+      "CREATE_SUBMISSION": "Create Submission",
+      "UPDATE_SUBMISSION": "Update Submission",
+      "EVALUATE_SUBMISSION": "Evaluate Submission",
+      "CREATE_GROUP": "Create Group",
+      "UPDATE_GROUP": "Update Group",
+      "DELETE_GROUP": "Delete Group",
+      "ASSIGN_GROUP": "Assign Group",
+      "REMOVE_GROUP": "Remove from Group",
+      "CREATE_FEEDBACK": "Create Feedback",
+      "UPDATE_FEEDBACK": "Update Feedback",
+      "DELETE_FEEDBACK": "Delete Feedback",
+      "REVIEW_PLAGIARISM": "Review Plagiarism",
+      "PLAGIARISM_FLAGGED": "Plagiarism Flagged",
+      "PLAGIARISM_DETECTED": "Plagiarism Detected",
+      "CREATE_COURSE": "Create Course",
+      "UPDATE_COURSE": "Update Course",
+      "DELETE_COURSE": "Delete Course",
+      "CREATE_SUBJECT": "Create Subject",
+      "UPDATE_SUBJECT": "Update Subject",
+      "DELETE_SUBJECT": "Delete Subject",
+      "CREATE_DEGREE": "Create Degree",
+      "UPDATE_DEGREE": "Update Degree",
+      "DELETE_DEGREE": "Delete Degree",
+      "CREATE_SYLLABUS": "Create Syllabus",
+      "UPDATE_SYLLABUS": "Update Syllabus",
+      "DELETE_SYLLABUS": "Delete Syllabus",
+      "CREATE_TEST_CASE": "Create Test Case",
+      "UPDATE_TEST_CASE": "Update Test Case",
+      "DELETE_TEST_CASE": "Delete Test Case",
+      "USE_HINT": "Use Hint",
+      "EXPORT_SUBMISSIONS": "Export Submissions"
+    },
+    "entities": {
+      "user": "User",
+      "exercise": "Exercise",
+      "submission": "Submission",
+      "group": "Group",
+      "course": "Course",
+      "subject": "Subject",
+      "degree": "Degree",
+      "syllabus": "Syllabus",
+      "feedback": "Feedback",
+      "plagiarism": "Plagiarism"
+    },
+    "search_placeholder": "Search logs...",
+    "loading": "Loading logs...",
+    "error": "Error loading audit logs",
+    "unknown_user": "Unknown user",
+    "system": "System"
   }
 }

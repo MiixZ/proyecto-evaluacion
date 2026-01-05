@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { dashboardService } from "@/services/dashboard.service";
+import { adminDashboardService } from "@/services/dashboard.admin.service";
 import { degreeService } from "@/services/degree.service";
 import { subjectService } from "@/services/subject.service";
 import {
@@ -62,6 +63,10 @@ import {
   SelectValue,
 } from "@/components/ui/forms/select";
 import { Link } from "react-router-dom";
+import { SubmissionsByDayChart } from "@/components/admin/charts/SubmissionsByDayChart";
+import { LanguageDistributionChart } from "@/components/admin/charts/LanguageDistributionChart";
+import { AcceptanceRateChart } from "@/components/admin/charts/AcceptanceRateChart";
+import { UsersByRoleChart } from "@/components/admin/charts/UsersByRoleChart";
 
 const AdminDashboard = () => {
   const { toast } = useToast();
@@ -112,6 +117,11 @@ const AdminDashboard = () => {
     queryFn: () =>
       dashboardService.getAdminStats(selectedYear, debouncedSearch),
     enabled: !!selectedYear || academicYears.length === 0,
+  });
+
+  const { data: chartsData, isLoading: isLoadingCharts } = useQuery({
+    queryKey: ["adminDashboardCharts"],
+    queryFn: adminDashboardService.getChartsData,
   });
 
   const createDegreeMutation = useMutation({
@@ -697,6 +707,26 @@ const AdminDashboard = () => {
             </CardContent>
           </Card>
         </div>
+      </div>
+
+      {/* Charts Section */}
+      <div className="px-5 space-y-6 mt-8">
+        <h2 className="text-xl font-semibold">
+          {t("admin.dashboard.analytics")}
+        </h2>
+
+        {isLoadingCharts ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : chartsData ? (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <SubmissionsByDayChart data={chartsData.submissionsByDay} />
+            <LanguageDistributionChart data={chartsData.languageDistribution} />
+            <AcceptanceRateChart data={chartsData.acceptanceRateByDifficulty} />
+            <UsersByRoleChart data={chartsData.usersByRole} />
+          </div>
+        ) : null}
       </div>
     </>
   );

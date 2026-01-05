@@ -58,7 +58,7 @@ import { UpdateProfilePayload } from "@/types/user.type";
 import { ProfileFormValues, getProfileSchema } from "@/schemas/profile.schema";
 
 export default function ProfilePage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { refreshUser } = useAuth();
@@ -100,6 +100,11 @@ export default function ProfilePage() {
     onSuccess: (updatedUser) => {
       queryClient.setQueryData(["userProfile"], updatedUser);
       if (refreshUser) refreshUser();
+
+      // Cambiar idioma inmediatamente si fue modificado
+      if (updatedUser.preferredLanguage) {
+        i18n.changeLanguage(updatedUser.preferredLanguage);
+      }
 
       toast({
         title: t("profile_page.notifications.success_title"),

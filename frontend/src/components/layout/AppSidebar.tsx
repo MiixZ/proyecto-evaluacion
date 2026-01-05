@@ -125,7 +125,7 @@ export function AppSidebar() {
       },
       {
         title: t("sidebar.menu.security"),
-        url: "/dashboard/audit",
+        url: "/dashboard/security",
         icon: Lock,
       },
     ],
@@ -144,8 +144,7 @@ export function AppSidebar() {
     ? `${user.firstName} ${user.lastName}`
     : t("sidebar.user_default");
 
-  const showProfessorMenu =
-    user?.role === UserRole.TEACHER || user?.role === UserRole.ADMIN;
+  const showProfessorMenu = user?.role === UserRole.TEACHER;
   const showAdminMenu = user?.role === UserRole.ADMIN;
   const showStudentMenu = user?.role === UserRole.STUDENT;
 

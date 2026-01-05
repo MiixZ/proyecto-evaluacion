@@ -21,6 +21,7 @@
     },
     "roles": {
       "student": "Estudiante",
+      "teacher": "Profesor",
       "professor": "Profesor",
       "admin": "Administrador"
     },
@@ -59,6 +60,30 @@
     "quickActions": "Acciones Rápidas",
     "solveExercises": "Resolver Ejercicios",
     "viewProgress": "Ver Mi Progreso"
+  },
+  "student": {
+    "charts": {
+      "submissions_by_day": {
+        "title": "Mi Actividad de Envíos",
+        "description": "Historial de envíos en los últimos 30 días",
+        "submissions": "Envíos"
+      },
+      "success_rate": {
+        "title": "Tasa de Éxito por Dificultad",
+        "description": "Rendimiento según el nivel de ejercicio",
+        "rate": "Tasa de Éxito"
+      },
+      "progress_by_syllabus": {
+        "title": "Progreso por Temario",
+        "description": "Porcentaje de completitud en cada módulo",
+        "progress": "Progreso"
+      },
+      "score_evolution": {
+        "title": "Evolución de mi Puntuación",
+        "description": "Progreso de puntuación promedio en el tiempo",
+        "score": "Puntuación Promedio"
+      }
+    }
   },
   "subjects_page": {
     "title": "Mis Asignaturas",
@@ -768,6 +793,29 @@
       "no_submissions": "No hay envíos recientes",
       "no_exercises": "No hay ejercicios activos",
       "loading": "Cargando..."
+    },
+    "charts": {
+      "submissions_by_day": {
+        "title": "Envíos por Día",
+        "description": "Actividad de envíos en los últimos 30 días",
+        "submissions": "Envíos"
+      },
+      "acceptance_rate": {
+        "title": "Tasa de Aceptación por Ejercicio",
+        "description": "Porcentaje de éxito en cada ejercicio",
+        "rate": "Tasa de Aceptación",
+        "all_exercises": "Todos los ejercicios"
+      },
+      "student_progress": {
+        "title": "Progreso de Estudiantes",
+        "description": "Top 10 estudiantes por tasa de completitud",
+        "completion": "Completitud"
+      },
+      "submission_trend": {
+        "title": "Horario de Mayor Actividad",
+        "description": "Distribución de envíos por hora del día",
+        "submissions": "Envíos"
+      }
     }
   },
   "admin": {
@@ -894,6 +942,7 @@
       "active_students": "Estudiantes activos",
       "submissions_today": "Envíos hoy",
       "success_rate_global": "Tasa de éxito global",
+      "analytics": "Analíticas",
       "active_degrees": "Titulaciones Activas",
       "active_subjects": "Asignaturas Activas",
       "active_teachers": "Profesores Activos",
@@ -926,6 +975,27 @@
       "active_students": "Estudiantes activos",
       "submissions_today": "Envíos hoy",
       "success_rate": "Tasa de éxito global"
+    },
+    "charts": {
+      "submissions_by_day": {
+        "title": "Envíos por Día",
+        "description": "Actividad de envíos en los últimos 30 días",
+        "submissions": "Envíos"
+      },
+      "language_distribution": {
+        "title": "Distribución de Lenguajes",
+        "description": "Lenguajes más utilizados en submissions",
+        "submissions": "Envíos"
+      },
+      "acceptance_rate": {
+        "title": "Tasa de Aceptación por Dificultad",
+        "description": "Porcentaje de éxito según nivel de ejercicio",
+        "rate": "Tasa de Aceptación"
+      },
+      "users_by_role": {
+        "title": "Usuarios por Rol",
+        "description": "Distribución de usuarios en la plataforma"
+      }
     },
     "syllabus": {
       "title": "Temarios y Módulos",
@@ -1087,5 +1157,105 @@
     "next": "Siguiente",
     "page": "Pág",
     "of": "de"
+  },
+  "security": {
+    "title": "Seguridad y Auditoría",
+    "subtitle": "Registro de actividades y acciones realizadas en el sistema",
+    "filters": {
+      "title": "Filtros",
+      "user": "Usuario",
+      "all_users": "Todos los usuarios",
+      "entity_type": "Tipo de Entidad",
+      "all_entities": "Todas las entidades",
+      "action": "Acción",
+      "all_actions": "Todas las acciones",
+      "date_range": "Rango de Fechas",
+      "start_date": "Fecha Inicio",
+      "end_date": "Fecha Fin",
+      "clear_filters": "Limpiar Filtros",
+      "apply_filters": "Aplicar Filtros"
+    },
+    "table": {
+      "date": "Fecha y Hora",
+      "user": "Usuario",
+      "action": "Acción",
+      "entity": "Entidad",
+      "entity_id": "ID Entidad",
+      "changes": "Cambios",
+      "ip_address": "Dirección IP",
+      "user_agent": "Navegador",
+      "no_logs": "No se encontraron registros de auditoría",
+      "show_changes": "Ver cambios",
+      "hide_changes": "Ocultar cambios",
+      "no_changes": "Sin cambios registrados"
+    },
+    "actions": {
+      "CREATE": "Crear",
+      "UPDATE": "Actualizar",
+      "DELETE": "Eliminar",
+      "LOGIN": "Iniciar sesión",
+      "LOGOUT": "Cerrar sesión",
+      "EXPORT": "Exportar",
+      "VIEW": "Ver",
+      "DOWNLOAD": "Descargar",
+      "CREATE_USER": "Crear Usuario",
+      "UPDATE_USER": "Actualizar Usuario",
+      "DELETE_USER": "Eliminar Usuario",
+      "UPDATE_PROFILE": "Actualizar Perfil",
+      "CREATE_EXERCISE": "Crear Ejercicio",
+      "UPDATE_EXERCISE": "Actualizar Ejercicio",
+      "DELETE_EXERCISE": "Eliminar Ejercicio",
+      "CLONE_EXERCISE": "Clonar Ejercicio",
+      "PUBLISH_EXERCISE": "Publicar Ejercicio",
+      "UNPUBLISH_EXERCISE": "Despublicar Ejercicio",
+      "CREATE_SUBMISSION": "Crear Envío",
+      "UPDATE_SUBMISSION": "Actualizar Envío",
+      "EVALUATE_SUBMISSION": "Evaluar Envío",
+      "CREATE_GROUP": "Crear Grupo",
+      "UPDATE_GROUP": "Actualizar Grupo",
+      "DELETE_GROUP": "Eliminar Grupo",
+      "ASSIGN_GROUP": "Asignar Grupo",
+      "REMOVE_GROUP": "Eliminar de Grupo",
+      "CREATE_FEEDBACK": "Crear Retroalimentación",
+      "UPDATE_FEEDBACK": "Actualizar Retroalimentación",
+      "DELETE_FEEDBACK": "Eliminar Retroalimentación",
+      "REVIEW_PLAGIARISM": "Revisar Plagio",
+      "PLAGIARISM_FLAGGED": "Plagio Marcado",
+      "PLAGIARISM_DETECTED": "Plagio Detectado",
+      "CREATE_COURSE": "Crear Curso",
+      "UPDATE_COURSE": "Actualizar Curso",
+      "DELETE_COURSE": "Eliminar Curso",
+      "CREATE_SUBJECT": "Crear Asignatura",
+      "UPDATE_SUBJECT": "Actualizar Asignatura",
+      "DELETE_SUBJECT": "Eliminar Asignatura",
+      "CREATE_DEGREE": "Crear Titulación",
+      "UPDATE_DEGREE": "Actualizar Titulación",
+      "DELETE_DEGREE": "Eliminar Titulación",
+      "CREATE_SYLLABUS": "Crear Temario",
+      "UPDATE_SYLLABUS": "Actualizar Temario",
+      "DELETE_SYLLABUS": "Eliminar Temario",
+      "CREATE_TEST_CASE": "Crear Caso de Prueba",
+      "UPDATE_TEST_CASE": "Actualizar Caso de Prueba",
+      "DELETE_TEST_CASE": "Eliminar Caso de Prueba",
+      "USE_HINT": "Usar Pista",
+      "EXPORT_SUBMISSIONS": "Exportar Envíos"
+    },
+    "entities": {
+      "user": "Usuario",
+      "exercise": "Ejercicio",
+      "submission": "Envío",
+      "group": "Grupo",
+      "course": "Curso",
+      "subject": "Asignatura",
+      "degree": "Titulación",
+      "syllabus": "Temario",
+      "feedback": "Retroalimentación",
+      "plagiarism": "Plagio"
+    },
+    "search_placeholder": "Buscar en logs...",
+    "loading": "Cargando registros...",
+    "error": "Error al cargar los registros de auditoría",
+    "unknown_user": "Usuario desconocido",
+    "system": "Sistema"
   }
 }

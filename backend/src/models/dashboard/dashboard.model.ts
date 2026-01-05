@@ -542,6 +542,398 @@ export class DashboardModel {
     const [rows] = await getPool().execute<any[]>(query);
     return rows.length > 0 ? rows[0].academic_year : null;
   }
+
+  async getSubmissionsByDay(): Promise<Array<{ date: string; count: number }>> {
+    const query = `
+      SELECT 
+        DATE(created_at) as date,
+        COUNT(*) as count
+      FROM submissions
+      WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+      GROUP BY DATE(created_at)
+      ORDER BY date ASC
+    `;
+
+    const [rows] = await getPool().execute<any[]>(query);
+    return rows.map((row) => ({
+      date: row.date,
+      count: Number(row.count),
+    }));
+  }
+
+  async getLanguageDistribution(): Promise<
+    Array<{ language: string; count: number; percentage: number }>
+  > {
+    const query = `
+      SELECT 
+        e.language,
+        COUNT(s.id) as count,
+        ROUND((COUNT(s.id) * 100.0 / (SELECT COUNT(*) FROM submissions)), 2) as percentage
+      FROM submissions s
+      JOIN exercises e ON s.exercise_id = e.id
+      GROUP BY e.language
+      ORDER BY count DESC
+    `;
+
+    const [rows] = await getPool().execute<any[]>(query);
+    return rows.map((row) => ({
+      language: row.language,
+      count: Number(row.count),
+      percentage: Number(row.percentage),
+    }));
+  }
+
+  async getAcceptanceRateByDifficulty(): Promise<
+    Array<{
+      difficulty: string;
+      acceptanceRate: number;
+      totalSubmissions: number;
+      acceptedSubmissions: number;
+    }>
+  > {
+    const query = `
+      SELECT 
+        e.difficulty,
+        COUNT(s.id) as totalSubmissions,
+        SUM(CASE WHEN s.verdict = 'accepted' THEN 1 ELSE 0 END) as acceptedSubmissions,
+        ROUND(
+          (SUM(CASE WHEN s.verdict = 'accepted' THEN 1 ELSE 0 END) * 100.0 / COUNT(s.id)), 
+          2
+        ) as acceptanceRate
+      FROM submissions s
+      JOIN exercises e ON s.exercise_id = e.id
+      GROUP BY e.difficulty
+      ORDER BY 
+        CASE e.difficulty
+          WHEN 'beginner' THEN 1
+          WHEN 'intermediate' THEN 2
+          WHEN 'advanced' THEN 3
+        END
+    `;
+
+    const [rows] = await getPool().execute<any[]>(query);
+    return rows.map((row) => ({
+      difficulty: row.difficulty,
+      acceptanceRate: Number(row.acceptanceRate),
+      totalSubmissions: Number(row.totalSubmissions),
+      acceptedSubmissions: Number(row.acceptedSubmissions),
+    }));
+  }
+
+  async getUsersByRole(): Promise<
+    Array<{ role: string; count: number; percentage: number }>
+  > {
+    const query = `
+      SELECT 
+        role,
+        COUNT(*) as count,
+        ROUND((COUNT(*) * 100.0 / (SELECT COUNT(*) FROM users WHERE status = 'active')), 2) as percentage
+      FROM users
+      WHERE status = 'active'
+      GROUP BY role
+      ORDER BY count DESC
+    `;
+
+    const [rows] = await getPool().execute<any[]>(query);
+    return rows.map((row) => ({
+      role: row.role,
+      count: Number(row.count),
+      percentage: Number(row.percentage),
+    }));
+  }
+
+  async getTeacherSubmissionsByDay(
+    groupId?: string
+  ): Promise<Array<{ date: string; count: number }>> {
+    let query = `
+      SELECT 
+        DATE(s.created_at) as date,
+        COUNT(*) as count
+      FROM submissions s
+      JOIN exercises e ON s.exercise_id = e.id
+      JOIN syllabi syl ON e.syllabus_id = syl.id
+      JOIN courses c ON syl.course_id = c.id
+    `;
+
+    const params: any[] = [];
+
+    if (groupId) {
+      query += `
+        JOIN \`groups\` g ON c.id = g.course_id
+        WHERE g.id = ? AND s.created_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+      `;
+      params.push(groupId);
+    } else {
+      query += ` WHERE s.created_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) `;
+    }
+
+    query += `
+      GROUP BY DATE(s.created_at)
+      ORDER BY date ASC
+    `;
+
+    const [rows] = await getPool().execute<any[]>(query, params);
+    return rows.map((row) => ({
+      date: row.date,
+      count: Number(row.count),
+    }));
+  }
+
+  async getAcceptanceRateByExercise(groupId?: string): Promise<
+    Array<{
+      exerciseId: string;
+      exerciseTitle: string;
+      acceptanceRate: number;
+      totalSubmissions: number;
+      acceptedSubmissions: number;
+    }>
+  > {
+    let query = `
+      SELECT 
+        e.id as exerciseId,
+        e.title as exerciseTitle,
+        COUNT(s.id) as totalSubmissions,
+        SUM(CASE WHEN s.verdict = 'accepted' THEN 1 ELSE 0 END) as acceptedSubmissions,
+        ROUND(
+          (SUM(CASE WHEN s.verdict = 'accepted' THEN 1 ELSE 0 END) * 100.0 / COUNT(s.id)), 
+          2
+        ) as acceptanceRate
+      FROM exercises e
+      JOIN syllabi syl ON e.syllabus_id = syl.id
+      JOIN courses c ON syl.course_id = c.id
+      LEFT JOIN submissions s ON e.id = s.exercise_id
+    `;
+
+    const params: any[] = [];
+
+    if (groupId) {
+      query += `
+        JOIN \`groups\` g ON c.id = g.course_id
+        WHERE g.id = ?
+      `;
+      params.push(groupId);
+    }
+
+    query += `
+      GROUP BY e.id
+      HAVING COUNT(s.id) > 0
+      ORDER BY totalSubmissions DESC
+    `;
+
+    const [rows] = await getPool().execute<any[]>(query, params);
+    return rows.map((row) => ({
+      exerciseId: row.exerciseId,
+      exerciseTitle: row.exerciseTitle,
+      acceptanceRate: Number(row.acceptanceRate),
+      totalSubmissions: Number(row.totalSubmissions),
+      acceptedSubmissions: Number(row.acceptedSubmissions),
+    }));
+  }
+
+  async getGroupStudentProgress(groupId?: string): Promise<
+    Array<{
+      studentId: string;
+      studentName: string;
+      exercisesCompleted: number;
+      totalExercises: number;
+      averageScore: number;
+      lastActivity: string;
+    }>
+  > {
+    let query = `
+      SELECT 
+        u.id as studentId,
+        CONCAT(u.first_name, ' ', u.last_name) as studentName,
+        COUNT(DISTINCT CASE WHEN s.verdict = 'accepted' THEN e.id END) as exercisesCompleted,
+        COUNT(DISTINCT e.id) as totalExercises,
+        COALESCE(AVG(s.score), 0) as averageScore,
+        MAX(s.created_at) as lastActivity
+      FROM users u
+      JOIN user_groups ug ON u.id = ug.user_id
+      JOIN \`groups\` g ON ug.group_id = g.id
+      JOIN courses c ON g.course_id = c.id
+      JOIN syllabi syl ON c.id = syl.course_id
+      JOIN exercises e ON syl.id = e.syllabus_id
+      LEFT JOIN submissions s ON e.id = s.exercise_id AND u.id = s.student_id
+      WHERE ug.role = 'student'
+    `;
+
+    const params: any[] = [];
+
+    if (groupId) {
+      query += ` AND g.id = ? `;
+      params.push(groupId);
+    }
+
+    query += `
+      GROUP BY u.id
+      ORDER BY exercisesCompleted DESC
+    `;
+
+    const [rows] = await getPool().execute<any[]>(query, params);
+    return rows.map((row) => ({
+      studentId: row.studentId,
+      studentName: row.studentName,
+      exercisesCompleted: Number(row.exercisesCompleted),
+      totalExercises: Number(row.totalExercises),
+      averageScore: Number(row.averageScore),
+      lastActivity: row.lastActivity,
+    }));
+  }
+
+  async getSubmissionTrend(
+    groupId?: string
+  ): Promise<Array<{ hour: number; count: number }>> {
+    let query = `
+      SELECT 
+        HOUR(s.created_at) as hour,
+        COUNT(*) as count
+      FROM submissions s
+      JOIN exercises e ON s.exercise_id = e.id
+      JOIN syllabi syl ON e.syllabus_id = syl.id
+      JOIN courses c ON syl.course_id = c.id
+    `;
+
+    const params: any[] = [];
+
+    if (groupId) {
+      query += `
+        JOIN \`groups\` g ON c.id = g.course_id
+        WHERE g.id = ?
+      `;
+      params.push(groupId);
+    }
+
+    query += `
+      GROUP BY HOUR(s.created_at)
+      ORDER BY hour ASC
+    `;
+
+    const [rows] = await getPool().execute<any[]>(query, params);
+    return rows.map((row) => ({
+      hour: Number(row.hour),
+      count: Number(row.count),
+    }));
+  }
+
+  async getStudentSubmissionsByDay(
+    studentId: string
+  ): Promise<Array<{ date: string; count: number }>> {
+    const query = `
+      SELECT 
+        DATE(created_at) as date,
+        COUNT(*) as count
+      FROM submissions
+      WHERE student_id = ? AND created_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+      GROUP BY DATE(created_at)
+      ORDER BY date ASC
+    `;
+
+    const [rows] = await getPool().execute<any[]>(query, [studentId]);
+    return rows.map((row) => ({
+      date: row.date,
+      count: Number(row.count),
+    }));
+  }
+
+  async getSuccessRateByDifficulty(studentId: string): Promise<
+    Array<{
+      difficulty: string;
+      successRate: number;
+      totalAttempts: number;
+      successfulAttempts: number;
+    }>
+  > {
+    const query = `
+      SELECT 
+        e.difficulty,
+        COUNT(s.id) as totalAttempts,
+        SUM(CASE WHEN s.verdict = 'accepted' THEN 1 ELSE 0 END) as successfulAttempts,
+        ROUND(
+          (SUM(CASE WHEN s.verdict = 'accepted' THEN 1 ELSE 0 END) * 100.0 / COUNT(s.id)), 
+          2
+        ) as successRate
+      FROM submissions s
+      JOIN exercises e ON s.exercise_id = e.id
+      WHERE s.student_id = ?
+      GROUP BY e.difficulty
+      ORDER BY 
+        CASE e.difficulty
+          WHEN 'beginner' THEN 1
+          WHEN 'intermediate' THEN 2
+          WHEN 'advanced' THEN 3
+        END
+    `;
+
+    const [rows] = await getPool().execute<any[]>(query, [studentId]);
+    return rows.map((row) => ({
+      difficulty: row.difficulty,
+      successRate: Number(row.successRate),
+      totalAttempts: Number(row.totalAttempts),
+      successfulAttempts: Number(row.successfulAttempts),
+    }));
+  }
+
+  async getProgressBySyllabus(studentId: string): Promise<
+    Array<{
+      syllabusTitle: string;
+      completed: number;
+      total: number;
+      percentage: number;
+    }>
+  > {
+    const query = `
+      SELECT 
+        syl.title as syllabusTitle,
+        COUNT(DISTINCT e.id) as total,
+        COUNT(DISTINCT CASE WHEN s.verdict = 'accepted' THEN e.id END) as completed,
+        ROUND(
+          (COUNT(DISTINCT CASE WHEN s.verdict = 'accepted' THEN e.id END) * 100.0 / COUNT(DISTINCT e.id)),
+          2
+        ) as percentage
+      FROM user_groups ug
+      JOIN \`groups\` g ON ug.group_id = g.id
+      JOIN courses c ON g.course_id = c.id
+      JOIN syllabi syl ON c.id = syl.course_id
+      JOIN exercises e ON syl.id = e.syllabus_id
+      LEFT JOIN submissions s ON e.id = s.exercise_id AND s.student_id = ug.user_id
+      WHERE ug.user_id = ? AND ug.role = 'student'
+      GROUP BY syl.id
+      ORDER BY percentage DESC
+    `;
+
+    const [rows] = await getPool().execute<any[]>(query, [studentId]);
+    return rows.map((row) => ({
+      syllabusTitle: row.syllabusTitle,
+      completed: Number(row.completed),
+      total: Number(row.total),
+      percentage: Number(row.percentage),
+    }));
+  }
+
+  async getScoreEvolution(
+    studentId: string
+  ): Promise<
+    Array<{ date: string; averageScore: number; submissionCount: number }>
+  > {
+    const query = `
+      SELECT 
+        DATE(created_at) as date,
+        AVG(score) as averageScore,
+        COUNT(*) as submissionCount
+      FROM submissions
+      WHERE student_id = ? AND created_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+      GROUP BY DATE(created_at)
+      ORDER BY date ASC
+    `;
+
+    const [rows] = await getPool().execute<any[]>(query, [studentId]);
+    return rows.map((row) => ({
+      date: row.date,
+      averageScore: Number(row.averageScore),
+      submissionCount: Number(row.submissionCount),
+    }));
+  }
 }
 
 export const dashboardModel = new DashboardModel();

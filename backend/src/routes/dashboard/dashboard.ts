@@ -7,8 +7,10 @@ const router = Router();
 router.use(authMiddleware);
 
 router.get('/my-progress', dashboardController.getMyProgress);
+router.get('/student/charts', dashboardController.getStudentCharts);
 
 router.get('/teacher/overview', dashboardController.getTeacherOverview);
+router.get('/teacher/charts', dashboardController.getTeacherCharts);
 
 router.get(
   '/teacher/group/:groupId/activity',
@@ -20,6 +22,7 @@ router.get(
 );
 
 router.get('/admin', dashboardController.getAdminOverview);
+router.get('/admin/charts', dashboardController.getAdminCharts);
 router.get('/academic-years', dashboardController.getAcademicYears);
 
 // Analíticas

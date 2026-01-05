@@ -90,6 +90,55 @@ export class DashboardService {
 
     return `${startYear}-${startYear + 1}`;
   }
+
+  async getAdminChartsData() {
+    const submissionsByDay = await dashboardModel.getSubmissionsByDay();
+    const languageDistribution = await dashboardModel.getLanguageDistribution();
+    const acceptanceRateByDifficulty =
+      await dashboardModel.getAcceptanceRateByDifficulty();
+    const usersByRole = await dashboardModel.getUsersByRole();
+
+    return {
+      submissionsByDay,
+      languageDistribution,
+      acceptanceRateByDifficulty,
+      usersByRole,
+    };
+  }
+
+  async getTeacherChartsData(groupId?: string) {
+    const submissionsByDay =
+      await dashboardModel.getTeacherSubmissionsByDay(groupId);
+    const acceptanceRateByExercise =
+      await dashboardModel.getAcceptanceRateByExercise(groupId);
+    const studentProgress =
+      await dashboardModel.getGroupStudentProgress(groupId);
+    const submissionTrend = await dashboardModel.getSubmissionTrend(groupId);
+
+    return {
+      submissionsByDay,
+      acceptanceRateByExercise,
+      studentProgress,
+      submissionTrend,
+    };
+  }
+
+  async getStudentChartsData(studentId: string) {
+    const submissionsByDay =
+      await dashboardModel.getStudentSubmissionsByDay(studentId);
+    const successRateByDifficulty =
+      await dashboardModel.getSuccessRateByDifficulty(studentId);
+    const progressBySyllabus =
+      await dashboardModel.getProgressBySyllabus(studentId);
+    const scoreEvolution = await dashboardModel.getScoreEvolution(studentId);
+
+    return {
+      submissionsByDay,
+      successRateByDifficulty,
+      progressBySyllabus,
+      scoreEvolution,
+    };
+  }
 }
 
 export const dashboardService = new DashboardService();

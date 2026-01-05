@@ -28,6 +28,7 @@ interface CodeEditorProps {
   isSubmitting?: boolean;
   onChange?: (code: string) => void;
   showSubmitButton?: boolean;
+  lockLanguage?: boolean; // Bloquear cambio de lenguaje
 }
 
 const defaultCode = `# Escribe tu solución aquí
@@ -47,6 +48,7 @@ export const CodeEditor = ({
   isSubmitting = false,
   onChange,
   showSubmitButton = true,
+  lockLanguage = false,
 }: CodeEditorProps) => {
   const { t } = useTranslation();
   const [code, setCode] = useState(initialCode);
@@ -148,7 +150,7 @@ export const CodeEditor = ({
           <Select
             value={selectedLanguage}
             onValueChange={setSelectedLanguage}
-            disabled={readOnly || isSubmitting}>
+            disabled={readOnly || isSubmitting || lockLanguage}>
             <SelectTrigger className="w-[140px] h-8 text-xs bg-background">
               <SelectValue placeholder={t("editor.language")} />
             </SelectTrigger>

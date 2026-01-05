@@ -32,7 +32,12 @@ import {
   AlertTitle,
 } from "@/components/ui/feedback/alert";
 import { studentService } from "@/services/student.service";
+import { studentDashboardService } from "@/services/dashboard.student.service";
 import { useAuth } from "@/hooks/use-auth";
+import { StudentSubmissionsByDayChart } from "@/components/student/charts/SubmissionsByDayChart";
+import { SuccessRateByDifficultyChart } from "@/components/student/charts/SuccessRateByDifficultyChart";
+import { ProgressBySyllabusChart } from "@/components/student/charts/ProgressBySyllabusChart";
+import { ScoreEvolutionChart } from "@/components/student/charts/ScoreEvolutionChart";
 
 export default function StudentDashboard() {
   const { user } = useAuth();
@@ -45,6 +50,11 @@ export default function StudentDashboard() {
   } = useQuery({
     queryKey: ["studentProgress"],
     queryFn: studentService.getProgress,
+  });
+
+  const { data: chartsData, isLoading: isLoadingCharts } = useQuery({
+    queryKey: ["studentCharts"],
+    queryFn: studentDashboardService.getChartsData,
   });
 
   const totalExercises = progressData?.length || 0;
@@ -275,6 +285,28 @@ export default function StudentDashboard() {
             </Card>
           </div>
         </div>
+      </div>
+
+      {/* Charts Section */}
+      <div className="mt-8">
+        <h2 className="text-xl font-semibold mb-6">
+          {t("admin.dashboard.analytics")}
+        </h2>
+
+        {isLoadingCharts ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : chartsData ? (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <StudentSubmissionsByDayChart data={chartsData.submissionsByDay} />
+            <SuccessRateByDifficultyChart
+              data={chartsData.successRateByDifficulty}
+            />
+            <ProgressBySyllabusChart data={chartsData.progressBySyllabus} />
+            <ScoreEvolutionChart data={chartsData.scoreEvolution} />
+          </div>
+        ) : null}
       </div>
     </div>
   );

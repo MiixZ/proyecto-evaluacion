@@ -196,6 +196,43 @@ export class DashboardController {
       );
     }
   );
+
+  getAdminCharts = catchAsync(async (req: AuthRequest, res: Response) => {
+    if (req.user?.role !== UserRole.ADMIN) {
+      throw new AppError(
+        'FORBIDDEN',
+        403,
+        'Acceso exclusivo para administradores'
+      );
+    }
+
+    const data = await dashboardService.getAdminChartsData();
+
+    return ApiResponse.success(res, data);
+  });
+
+  getTeacherCharts = catchAsync(async (req: AuthRequest, res: Response) => {
+    if (
+      req.user?.role !== UserRole.TEACHER &&
+      req.user?.role !== UserRole.ADMIN
+    ) {
+      throw new AppError('FORBIDDEN', 403, 'Acceso denegado');
+    }
+
+    const { groupId } = req.query;
+    const data = await dashboardService.getTeacherChartsData(
+      groupId as UUID | undefined
+    );
+
+    return ApiResponse.success(res, data);
+  });
+
+  getStudentCharts = catchAsync(async (req: AuthRequest, res: Response) => {
+    const userId = req.user!.id;
+    const data = await dashboardService.getStudentChartsData(userId as UUID);
+
+    return ApiResponse.success(res, data);
+  });
 }
 
 export const dashboardController = new DashboardController();

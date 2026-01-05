@@ -51,7 +51,12 @@ import { Input } from "@/components/ui/forms/input";
 import { Button } from "@/components/ui/forms/button";
 import { ScrollArea } from "@/components/ui/layout/scroll-area";
 import { dashboardService } from "@/services/dashboard.service";
+import { professorDashboardService } from "@/services/dashboard.professor.service";
 import { toast } from "sonner";
+import { ProfessorSubmissionsByDayChart } from "@/components/professor/charts/SubmissionsByDayChart";
+import { AcceptanceRateByExerciseChart } from "@/components/professor/charts/AcceptanceRateByExerciseChart";
+import { StudentProgressChart } from "@/components/professor/charts/StudentProgressChart";
+import { SubmissionTrendChart } from "@/components/professor/charts/SubmissionTrendChart";
 
 export default function ProfessorDashboard() {
   const { t, i18n } = useTranslation();
@@ -64,6 +69,7 @@ export default function ProfessorDashboard() {
 
   const [studentFilter, setStudentFilter] = useState("");
   const [isExporting, setIsExporting] = useState(false);
+  const [selectedExerciseId, setSelectedExerciseId] = useState<string>("all");
 
   const {
     data: dashboardData,
@@ -72,6 +78,12 @@ export default function ProfessorDashboard() {
   } = useQuery({
     queryKey: ["professorOverview", selectedGroupId],
     queryFn: () => dashboardService.getProfessorStats(selectedGroupId),
+  });
+
+  const { data: chartsData, isLoading: isLoadingCharts } = useQuery({
+    queryKey: ["professorCharts", selectedGroupId],
+    queryFn: () => professorDashboardService.getChartsData(selectedGroupId),
+    enabled: !!selectedGroupId,
   });
 
   useEffect(() => {
@@ -576,6 +588,36 @@ export default function ProfessorDashboard() {
           </Card>
         </div>
       </div>
+
+      {/* Charts Section */}
+      {selectedGroupId && (
+        <div className="mt-8">
+          <h2 className="text-xl font-semibold mb-6 px-6">
+            {t("admin.dashboard.analytics")}
+          </h2>
+
+          {isLoadingCharts ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : chartsData ? (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 px-6">
+              <ProfessorSubmissionsByDayChart
+                data={chartsData.submissionsByDay}
+              />
+              <AcceptanceRateByExerciseChart
+                data={chartsData.acceptanceRateByExercise}
+                selectedExerciseId={
+                  selectedExerciseId === "all" ? undefined : selectedExerciseId
+                }
+                onExerciseChange={(id) => setSelectedExerciseId(id)}
+              />
+              <StudentProgressChart data={chartsData.studentProgress} />
+              <SubmissionTrendChart data={chartsData.submissionTrend} />
+            </div>
+          ) : null}
+        </div>
+      )}
     </div>
   );
 }

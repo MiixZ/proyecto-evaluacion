@@ -390,6 +390,7 @@ export default function ExerciseView() {
               key={currentCode ? `loaded-${currentCode.length}` : "default"}
               initialCode={currentCode}
               language={exercise.language}
+              lockLanguage={true}
               onSubmit={handleSubmit}
               isSubmitting={submitMutation.isPending}
             />

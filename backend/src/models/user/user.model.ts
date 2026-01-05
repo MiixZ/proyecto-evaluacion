@@ -155,6 +155,18 @@ export class UserModel {
       fields.push('status = ?');
       values.push(data.status);
     }
+    if (data.phone !== undefined) {
+      fields.push('phone = ?');
+      values.push(data.phone);
+    }
+    if (data.bio !== undefined) {
+      fields.push('bio = ?');
+      values.push(data.bio);
+    }
+    if (data.preferredLanguage) {
+      fields.push('preferred_language = ?');
+      values.push(data.preferredLanguage);
+    }
 
     if (fields.length === 0) return;
 
