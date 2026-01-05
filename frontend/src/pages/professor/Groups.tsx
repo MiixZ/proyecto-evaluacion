@@ -56,6 +56,10 @@ import {
 } from "@/components/ui/overlay/dropdown-menu";
 import { Label } from "@/components/ui/forms/label";
 import { toast } from "@/hooks/use-toast";
+import {
+  parseBackendError,
+  extractValidationErrors,
+} from "@/lib/error-handler";
 
 import { dashboardService } from "@/services/dashboard.service";
 import { groupService } from "@/services/group.service";
@@ -79,6 +83,7 @@ export default function GroupsPage() {
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
 
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [newStudent, setNewStudent] = useState({
     firstName: "",
     lastName: "",
@@ -136,6 +141,7 @@ export default function GroupsPage() {
       });
       setIsAddOpen(false);
       setNewStudent({ firstName: "", lastName: "", email: "" });
+      setFieldErrors({});
       toast({
         title: t("professor.groups.student_added", "Estudiante añadido"),
         description: t(
@@ -144,13 +150,20 @@ export default function GroupsPage() {
         ),
       });
     },
-    onError: () => {
+    onError: (error: any) => {
+      const errorMessage = parseBackendError(
+        error,
+        t("professor.groups.add_error", "No se pudo añadir al estudiante.")
+      );
+      const validationErrors = extractValidationErrors(error);
+
+      if (validationErrors) {
+        setFieldErrors(validationErrors);
+      }
+
       toast({
         title: t("common.error", "Error"),
-        description: t(
-          "professor.groups.add_error",
-          "No se pudo añadir al estudiante."
-        ),
+        description: errorMessage,
         variant: "destructive",
       });
     },
@@ -170,13 +183,14 @@ export default function GroupsPage() {
         description: response.message,
       });
     },
-    onError: () => {
+    onError: (error: any) => {
+      const errorMessage = parseBackendError(
+        error,
+        t("professor.groups.import_failed", "Falló la importación.")
+      );
       toast({
         title: t("common.error", "Error"),
-        description: t(
-          "professor.groups.import_failed",
-          "Falló la importación."
-        ),
+        description: errorMessage,
         variant: "destructive",
       });
     },
@@ -195,6 +209,17 @@ export default function GroupsPage() {
           "professor.groups.student_removed_desc",
           "Se ha quitado del grupo."
         ),
+      });
+    },
+    onError: (error: any) => {
+      const errorMessage = parseBackendError(
+        error,
+        t("professor.groups.remove_error", "No se pudo eliminar al estudiante.")
+      );
+      toast({
+        title: t("common.error", "Error"),
+        description: errorMessage,
+        variant: "destructive",
       });
     },
   });
@@ -216,13 +241,14 @@ export default function GroupsPage() {
         ),
       });
     },
-    onError: (err: any) => {
-      const msg =
-        err.response?.data?.message ||
-        t("professor.groups.update_error", "No se pudo actualizar.");
+    onError: (error: any) => {
+      const errorMessage = parseBackendError(
+        error,
+        t("professor.groups.update_error", "No se pudo actualizar.")
+      );
       toast({
         title: t("common.error", "Error"),
-        description: msg,
+        description: errorMessage,
         variant: "destructive",
       });
     },
@@ -240,13 +266,14 @@ export default function GroupsPage() {
         description: response.message,
       });
     },
-    onError: () => {
+    onError: (error: any) => {
+      const errorMessage = parseBackendError(
+        error,
+        t("professor.groups.status_error", "No se pudo cambiar el estado.")
+      );
       toast({
         title: t("common.error", "Error"),
-        description: t(
-          "professor.groups.status_error",
-          "No se pudo cambiar el estado."
-        ),
+        description: errorMessage,
         variant: "destructive",
       });
     },
@@ -463,7 +490,19 @@ export default function GroupsPage() {
 
               <div className="flex flex-col sm:flex-row gap-2 w-full xl:w-auto items-start sm:items-center">
                 <div className="flex gap-2 w-full sm:w-auto">
-                  <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+                  <Dialog
+                    open={isAddOpen}
+                    onOpenChange={(open) => {
+                      setIsAddOpen(open);
+                      if (!open) {
+                        setFieldErrors({});
+                        setNewStudent({
+                          firstName: "",
+                          lastName: "",
+                          email: "",
+                        });
+                      }
+                    }}>
                     <DialogTrigger asChild>
                       <Button className="flex-1 sm:flex-none">
                         <UserPlus className="mr-2 h-4 w-4" />{" "}
@@ -493,13 +532,27 @@ export default function GroupsPage() {
                           <Input
                             required
                             value={newStudent.firstName}
-                            onChange={(e) =>
+                            onChange={(e) => {
                               setNewStudent({
                                 ...newStudent,
                                 firstName: e.target.value,
-                              })
+                              });
+                              if (fieldErrors.firstName) {
+                                setFieldErrors({
+                                  ...fieldErrors,
+                                  firstName: "",
+                                });
+                              }
+                            }}
+                            className={
+                              fieldErrors.firstName ? "border-red-500" : ""
                             }
                           />
+                          {fieldErrors.firstName && (
+                            <p className="text-sm text-red-500">
+                              {fieldErrors.firstName}
+                            </p>
+                          )}
                         </div>
                         <div className="space-y-2">
                           <Label>
@@ -508,13 +561,27 @@ export default function GroupsPage() {
                           <Input
                             required
                             value={newStudent.lastName}
-                            onChange={(e) =>
+                            onChange={(e) => {
                               setNewStudent({
                                 ...newStudent,
                                 lastName: e.target.value,
-                              })
+                              });
+                              if (fieldErrors.lastName) {
+                                setFieldErrors({
+                                  ...fieldErrors,
+                                  lastName: "",
+                                });
+                              }
+                            }}
+                            className={
+                              fieldErrors.lastName ? "border-red-500" : ""
                             }
                           />
+                          {fieldErrors.lastName && (
+                            <p className="text-sm text-red-500">
+                              {fieldErrors.lastName}
+                            </p>
+                          )}
                         </div>
                         <div className="space-y-2">
                           <Label>Email</Label>
@@ -522,13 +589,24 @@ export default function GroupsPage() {
                             required
                             type="email"
                             value={newStudent.email}
-                            onChange={(e) =>
+                            onChange={(e) => {
                               setNewStudent({
                                 ...newStudent,
                                 email: e.target.value,
-                              })
+                              });
+                              if (fieldErrors.email) {
+                                setFieldErrors({ ...fieldErrors, email: "" });
+                              }
+                            }}
+                            className={
+                              fieldErrors.email ? "border-red-500" : ""
                             }
                           />
+                          {fieldErrors.email && (
+                            <p className="text-sm text-red-500">
+                              {fieldErrors.email}
+                            </p>
+                          )}
                         </div>
                         <DialogFooter>
                           <Button

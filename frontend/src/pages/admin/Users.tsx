@@ -63,6 +63,11 @@ import {
 import { Label } from "@/components/ui/forms/label";
 import { useToast } from "@/hooks/use-toast";
 import {
+  parseBackendError,
+  extractValidationErrors,
+  applyValidationErrors,
+} from "@/lib/error-handler";
+import {
   MoreHorizontal,
   Plus,
   Search,
@@ -150,8 +155,17 @@ const AssignGroupDialog = ({
       setSelectedSubject("");
       setSelectedGroup("");
     },
-    onError: () =>
-      toast({ title: t("admin.users.assign_error"), variant: "destructive" }),
+    onError: (error: any) => {
+      const errorMessage = parseBackendError(
+        error,
+        t("admin.users.assign_error")
+      );
+      toast({
+        title: t("common.error"),
+        description: errorMessage,
+        variant: "destructive",
+      });
+    },
   });
 
   return (
@@ -304,6 +318,17 @@ const UserTable = ({
       toast({ title: t("admin.users.status_updated") });
       queryClient.invalidateQueries({ queryKey: ["users"] });
     },
+    onError: (error: any) => {
+      const errorMessage = parseBackendError(
+        error,
+        t("admin.users.status_error")
+      );
+      toast({
+        title: t("common.error"),
+        description: errorMessage,
+        variant: "destructive",
+      });
+    },
   });
 
   const changeRoleMutation = useMutation({
@@ -313,6 +338,17 @@ const UserTable = ({
       toast({ title: t("admin.users.role_updated") });
       queryClient.invalidateQueries({ queryKey: ["users"] });
     },
+    onError: (error: any) => {
+      const errorMessage = parseBackendError(
+        error,
+        t("admin.users.role_error")
+      );
+      toast({
+        title: t("common.error"),
+        description: errorMessage,
+        variant: "destructive",
+      });
+    },
   });
 
   const deleteMutation = useMutation({
@@ -320,6 +356,17 @@ const UserTable = ({
     onSuccess: () => {
       toast({ title: t("admin.users.user_deleted") });
       queryClient.invalidateQueries({ queryKey: ["users"] });
+    },
+    onError: (error: any) => {
+      const errorMessage = parseBackendError(
+        error,
+        t("admin.users.delete_error")
+      );
+      toast({
+        title: t("common.error"),
+        description: errorMessage,
+        variant: "destructive",
+      });
     },
   });
 
@@ -580,6 +627,7 @@ const UsersPage = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [newUser, setNewUser] = useState({
     firstName: "",
     lastName: "",
@@ -635,19 +683,30 @@ const UsersPage = () => {
         email: "",
         role: "student",
       });
+      setFieldErrors({});
       queryClient.invalidateQueries({ queryKey: ["users"] });
     },
-    onError: (err: any) => {
+    onError: (error: any) => {
+      const errorMessage = parseBackendError(
+        error,
+        t("admin.users.create_error")
+      );
+      const validationErrors = extractValidationErrors(error);
+
+      if (validationErrors) {
+        setFieldErrors(validationErrors);
+      }
+
       toast({
         title: t("common.error"),
-        description: err.response?.data?.message,
+        description: errorMessage,
         variant: "destructive",
       });
     },
   });
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 p-5">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
@@ -657,7 +716,20 @@ const UsersPage = () => {
           <p className="text-muted-foreground">{t("admin.users.subtitle")}</p>
         </div>
 
-        <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+        <Dialog
+          open={isCreateOpen}
+          onOpenChange={(open) => {
+            setIsCreateOpen(open);
+            if (!open) {
+              setFieldErrors({});
+              setNewUser({
+                firstName: "",
+                lastName: "",
+                email: "",
+                role: "student",
+              });
+            }
+          }}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="mr-2 h-4 w-4" /> {t("admin.users.create_button")}
@@ -676,19 +748,37 @@ const UsersPage = () => {
                   <Label>{t("profile_page.fields.first_name")}</Label>
                   <Input
                     value={newUser.firstName}
-                    onChange={(e) =>
-                      setNewUser({ ...newUser, firstName: e.target.value })
-                    }
+                    onChange={(e) => {
+                      setNewUser({ ...newUser, firstName: e.target.value });
+                      if (fieldErrors.firstName) {
+                        setFieldErrors({ ...fieldErrors, firstName: "" });
+                      }
+                    }}
+                    className={fieldErrors.firstName ? "border-red-500" : ""}
                   />
+                  {fieldErrors.firstName && (
+                    <p className="text-sm text-red-500">
+                      {fieldErrors.firstName}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label>{t("profile_page.fields.last_name")}</Label>
                   <Input
                     value={newUser.lastName}
-                    onChange={(e) =>
-                      setNewUser({ ...newUser, lastName: e.target.value })
-                    }
+                    onChange={(e) => {
+                      setNewUser({ ...newUser, lastName: e.target.value });
+                      if (fieldErrors.lastName) {
+                        setFieldErrors({ ...fieldErrors, lastName: "" });
+                      }
+                    }}
+                    className={fieldErrors.lastName ? "border-red-500" : ""}
                   />
+                  {fieldErrors.lastName && (
+                    <p className="text-sm text-red-500">
+                      {fieldErrors.lastName}
+                    </p>
+                  )}
                 </div>
               </div>
               <div className="space-y-2">
@@ -696,10 +786,17 @@ const UsersPage = () => {
                 <Input
                   type="email"
                   value={newUser.email}
-                  onChange={(e) =>
-                    setNewUser({ ...newUser, email: e.target.value })
-                  }
+                  onChange={(e) => {
+                    setNewUser({ ...newUser, email: e.target.value });
+                    if (fieldErrors.email) {
+                      setFieldErrors({ ...fieldErrors, email: "" });
+                    }
+                  }}
+                  className={fieldErrors.email ? "border-red-500" : ""}
                 />
+                {fieldErrors.email && (
+                  <p className="text-sm text-red-500">{fieldErrors.email}</p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label>{t("admin.users.initial_role")}</Label>

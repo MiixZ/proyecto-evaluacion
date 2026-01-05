@@ -23,32 +23,43 @@ export function parseBackendError(
   if (axios.isAxiosError(error)) {
     const data = error.response?.data;
 
-    // Caso 1: Backend devuelve { error: { message: "..." } }
+    // Caso 1: Errores de validación con detalles específicos
+    if (data?.details?.details && Array.isArray(data.details.details)) {
+      const errorMessages = data.details.details
+        .map((issue: any) => {
+          const cleanField = issue.field?.replace(/^body\./, "") || "Campo";
+          return `${cleanField}: ${issue.message}`;
+        })
+        .join(", ");
+      return errorMessages || data.message || "Error de validación";
+    }
+
+    // Caso 2: Backend devuelve { error: { message: "..." } }
     if (data?.error && typeof data.error === "object" && data.error.message) {
       return data.error.message;
     }
 
-    // Caso 2: Backend devuelve { message: "..." }
+    // Caso 3: Backend devuelve { message: "..." }
     if (data?.message && typeof data.message === "string") {
       return data.message;
     }
 
-    // Caso 3: Backend devuelve { error: "..." } (string directo)
+    // Caso 4: Backend devuelve { error: "..." } (string directo)
     if (data?.error && typeof data.error === "string") {
       return data.error;
     }
 
-    // Caso 4: Error de red
+    // Caso 5: Error de red
     if (error.code === "ERR_NETWORK") {
       return "Error de conexión. Verifica tu conexión a internet.";
     }
 
-    // Caso 5: Timeout
+    // Caso 6: Timeout
     if (error.code === "ECONNABORTED") {
       return "La solicitud ha tardado demasiado tiempo. Inténtalo de nuevo.";
     }
 
-    // Caso 6: Error HTTP genérico
+    // Caso 7: Error HTTP genérico
     if (error.response?.status) {
       const status = error.response.status;
       if (status === 401)
@@ -61,7 +72,7 @@ export function parseBackendError(
     }
   }
 
-  // Caso 7: Error de JS estándar
+  // Caso 8: Error de JS estándar
   if (error instanceof Error) {
     return error.message;
   }
@@ -80,6 +91,20 @@ export function extractValidationErrors(
   if (axios.isAxiosError(error)) {
     const data = error.response?.data;
 
+    // Caso 1: Formato del middleware validator { details: { details: [{ field, message }] } }
+    if (data?.details?.details && Array.isArray(data.details.details)) {
+      const fieldErrors: Record<string, string> = {};
+      data.details.details.forEach((issue: any) => {
+        if (issue.field && issue.message) {
+          // Remover el prefijo "body." si existe
+          const cleanField = issue.field.replace(/^body\./, "");
+          fieldErrors[cleanField] = issue.message;
+        }
+      });
+      return Object.keys(fieldErrors).length > 0 ? fieldErrors : null;
+    }
+
+    // Caso 2: Zod issues format
     if (data?.error?.issues && Array.isArray(data.error.issues)) {
       const fieldErrors: Record<string, string> = {};
       data.error.issues.forEach((issue: any) => {
@@ -93,6 +118,7 @@ export function extractValidationErrors(
       return Object.keys(fieldErrors).length > 0 ? fieldErrors : null;
     }
 
+    // Caso 3: Formato { errors: { field: [messages] } }
     if (data?.errors && typeof data.errors === "object") {
       const fieldErrors: Record<string, string> = {};
       Object.entries(data.errors).forEach(([field, messages]) => {
@@ -103,6 +129,7 @@ export function extractValidationErrors(
       return Object.keys(fieldErrors).length > 0 ? fieldErrors : null;
     }
 
+    // Caso 4: Formato { validationErrors: { field: message } }
     if (data?.validationErrors && typeof data.validationErrors === "object") {
       return data.validationErrors;
     }
@@ -118,15 +145,20 @@ export function extractValidationErrors(
  */
 export function applyValidationErrors(
   errors: Record<string, string> | null,
-  setError: (name: string, error: { type: string; message: string }) => void
+  setError: any // UseFormSetError from react-hook-form
 ): void {
   if (!errors) return;
 
   Object.entries(errors).forEach(([field, message]) => {
-    setError(field, {
-      type: "server",
-      message,
-    });
+    // Intentar aplicar el error al campo
+    try {
+      setError(field as any, {
+        type: "server",
+        message,
+      });
+    } catch (e) {
+      console.warn(`No se pudo aplicar error al campo: ${field}`, e);
+    }
   });
 }
 
