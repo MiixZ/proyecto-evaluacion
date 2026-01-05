@@ -27,25 +27,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/layout/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/data/table";
 import { Badge } from "@/components/ui/data/badge";
+import {
+  ServerDataTable,
+  ColumnDef,
+  SortState,
+} from "@/components/ui/data/server-data-table";
 import { dashboardService } from "@/services/dashboard.service";
 import { exportService } from "@/services/export.service";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/data/pagination";
 import {
   Select,
   SelectContent,
@@ -72,25 +61,17 @@ export default function ActivityHistory() {
   const studentIdParam = searchParams.get("studentId");
 
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
-  const [filterStatus, setFilterStatus] = useState("all");
-  const [sorting, setSorting] = useState<{
-    column: string;
-    direction: "ASC" | "DESC";
-  }>({ column: "date", direction: "DESC" });
+  const [limit, setLimit] = useState(20);
+  const [filterVerdict, setFilterVerdict] = useState("all");
+  const [sorting, setSorting] = useState<SortState>({
+    column: "date",
+    direction: "DESC",
+  });
 
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
-  const { data, isLoading } = useQuery({
-    queryKey: [
-      "groupActivity",
-      groupId,
-      page,
-      limit,
-      sorting,
-      filterStatus,
-      studentIdParam,
-    ],
+  const { data: rawData, isLoading } = useQuery({
+    queryKey: ["groupActivity", groupId, page, limit, sorting, studentIdParam],
     queryFn: () =>
       dashboardService.getGroupActivity(
         groupId!,
@@ -98,18 +79,36 @@ export default function ActivityHistory() {
         limit,
         sorting.column,
         sorting.direction,
-        filterStatus,
+        undefined, // No filtramos en el servidor
         studentIdParam || undefined
       ),
     enabled: !!groupId,
   });
 
-  const handleSort = (column: string) => {
-    setSorting((prev) => ({
-      column,
-      direction:
-        prev.column === column && prev.direction === "DESC" ? "ASC" : "DESC",
-    }));
+  // Filtrar client-side por veredicto
+  const data = rawData
+    ? {
+        ...rawData,
+        items:
+          filterVerdict === "all"
+            ? rawData.items
+            : filterVerdict === "accepted"
+            ? rawData.items.filter((item: any) => item.verdict === "accepted")
+            : rawData.items.filter((item: any) => item.verdict !== "accepted"),
+        total:
+          filterVerdict === "all"
+            ? rawData.total
+            : filterVerdict === "accepted"
+            ? rawData.items.filter((item: any) => item.verdict === "accepted")
+                .length
+            : rawData.items.filter((item: any) => item.verdict !== "accepted")
+                .length,
+      }
+    : undefined;
+
+  const handleSort = (column: string, direction: "ASC" | "DESC") => {
+    setSorting({ column, direction });
+    setPage(1);
   };
 
   const handleDownload = async (
@@ -136,33 +135,24 @@ export default function ActivityHistory() {
     setPage(1); // Resetear a página 1 al quitar filtro
   };
 
-  const SortIcon = ({ column }: { column: string }) => {
-    if (sorting.column !== column)
-      return <ArrowUpDown className="ml-2 h-4 w-4" />;
-    return sorting.direction === "ASC" ? (
-      <ArrowUp className="ml-2 h-4 w-4 text-primary" />
-    ) : (
-      <ArrowDown className="ml-2 h-4 w-4 text-primary" />
-    );
-  };
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "success":
-      case "completed":
+  const getStatusBadge = (verdict: string) => {
+    switch (verdict) {
+      case "accepted":
         return (
           <Badge variant="default">
             {t("activity_history.status.accepted")}
           </Badge>
         );
-      case "error":
-      case "failed":
+      case "wrong_answer":
+      case "runtime_error":
+      case "compilation_error":
         return (
           <Badge variant="destructive">
             {t("activity_history.status.error")}
           </Badge>
         );
-      case "warning":
+      case "time_limit_exceeded":
+      case "memory_limit_exceeded":
         return (
           <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
             {t("activity_history.status.incorrect")}
@@ -176,10 +166,96 @@ export default function ActivityHistory() {
         );
       default:
         return (
-          <Badge variant="outline">{t("activity_history.status.info")}</Badge>
+          <Badge variant="outline">
+            {verdict || t("activity_history.status.info")}
+          </Badge>
         );
     }
   };
+
+  const activityColumns: ColumnDef<any>[] = [
+    {
+      key: "studentName",
+      label: t("activity_history.table.student"),
+      sortable: true,
+      className: "font-medium",
+    },
+    {
+      key: "exerciseTitle",
+      label: t("activity_history.table.exercise"),
+      sortable: true,
+      render: (activity) =>
+        activity.exerciseTitle ||
+        activity.action ||
+        t("activity_history.generic_submission"),
+    },
+    {
+      key: "verdict",
+      label: t("activity_history.table.verdict", "Veredicto"),
+      sortable: true,
+      render: (activity) => getStatusBadge(activity.verdict),
+    },
+    {
+      key: "date",
+      label: t("activity_history.table.date"),
+      sortable: true,
+      render: (activity) => {
+        if (!activity.time) return "-";
+        try {
+          return (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Calendar className="h-3 w-3" />
+              {format(new Date(activity.time), "PP p", {
+                locale: dateLocale,
+              })}
+            </div>
+          );
+        } catch {
+          return "-";
+        }
+      },
+    },
+    {
+      key: "actions",
+      label: "",
+      render: (activity) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-8 w-8 p-0">
+              <span className="sr-only">
+                {t("activity_history.actions.menu")}
+              </span>
+              {downloadingId === activity.id ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <MoreHorizontal className="h-4 w-4" />
+              )}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>
+              {t("activity_history.actions.title")}
+            </DropdownMenuLabel>
+            <DropdownMenuItem
+              onClick={() => handleDownload(activity.id, "zip")}>
+              <FileCode className="mr-2 h-4 w-4" />
+              {t("activity_history.actions.download_code")}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => handleDownload(activity.id, "json")}>
+              <FileJson className="mr-2 h-4 w-4" />
+              {t("activity_history.actions.download_json")}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={() => navigate(`/submissions/${activity.id}`)}>
+              {t("activity_history.actions.view_details")}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ),
+    },
+  ];
 
   if (isLoading) {
     return (
@@ -201,9 +277,8 @@ export default function ActivityHistory() {
             {t("activity_history.title")}
           </h1>
           <p className="text-muted-foreground">
-            {t("activity_history.subtitle", {
-              name: data?.group?.name || "",
-              subject: data?.group?.subject?.name || "",
+            {t("activity_history.subtitle_simple", {
+              defaultValue: "Historial de actividad del grupo",
             })}
           </p>
         </div>
@@ -217,12 +292,10 @@ export default function ActivityHistory() {
               {t("activity_history.filter_active")}
             </span>
             <span className="text-xs opacity-90">
-              {t("activity_history.filter_student_only", {
-                student:
-                  data?.students?.find(
-                    (s: any) => s.id.toString() === studentIdParam
-                  )?.name || "",
-              })}
+              {t(
+                "activity_history.filter_student_only_simple",
+                "Mostrando solo actividad de un estudiante"
+              )}
             </span>
           </div>
           <Button
@@ -243,218 +316,55 @@ export default function ActivityHistory() {
               <CardTitle>{t("activity_history.submissions_title")}</CardTitle>
               <CardDescription>
                 {t("activity_history.showing", {
-                  start: (page - 1) * limit + 1,
-                  end: Math.min(page * limit, data?.total || 0),
+                  count: data?.items.length || 0,
                   total: data?.total || 0,
                 })}
               </CardDescription>
             </div>
 
-            <div className="flex items-center gap-2">
-              <Select
-                value={filterStatus}
-                onValueChange={(val) => {
-                  setFilterStatus(val);
-                  setPage(1);
-                }}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue
-                    placeholder={t("activity_history.filter_status")}
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">
-                    {t("activity_history.filter_all")}
-                  </SelectItem>
-                  <SelectItem value="passed">
-                    {t("activity_history.filter_passed")}
-                  </SelectItem>
-                  <SelectItem value="failed">
-                    {t("activity_history.filter_failed")}
-                  </SelectItem>
-                  <SelectItem value="pending">
-                    {t("activity_history.filter_pending")}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select
-                value={limit.toString()}
-                onValueChange={(val) => {
-                  setLimit(Number(val));
-                  setPage(1);
-                }}>
-                <SelectTrigger className="w-[130px]">
-                  <SelectValue placeholder={t("activity_history.rows")} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="5">
-                    5 {t("activity_history.per_page")}
-                  </SelectItem>
-                  <SelectItem value="10">
-                    10 {t("activity_history.per_page")}
-                  </SelectItem>
-                  <SelectItem value="20">
-                    20 {t("activity_history.per_page")}
-                  </SelectItem>
-                  <SelectItem value="50">
-                    50 {t("activity_history.per_page")}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <Select
+              value={filterVerdict}
+              onValueChange={(val) => {
+                setFilterVerdict(val);
+                setPage(1);
+              }}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue
+                  placeholder={t(
+                    "activity_history.filter_verdict",
+                    "Veredicto"
+                  )}
+                />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">
+                  {t("activity_history.filter_all", "Todos")}
+                </SelectItem>
+                <SelectItem value="accepted">
+                  {t("activity_history.filter_accepted", "Aceptado")}
+                </SelectItem>
+                <SelectItem value="error">
+                  {t("activity_history.filter_error", "Error")}
+                </SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead
-                  className="cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => handleSort("studentName")}>
-                  <div className="flex items-center">
-                    {t("activity_history.table.student")}{" "}
-                    <SortIcon column="studentName" />
-                  </div>
-                </TableHead>
-                <TableHead
-                  className="cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => handleSort("exerciseTitle")}>
-                  <div className="flex items-center">
-                    {t("activity_history.table.exercise")}{" "}
-                    <SortIcon column="exerciseTitle" />
-                  </div>
-                </TableHead>
-                <TableHead
-                  className="cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => handleSort("status")}>
-                  <div className="flex items-center">
-                    {t("activity_history.table.status")}{" "}
-                    <SortIcon column="status" />
-                  </div>
-                </TableHead>
-                <TableHead
-                  className="text-right cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => handleSort("date")}>
-                  <div className="flex items-center justify-end">
-                    {t("activity_history.table.date")}{" "}
-                    <SortIcon column="date" />
-                  </div>
-                </TableHead>
-                <TableHead className="w-[50px]"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {data?.items.map((activity: any) => (
-                <TableRow key={activity.id}>
-                  <TableCell className="font-medium">
-                    {activity.studentName}
-                  </TableCell>
-                  <TableCell>
-                    {/* Fallback para mostrar título o acción genérica */}
-                    {activity.exerciseTitle ||
-                      activity.action ||
-                      t("activity_history.generic_submission")}
-                  </TableCell>
-                  <TableCell>{getStatusBadge(activity.status)}</TableCell>
-                  <TableCell className="text-right flex items-center justify-end gap-2 text-muted-foreground">
-                    <Calendar className="h-3 w-3" />
-                    {format(new Date(activity.time), "PP p", {
-                      locale: dateLocale,
-                    })}
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <span className="sr-only">
-                            {t("activity_history.actions.menu")}
-                          </span>
-                          {downloadingId === activity.id ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <MoreHorizontal className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>
-                          {t("activity_history.actions.title")}
-                        </DropdownMenuLabel>
-                        <DropdownMenuItem
-                          onClick={() => handleDownload(activity.id, "zip")}>
-                          <FileCode className="mr-2 h-4 w-4" />
-                          {t("activity_history.actions.download_code")}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => handleDownload(activity.id, "json")}>
-                          <FileJson className="mr-2 h-4 w-4" />
-                          {t("activity_history.actions.download_json")}
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          onClick={() =>
-                            navigate(`/submissions/${activity.id}`)
-                          }>
-                          {t("activity_history.actions.view_details")}
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {data?.items.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center">
-                    {t("activity_history.no_results")}
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-
-          {data && data.totalPages > 1 && (
-            <div className="mt-4 flex justify-center">
-              <Pagination>
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious
-                      onClick={() => setPage((p) => Math.max(1, p - 1))}
-                      className={
-                        page === 1
-                          ? "pointer-events-none opacity-50"
-                          : "cursor-pointer"
-                      }
-                    />
-                  </PaginationItem>
-                  {Array.from({ length: data.totalPages }, (_, i) => i + 1).map(
-                    (pageNum) => (
-                      <PaginationItem key={pageNum}>
-                        <PaginationLink
-                          onClick={() => setPage(pageNum)}
-                          isActive={page === pageNum}
-                          className="cursor-pointer">
-                          {pageNum}
-                        </PaginationLink>
-                      </PaginationItem>
-                    )
-                  )}
-                  <PaginationItem>
-                    <PaginationNext
-                      onClick={() =>
-                        setPage((p) => Math.min(data.totalPages, p + 1))
-                      }
-                      className={
-                        page === data.totalPages
-                          ? "pointer-events-none opacity-50"
-                          : "cursor-pointer"
-                      }
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
-            </div>
-          )}
+          <ServerDataTable<any>
+            data={data?.items || []}
+            columns={activityColumns}
+            totalItems={data?.total || 0}
+            currentPage={page}
+            pageSize={limit}
+            onPageChange={setPage}
+            onSortChange={handleSort}
+            sortState={sorting}
+            emptyMessage={t("activity_history.no_results")}
+            getRowKey={(item) => item.id}
+            isLoading={isLoading}
+            loadingRows={10}
+          />
         </CardContent>
       </Card>
     </div>

@@ -1,6 +1,6 @@
 // frontend/src/types/academic.types.ts
 
-export interface Degree {
+export interface Degree extends Record<string, unknown> {
   id: string;
   name: string;
   code: string;
@@ -10,7 +10,7 @@ export interface Degree {
   status: "active" | "archived";
 }
 
-export interface Subject {
+export interface Subject extends Record<string, unknown> {
   id: string;
   degreeId: string;
   name: string;
@@ -22,7 +22,7 @@ export interface Subject {
   degree?: Degree;
 }
 
-export interface Course {
+export interface Course extends Record<string, unknown> {
   id: string;
   subjectId: string;
   academicYear: string;
@@ -33,7 +33,7 @@ export interface Course {
   subject?: Subject;
 }
 
-export interface Syllabus {
+export interface Syllabus extends Record<string, unknown> {
   id: string;
   courseId: string;
   title: string;

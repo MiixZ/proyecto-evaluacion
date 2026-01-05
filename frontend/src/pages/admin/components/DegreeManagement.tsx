@@ -31,14 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/forms/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/data/table";
+import { DataTable, ColumnDef } from "@/components/ui/data/data-table";
 import { Badge } from "@/components/ui/data/badge";
 import { toast } from "sonner";
 
@@ -138,10 +131,6 @@ export default function DegreeManagement() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Degree | null>(null);
 
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
-
   const { data: degrees = [], isLoading } = useQuery({
     queryKey: ["degrees"],
     queryFn: academicService.getDegrees,
@@ -181,19 +170,57 @@ export default function DegreeManagement() {
     setIsDialogOpen(true);
   };
 
-  // Filtrado y paginación
-  const filtered = degrees.filter((degree) => {
-    const searchLower = search.toLowerCase();
-    return (
-      degree.name?.toLowerCase().includes(searchLower) ||
-      degree.code?.toLowerCase().includes(searchLower)
-    );
-  });
-
-  const total = filtered.length;
-  const totalPages = Math.ceil(total / limit);
-  const start = (page - 1) * limit;
-  const paginated = filtered.slice(start, start + limit);
+  // Definir columnas para DataTable
+  const degreeColumns: ColumnDef<Degree>[] = [
+    {
+      key: "code",
+      label: t("admin.degrees.code"),
+      sortable: true,
+      className: "font-mono",
+    },
+    {
+      key: "name",
+      label: t("admin.subjects.name"),
+      sortable: true,
+      className: "font-medium",
+    },
+    {
+      key: "durationYears",
+      label: t("admin.degrees.duration_years"),
+      sortable: true,
+      render: (item) => `${item.durationYears} ${t("admin.degrees.years")}`,
+    },
+    {
+      key: "totalCredits",
+      label: t("admin.subjects.credits"),
+      sortable: true,
+      render: (item) => `${item.totalCredits} ECTS`,
+    },
+    {
+      key: "status",
+      label: t("admin.degrees.status"),
+      sortable: true,
+      render: (item) => (
+        <Badge variant={item.status === "active" ? "default" : "secondary"}>
+          {item.status}
+        </Badge>
+      ),
+    },
+    {
+      key: "actions",
+      label: t("admin.degrees.actions"),
+      headerClassName: "text-right",
+      className: "text-right",
+      render: (item) => (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => openEditDialog(item)}>
+          <Pencil className="h-4 w-4" />
+        </Button>
+      ),
+    },
+  ];
 
   return (
     <>
@@ -227,121 +254,19 @@ export default function DegreeManagement() {
         <CardHeader>
           <CardTitle>{t("admin.degrees.title")}</CardTitle>
           <CardDescription>{t("admin.degrees.subtitle")}</CardDescription>
-          <div className="flex justify-between items-center gap-4 mt-4">
-            <div className="relative w-64">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder={t("admin.degrees.search_degree")}
-                className="pl-8"
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                  setPage(1);
-                }}
-              />
-            </div>
-            <Select
-              value={limit.toString()}
-              onValueChange={(v) => setLimit(Number(v))}>
-              <SelectTrigger className="w-[100px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="5">5 {t("common.rows")}</SelectItem>
-                <SelectItem value="10">10 {t("common.rows")}</SelectItem>
-                <SelectItem value="20">20 {t("common.rows")}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
-            <div className="flex justify-center p-4">
-              <Loader2 className="animate-spin" />
-            </div>
-          ) : (
-            <>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t("admin.degrees.code")}</TableHead>
-                    <TableHead>{t("admin.subjects.name")}</TableHead>
-                    <TableHead>{t("admin.degrees.duration_years")}</TableHead>
-                    <TableHead>{t("admin.subjects.credits")}</TableHead>
-                    <TableHead>{t("admin.degrees.status")}</TableHead>
-                    <TableHead className="text-right">
-                      {t("admin.degrees.actions")}
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {paginated.length === 0 ? (
-                    <TableRow>
-                      <TableCell
-                        colSpan={6}
-                        className="text-center text-muted-foreground">
-                        {t("admin.degrees.no_degrees")}
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    paginated.map((degree) => (
-                      <TableRow key={degree.id}>
-                        <TableCell className="font-mono">
-                          {degree.code}
-                        </TableCell>
-                        <TableCell className="font-medium">
-                          {degree.name}
-                        </TableCell>
-                        <TableCell>
-                          {degree.durationYears} {t("admin.degrees.years")}
-                        </TableCell>
-                        <TableCell>{degree.totalCredits} ECTS</TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={
-                              degree.status === "active"
-                                ? "default"
-                                : "secondary"
-                            }>
-                            {degree.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => openEditDialog(degree)}>
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-              <div className="flex justify-center gap-2 mt-4">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page === 1}>
-                  {t("common.previous")}
-                </Button>
-                <div className="flex items-center text-sm text-muted-foreground">
-                  {t("common.page")} {page} {t("common.of")} {totalPages || 1}
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    setPage((p) => Math.min(totalPages || 1, p + 1))
-                  }
-                  disabled={page >= (totalPages || 1)}>
-                  {t("common.next")}
-                </Button>
-              </div>
-            </>
-          )}
+          <DataTable<Degree>
+            data={degrees}
+            columns={degreeColumns}
+            searchKeys={["name", "code"]}
+            searchPlaceholder={t("admin.degrees.search_degree")}
+            pageSize={10}
+            emptyMessage={t("admin.degrees.no_degrees")}
+            getRowKey={(item) => item.id}
+            isLoading={isLoading}
+            loadingRows={5}
+          />
         </CardContent>
       </Card>
     </>

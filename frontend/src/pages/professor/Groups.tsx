@@ -3,7 +3,6 @@ import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Users,
-  Search,
   UserPlus,
   Upload,
   Trash2,
@@ -12,9 +11,6 @@ import {
   Pencil,
   Power,
   PowerOff,
-  ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
   History,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -28,14 +24,6 @@ import {
   CardTitle,
 } from "@/components/ui/layout/card";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/data/table";
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -43,12 +31,12 @@ import {
   SelectValue,
 } from "@/components/ui/forms/select";
 import { Button } from "@/components/ui/forms/button";
-import { Input } from "@/components/ui/forms/input";
 import {
   Avatar,
   AvatarFallback,
   AvatarImage,
 } from "@/components/ui/data/avatar";
+import { DataTable, ColumnDef } from "@/components/ui/data/data-table";
 import { Badge } from "@/components/ui/data/badge";
 import {
   Dialog,
@@ -66,20 +54,13 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/overlay/dropdown-menu";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/data/pagination"; //
 import { Label } from "@/components/ui/forms/label";
 import { toast } from "@/hooks/use-toast";
 
 import { dashboardService } from "@/services/dashboard.service";
 import { groupService } from "@/services/group.service";
 import { GroupStudentDTO } from "@/types/dashboard.types";
+import { Input } from "@/components/ui/forms/input";
 
 export default function GroupsPage() {
   const { t } = useTranslation();
@@ -94,19 +75,9 @@ export default function GroupsPage() {
     return localStorage.getItem("professorLastGroupId") || "";
   });
 
-  const [searchTerm, setSearchTerm] = useState("");
-
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
-
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
-
-  const [sorting, setSorting] = useState<{
-    column: keyof GroupStudentDTO | string;
-    direction: "ASC" | "DESC";
-  }>({ column: "name", direction: "ASC" });
 
   const [newStudent, setNewStudent] = useState({
     firstName: "",
@@ -131,7 +102,6 @@ export default function GroupsPage() {
   useEffect(() => {
     if (selectedGroupId) {
       localStorage.setItem("professorLastGroupId", selectedGroupId);
-      setPage(1);
     }
   }, [selectedGroupId]);
 
@@ -150,10 +120,6 @@ export default function GroupsPage() {
       );
     }
   }, [location]);
-
-  useEffect(() => {
-    setPage(1);
-  }, [searchTerm]);
 
   const { data: students, isLoading } = useQuery({
     queryKey: ["groupStudents", selectedGroupId],
@@ -286,55 +252,138 @@ export default function GroupsPage() {
     },
   });
 
-  const processedStudents = useMemo(() => {
-    if (!students) return [];
-    let result = students.filter(
-      (s) =>
-        s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        s.email.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-    result = result.sort((a, b) => {
-      const valA = a[sorting.column as keyof GroupStudentDTO];
-      const valB = b[sorting.column as keyof GroupStudentDTO];
-      if (typeof valA === "string" && typeof valB === "string") {
-        return sorting.direction === "ASC"
-          ? valA.localeCompare(valB)
-          : valB.localeCompare(valA);
-      }
-      if (typeof valA === "number" && typeof valB === "number") {
-        return sorting.direction === "ASC" ? valA - valB : valB - valA;
-      }
-      return 0;
-    });
-    return result;
-  }, [students, searchTerm, sorting]);
+  // Definir columnas para DataTable
+  const studentColumns: ColumnDef<GroupStudentDTO>[] = [
+    {
+      key: "name",
+      label: t("professor.groups.student", "Estudiante"),
+      sortable: true,
+      render: (student) => (
+        <div className="flex items-center gap-3">
+          <Avatar className="h-8 w-8">
+            <AvatarImage src={student.avatarUrl || ""} />
+            <AvatarFallback>
+              {student.name.substring(0, 2).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          <span className="font-medium">{student.name}</span>
+        </div>
+      ),
+    },
+    {
+      key: "email",
+      label: "Email",
+      sortable: true,
+    },
+    {
+      key: "status",
+      label: t("professor.groups.status", "Estado"),
+      sortable: true,
+      render: (student) => {
+        if (student.status === "active") {
+          return (
+            <Badge variant="default">
+              {t("professor.groups.status_active", "Activo")}
+            </Badge>
+          );
+        }
+        if (student.status === "inactive") {
+          return (
+            <Badge variant="secondary">
+              {t("professor.groups.status_inactive", "Inactivo")}
+            </Badge>
+          );
+        }
+        if (student.status === "risk") {
+          return (
+            <Badge variant="destructive">
+              {t("professor.groups.status_risk", "Riesgo")}
+            </Badge>
+          );
+        }
+        return null;
+      },
+    },
+    {
+      key: "progress",
+      label: t("professor.groups.progress", "Progreso"),
+      sortable: true,
+      render: (student) => (
+        <span className="font-medium">{Math.round(student.progress)}%</span>
+      ),
+      headerClassName: "text-right",
+      className: "text-right",
+    },
+    {
+      key: "actions",
+      label: t("common.actions", "Acciones"),
+      headerClassName: "w-[100px] text-right",
+      className: "text-right",
+      render: (student) => (
+        <div className="flex justify-end items-center gap-1">
+          {/* Botón para ver historial de actividad */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-muted-foreground hover:text-primary"
+            title={t(
+              "professor.groups.view_submissions",
+              "Ver entregas y feedback"
+            )}
+            onClick={() =>
+              navigate(
+                `/dashboard/group/${selectedGroupId}/activity?studentId=${student.id}`
+              )
+            }>
+            <History className="h-4 w-4" />
+          </Button>
 
-  const paginatedStudents = useMemo(() => {
-    const start = (page - 1) * limit;
-    const end = start + limit;
-
-    return processedStudents.slice(start, end);
-  }, [processedStudents, page, limit]);
-
-  const totalPages = Math.ceil(processedStudents.length / limit);
-
-  const handleSort = (column: string) => {
-    setSorting((prev) => ({
-      column,
-      direction:
-        prev.column === column && prev.direction === "DESC" ? "ASC" : "DESC",
-    }));
-  };
-
-  const SortIcon = ({ column }: { column: string }) => {
-    if (sorting.column !== column)
-      return <ArrowUpDown className="ml-2 h-4 w-4 text-muted-foreground/50" />;
-    return sorting.direction === "ASC" ? (
-      <ArrowUp className="ml-2 h-4 w-4 text-primary" />
-    ) : (
-      <ArrowDown className="ml-2 h-4 w-4 text-primary" />
-    );
-  };
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onClick={() =>
+                  navigate(
+                    `/dashboard/group/${selectedGroupId}/activity?studentId=${student.id}`
+                  )
+                }>
+                <History className="mr-2 h-4 w-4" />{" "}
+                {t("professor.groups.view_activity", "Ver Actividad")}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => openEditModal(student)}>
+                <Pencil className="mr-2 h-4 w-4" /> {t("common.edit", "Editar")}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => toggleStatusMutation.mutate(student.id)}>
+                {student.status === "inactive" ? (
+                  <>
+                    <Power className="mr-2 h-4 w-4 text-green-600" />{" "}
+                    {t("professor.groups.activate", "Activar")}
+                  </>
+                ) : (
+                  <>
+                    <PowerOff className="mr-2 h-4 w-4 text-orange-600" />{" "}
+                    {t("professor.groups.deactivate", "Desactivar")}
+                  </>
+                )}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="text-destructive focus:text-destructive cursor-pointer"
+                onClick={() => removeStudentMutation.mutate(student.id)}>
+                <Trash2 className="mr-2 h-4 w-4" />{" "}
+                {t("professor.groups.remove_from_group", "Eliminar del grupo")}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      ),
+    },
+  ];
 
   const handleAddSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -407,48 +456,12 @@ export default function GroupsPage() {
                   {t(
                     "professor.groups.showing_students",
                     "Mostrando {{count}} estudiantes matriculados",
-                    { count: processedStudents.length }
+                    { count: students?.length || 0 }
                   )}
                 </CardDescription>
               </div>
 
               <div className="flex flex-col sm:flex-row gap-2 w-full xl:w-auto items-start sm:items-center">
-                {/* Selector de límite por página */}
-                <Select
-                  value={limit.toString()}
-                  onValueChange={(val) => {
-                    setLimit(Number(val));
-                    setPage(1);
-                  }}>
-                  <SelectTrigger className="w-[130px]">
-                    <SelectValue placeholder={t("common.rows", "Filas")} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="5">
-                      5 {t("common.per_page", "por pág.")}
-                    </SelectItem>
-                    <SelectItem value="10">
-                      10 {t("common.per_page", "por pág.")}
-                    </SelectItem>
-                    <SelectItem value="20">
-                      20 {t("common.per_page", "por pág.")}
-                    </SelectItem>
-                    <SelectItem value="50">
-                      50 {t("common.per_page", "por pág.")}
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-
-                <div className="relative w-full sm:w-64">
-                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder={t("professor.groups.search_placeholder")}
-                    className="pl-8"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                </div>
-
                 <div className="flex gap-2 w-full sm:w-auto">
                   <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
                     <DialogTrigger asChild>
@@ -577,256 +590,50 @@ export default function GroupsPage() {
             </div>
           </CardHeader>
           <CardContent>
-            {isLoading ? (
-              <div className="flex h-48 items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
-            ) : (
-              <>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead
-                        className="cursor-pointer hover:bg-muted/50 transition-colors"
-                        onClick={() => handleSort("name")}>
-                        <div className="flex items-center">
-                          {t("professor.groups.student", "Estudiante")}{" "}
-                          <SortIcon column="name" />
-                        </div>
-                      </TableHead>
-                      <TableHead
-                        className="cursor-pointer hover:bg-muted/50 transition-colors"
-                        onClick={() => handleSort("email")}>
-                        <div className="flex items-center">
-                          Email <SortIcon column="email" />
-                        </div>
-                      </TableHead>
-                      <TableHead
-                        className="cursor-pointer hover:bg-muted/50 transition-colors"
-                        onClick={() => handleSort("status")}>
-                        <div className="flex items-center">
-                          {t("professor.groups.status", "Estado")}{" "}
-                          <SortIcon column="status" />
-                        </div>
-                      </TableHead>
-                      <TableHead
-                        className="text-right cursor-pointer hover:bg-muted/50 transition-colors"
-                        onClick={() => handleSort("progress")}>
-                        <div className="flex items-center justify-end">
-                          {t("professor.groups.progress", "Progreso")}{" "}
-                          <SortIcon column="progress" />
-                        </div>
-                      </TableHead>
-                      <TableHead className="w-[100px] text-right">
-                        {t("common.actions", "Acciones")}
-                      </TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {paginatedStudents.length > 0 ? (
-                      paginatedStudents.map((student) => (
-                        <TableRow key={student.id}>
-                          <TableCell className="flex items-center gap-3">
-                            <Avatar className="h-8 w-8">
-                              <AvatarImage src={student.avatarUrl || ""} />
-                              <AvatarFallback>
-                                {student.name.substring(0, 2).toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span className="font-medium">{student.name}</span>
-                          </TableCell>
-                          <TableCell>{student.email}</TableCell>
-                          <TableCell>
-                            {student.status === "active" && (
-                              <Badge variant="default">
-                                {t("professor.groups.status_active", "Activo")}
-                              </Badge>
-                            )}
-                            {student.status === "inactive" && (
-                              <Badge variant="secondary">
-                                {t(
-                                  "professor.groups.status_inactive",
-                                  "Inactivo"
-                                )}
-                              </Badge>
-                            )}
-                            {student.status === "risk" && (
-                              <Badge variant="destructive">
-                                {t("professor.groups.status_risk", "Riesgo")}
-                              </Badge>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-right font-medium">
-                            {Math.round(student.progress)}%
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex justify-end items-center gap-1">
-                              {/* Botón para ver historial de actividad */}
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-muted-foreground hover:text-primary"
-                                title={t(
-                                  "professor.groups.view_submissions",
-                                  "Ver entregas y feedback"
-                                )}
-                                onClick={() =>
-                                  navigate(
-                                    `/dashboard/group/${selectedGroupId}/activity?studentId=${student.id}`
-                                  )
-                                }>
-                                <History className="h-4 w-4" />
-                              </Button>
-
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    className="h-8 w-8 p-0">
-                                    <MoreVertical className="h-4 w-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem
-                                    onClick={() =>
-                                      navigate(
-                                        `/dashboard/group/${selectedGroupId}/activity?studentId=${student.id}`
-                                      )
-                                    }>
-                                    <History className="mr-2 h-4 w-4" />{" "}
-                                    {t(
-                                      "professor.groups.view_activity",
-                                      "Ver Actividad"
-                                    )}
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    onClick={() => openEditModal(student)}>
-                                    <Pencil className="mr-2 h-4 w-4" />{" "}
-                                    {t("common.edit", "Editar")}
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    onClick={() =>
-                                      toggleStatusMutation.mutate(student.id)
-                                    }>
-                                    {student.status === "inactive" ? (
-                                      <>
-                                        <Power className="mr-2 h-4 w-4 text-green-600" />{" "}
-                                        {t(
-                                          "professor.groups.activate",
-                                          "Activar"
-                                        )}
-                                      </>
-                                    ) : (
-                                      <>
-                                        <PowerOff className="mr-2 h-4 w-4 text-orange-600" />{" "}
-                                        {t(
-                                          "professor.groups.deactivate",
-                                          "Desactivar"
-                                        )}
-                                      </>
-                                    )}
-                                  </DropdownMenuItem>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem
-                                    className="text-destructive focus:text-destructive cursor-pointer"
-                                    onClick={() =>
-                                      removeStudentMutation.mutate(student.id)
-                                    }>
-                                    <Trash2 className="mr-2 h-4 w-4" />{" "}
-                                    {t(
-                                      "professor.groups.remove_from_group",
-                                      "Eliminar del grupo"
-                                    )}
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={5} className="h-24 text-center">
-                          {processedStudents.length === 0
-                            ? t(
-                                "professor.groups.no_students_match",
-                                "No hay estudiantes que coincidan con la búsqueda."
-                              )
-                            : t(
-                                "professor.groups.no_students_page",
-                                "No hay estudiantes en esta página."
-                              )}
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-
-                {/* Controles de Paginación */}
-                {totalPages > 1 && (
-                  <div className="mt-4 flex justify-center">
-                    <Pagination>
-                      <PaginationContent>
-                        <PaginationItem>
-                          <PaginationPrevious
-                            onClick={() => setPage((p) => Math.max(1, p - 1))}
-                            className={
-                              page === 1
-                                ? "pointer-events-none opacity-50"
-                                : "cursor-pointer"
-                            }
-                          />
-                        </PaginationItem>
-
-                        {/* Lógica simplificada de visualización de páginas */}
-                        {Array.from({ length: totalPages }, (_, i) => i + 1)
-                          .filter(
-                            (pageNum) =>
-                              pageNum === 1 ||
-                              pageNum === totalPages ||
-                              (pageNum >= page - 1 && pageNum <= page + 1)
-                          )
-                          .map((pageNum, i, arr) => {
-                            const prev = arr[i - 1];
-                            const showEllipsis = prev && pageNum - prev > 1;
-
-                            return (
-                              <div key={pageNum} className="flex items-center">
-                                {showEllipsis && (
-                                  <span className="px-2 text-muted-foreground">
-                                    ...
-                                  </span>
-                                )}
-                                <PaginationItem>
-                                  <PaginationLink
-                                    onClick={() => setPage(pageNum)}
-                                    isActive={page === pageNum}
-                                    className="cursor-pointer">
-                                    {pageNum}
-                                  </PaginationLink>
-                                </PaginationItem>
-                              </div>
-                            );
-                          })}
-
-                        <PaginationItem>
-                          <PaginationNext
-                            onClick={() =>
-                              setPage((p) => Math.min(totalPages, p + 1))
-                            }
-                            className={
-                              page === totalPages
-                                ? "pointer-events-none opacity-50"
-                                : "cursor-pointer"
-                            }
-                          />
-                        </PaginationItem>
-                      </PaginationContent>
-                    </Pagination>
-                  </div>
-                )}
-              </>
-            )}
+            <DataTable
+              data={(students || []) as unknown as Record<string, unknown>[]}
+              columns={
+                studentColumns as unknown as ColumnDef<
+                  Record<string, unknown>
+                >[]
+              }
+              searchKeys={["name", "email"]}
+              searchPlaceholder={t(
+                "professor.groups.search_placeholder",
+                "Buscar por nombre o email..."
+              )}
+              filterOptions={[
+                {
+                  key: "status",
+                  label: t(
+                    "professor.groups.filter_status",
+                    "Filtrar por estado"
+                  ),
+                  options: [
+                    {
+                      value: "active",
+                      label: t("professor.groups.status_active", "Activo"),
+                    },
+                    {
+                      value: "inactive",
+                      label: t("professor.groups.status_inactive", "Inactivo"),
+                    },
+                    {
+                      value: "risk",
+                      label: t("professor.groups.status_risk", "Riesgo"),
+                    },
+                  ],
+                },
+              ]}
+              pageSize={10}
+              emptyMessage={t(
+                "professor.groups.no_students_match",
+                "No hay estudiantes que coincidan con la búsqueda."
+              )}
+              getRowKey={(student) => (student as any).id}
+              isLoading={isLoading}
+              loadingRows={5}
+            />
           </CardContent>
         </Card>
 

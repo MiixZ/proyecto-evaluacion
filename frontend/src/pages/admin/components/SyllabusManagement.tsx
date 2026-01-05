@@ -31,15 +31,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/forms/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/data/table";
 import { Badge } from "@/components/ui/data/badge";
+import { DataTable, ColumnDef } from "@/components/ui/data/data-table";
 import { Switch } from "@/components/ui/forms/switch";
 import { toast } from "sonner";
 
@@ -166,9 +159,6 @@ export default function SyllabusManagement() {
 
   const [selectedCourseFilter, setSelectedCourseFilter] =
     useState<string>("all");
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
 
   const { data: syllabi = [], isLoading } = useQuery({
     queryKey: ["syllabi"],
@@ -226,28 +216,68 @@ export default function SyllabusManagement() {
     return `${subject?.name} (${course.academicYear})`;
   };
 
-  // Filtrado y paginación
-  const filtered = useMemo(() => {
-    let items = syllabi;
-    if (selectedCourseFilter !== "all") {
-      items = items.filter((s) => s.courseId === selectedCourseFilter);
-    }
+  // Filtrar por curso seleccionado
+  const filteredSyllabi = useMemo(() => {
+    if (selectedCourseFilter === "all") return syllabi;
+    return syllabi.filter((s) => s.courseId === selectedCourseFilter);
+  }, [syllabi, selectedCourseFilter]);
 
-    const searchLower = search.toLowerCase();
-    items = items.filter((syllabus) => {
-      return (
-        syllabus.title?.toLowerCase().includes(searchLower) ||
-        syllabus.description?.toLowerCase().includes(searchLower)
-      );
-    });
-
-    return items;
-  }, [syllabi, selectedCourseFilter, search]);
-
-  const total = filtered.length;
-  const totalPages = Math.ceil(total / limit);
-  const start = (page - 1) * limit;
-  const paginated = filtered.slice(start, start + limit);
+  // Definir columnas para DataTable
+  const syllabusColumns: ColumnDef<Syllabus>[] = [
+    {
+      key: "courseId",
+      label: t("admin.syllabus.course"),
+      sortable: true,
+      render: (item) => (
+        <span className="text-sm font-medium text-muted-foreground">
+          {getCourseLabel(item.courseId)}
+        </span>
+      ),
+    },
+    {
+      key: "orderIndex",
+      label: t("admin.syllabus.order"),
+      sortable: true,
+    },
+    {
+      key: "title",
+      label: t("admin.syllabus.title_column"),
+      sortable: true,
+      className: "font-semibold",
+    },
+    {
+      key: "contentType",
+      label: t("admin.syllabus.type"),
+      sortable: true,
+      render: (item) => <Badge variant="outline">{item.contentType}</Badge>,
+    },
+    {
+      key: "isPublic",
+      label: t("admin.syllabus.visibility"),
+      sortable: true,
+      render: (item) => (
+        <Badge variant={item.isPublic ? "default" : "secondary"}>
+          {item.isPublic
+            ? t("admin.syllabus.public")
+            : t("admin.syllabus.hidden")}
+        </Badge>
+      ),
+    },
+    {
+      key: "actions",
+      label: t("admin.syllabus.actions"),
+      headerClassName: "text-right",
+      className: "text-right",
+      render: (item) => (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => openEditDialog(item)}>
+          <Pencil className="h-4 w-4" />
+        </Button>
+      ),
+    },
+  ];
 
   return (
     <>
@@ -306,123 +336,19 @@ export default function SyllabusManagement() {
         <CardHeader>
           <CardTitle>{t("admin.syllabus.title")}</CardTitle>
           <CardDescription>{t("admin.syllabus.subtitle")}</CardDescription>
-          <div className="flex justify-between items-center gap-4 mt-4">
-            <div className="relative w-64">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder={t("admin.syllabus.search_topic")}
-                className="pl-8"
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                  setPage(1);
-                }}
-              />
-            </div>
-            <Select
-              value={limit.toString()}
-              onValueChange={(v) => setLimit(Number(v))}>
-              <SelectTrigger className="w-[100px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="5">5 {t("common.rows")}</SelectItem>
-                <SelectItem value="10">10 {t("common.rows")}</SelectItem>
-                <SelectItem value="20">20 {t("common.rows")}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
-            <div className="flex justify-center p-4">
-              <Loader2 className="animate-spin" />
-            </div>
-          ) : (
-            <>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t("admin.syllabus.course")}</TableHead>
-                    <TableHead>{t("admin.syllabus.order")}</TableHead>
-                    <TableHead>{t("admin.syllabus.title_column")}</TableHead>
-                    <TableHead>{t("admin.syllabus.type")}</TableHead>
-                    <TableHead>{t("admin.syllabus.visibility")}</TableHead>
-                    <TableHead className="text-right">
-                      {t("admin.syllabus.actions")}
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {paginated.length === 0 ? (
-                    <TableRow>
-                      <TableCell
-                        colSpan={6}
-                        className="text-center text-muted-foreground">
-                        {t("admin.syllabus.no_topics")}
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    paginated.map((syllabus) => (
-                      <TableRow key={syllabus.id}>
-                        <TableCell className="text-sm font-medium text-muted-foreground">
-                          {getCourseLabel(syllabus.courseId)}
-                        </TableCell>
-                        <TableCell>{syllabus.orderIndex}</TableCell>
-                        <TableCell className="font-semibold">
-                          {syllabus.title}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline">
-                            {syllabus.contentType}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={
-                              syllabus.isPublic ? "default" : "secondary"
-                            }>
-                            {syllabus.isPublic
-                              ? t("admin.syllabus.public")
-                              : t("admin.syllabus.hidden")}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => openEditDialog(syllabus)}>
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-              <div className="flex justify-center gap-2 mt-4">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page === 1}>
-                  {t("common.previous")}
-                </Button>
-                <div className="flex items-center text-sm text-muted-foreground">
-                  {t("common.page")} {page} {t("common.of")} {totalPages || 1}
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    setPage((p) => Math.min(totalPages || 1, p + 1))
-                  }
-                  disabled={page >= (totalPages || 1)}>
-                  {t("common.next")}
-                </Button>
-              </div>
-            </>
-          )}
+          <DataTable<Syllabus>
+            data={filteredSyllabi}
+            columns={syllabusColumns}
+            searchKeys={["title", "description"]}
+            searchPlaceholder={t("admin.syllabus.search_topic")}
+            pageSize={10}
+            emptyMessage={t("admin.syllabus.no_topics")}
+            getRowKey={(item) => item.id}
+            isLoading={isLoading}
+            loadingRows={5}
+          />
         </CardContent>
       </Card>
     </>

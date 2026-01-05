@@ -1,36 +1,25 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState, useMemo } from "react";
+import { useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   Plus,
-  Search,
   MoreVertical,
   Copy,
   Eye,
   EyeOff,
   Pencil,
-  Loader2,
   FileCode,
-  Filter,
   Trash2,
 } from "lucide-react";
 import { format } from "date-fns";
-import { es } from "date-fns/locale";
+import { es, enUS } from "date-fns/locale";
 
 import { Card, CardContent, CardHeader } from "@/components/ui/layout/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/data/table";
 import { Button } from "@/components/ui/forms/button";
-import { Input } from "@/components/ui/forms/input";
 import { Badge } from "@/components/ui/data/badge";
+import { DataTable, ColumnDef } from "@/components/ui/data/data-table";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,24 +27,25 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/overlay/dropdown-menu";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/forms/select";
+
 import { toast } from "@/hooks/use-toast";
 import { exerciseService } from "@/services/exercise.service";
+
+interface Exercise {
+  id: string;
+  title: string;
+  subject: string;
+  syllabus: string;
+  difficulty: string;
+  isPublished: boolean;
+  createdAt: string;
+  submissionCount: number;
+}
 
 export default function ExercisesList() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { t } = useTranslation();
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<
-    "all" | "published" | "draft"
-  >("all");
+  const { t, i18n } = useTranslation();
 
   const { data: exercises, isLoading } = useQuery({
     queryKey: ["my-exercises"],
@@ -117,22 +107,6 @@ export default function ExercisesList() {
     },
   });
 
-  const filteredExercises = useMemo(() => {
-    if (!exercises) return [];
-    return exercises.filter((ex) => {
-      const matchesSearch =
-        ex.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        ex.subject.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesStatus =
-        statusFilter === "all"
-          ? true
-          : statusFilter === "published"
-          ? ex.isPublished
-          : !ex.isPublished;
-      return matchesSearch && matchesStatus;
-    });
-  }, [exercises, searchTerm, statusFilter]);
-
   const getDifficultyColor = (diff: string) => {
     switch (diff) {
       case "beginner":
@@ -145,6 +119,148 @@ export default function ExercisesList() {
         return "bg-gray-100 text-gray-800";
     }
   };
+
+  const getDifficultyLabel = (diff: string) => {
+    switch (diff) {
+      case "beginner":
+        return t("exercise_list.difficulty.easy");
+      case "intermediate":
+        return t("exercise_list.difficulty.medium");
+      case "advanced":
+        return t("exercise_list.difficulty.hard");
+      default:
+        return diff;
+    }
+  };
+
+  const columns: ColumnDef<Exercise>[] = [
+    {
+      key: "title",
+      label: t("exercise_list.table.title"),
+      sortable: true,
+      render: (ex) => (
+        <div>
+          <div className="font-medium">{ex.title}</div>
+          <div className="text-xs text-muted-foreground mt-0.5">
+            {t("exercise_list.created_on")}{" "}
+            {format(new Date(ex.createdAt), "d MMM yyyy", {
+              locale: i18n.language === "es" ? es : enUS,
+            })}
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: "subject",
+      label: t("exercise_list.table.subject"),
+      sortable: true,
+      render: (ex) => (
+        <div>
+          <div className="font-medium text-sm">{ex.subject}</div>
+          <div className="text-xs text-muted-foreground">{ex.syllabus}</div>
+        </div>
+      ),
+    },
+    {
+      key: "difficulty",
+      label: t("exercise_list.table.difficulty"),
+      sortable: true,
+      render: (ex) => (
+        <Badge variant="outline" className={getDifficultyColor(ex.difficulty)}>
+          {getDifficultyLabel(ex.difficulty)}
+        </Badge>
+      ),
+    },
+    {
+      key: "isPublished",
+      label: t("exercise_list.table.status"),
+      sortable: true,
+      render: (ex) =>
+        ex.isPublished ? (
+          <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
+            <Eye className="mr-1 h-3 w-3" />
+            {t("exercise_list.status_published")}
+          </Badge>
+        ) : (
+          <Badge variant="outline" className="text-muted-foreground">
+            <EyeOff className="mr-1 h-3 w-3" />
+            {t("exercise_list.status_draft")}
+          </Badge>
+        ),
+    },
+    {
+      key: "submissionCount",
+      label: t("exercise_list.table.submissions"),
+      sortable: true,
+      render: (ex) => (
+        <span className="text-muted-foreground">{ex.submissionCount || 0}</span>
+      ),
+      headerClassName: "text-right",
+      className: "text-right",
+    },
+    {
+      key: "actions",
+      label: "",
+      render: (ex) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon">
+              <MoreVertical className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem
+              onClick={() => navigate(`/dashboard/exercises/${ex.id}/edit`)}>
+              <Pencil className="mr-2 h-4 w-4" />
+              {t("exercise_list.actions.edit")}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => cloneMutation.mutate(ex.id)}>
+              <Copy className="mr-2 h-4 w-4" />
+              {t("exercise_list.actions.duplicate")}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() =>
+                togglePublishMutation.mutate({
+                  id: ex.id,
+                  status: !ex.isPublished,
+                })
+              }>
+              {ex.isPublished ? (
+                <>
+                  <EyeOff className="mr-2 h-4 w-4" />
+                  {t("exercise_list.actions.unpublish")}
+                </>
+              ) : (
+                <>
+                  <Eye className="mr-2 h-4 w-4" />
+                  {t("exercise_list.actions.publish")}
+                </>
+              )}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              className="text-red-600"
+              onClick={() => {
+                if (window.confirm(t("exercise_list.delete_confirm"))) {
+                  deleteMutation.mutate(ex.id);
+                }
+              }}>
+              <Trash2 className="mr-2 h-4 w-4" />
+              {t("exercise_list.actions.delete")}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ),
+    },
+  ];
+
+  // Preparar datos para filtro de status
+  const exercisesWithStatus = useMemo(() => {
+    return (exercises || []).map((ex) => ({
+      ...ex,
+      status: ex.isPublished ? "published" : "draft",
+    }));
+  }, [exercises]);
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -162,181 +278,31 @@ export default function ExercisesList() {
       </div>
 
       <Card>
-        <CardHeader>
-          <div className="flex flex-col md:flex-row justify-between gap-4">
-            <div className="relative w-full md:w-72">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder={t("exercise_list.search_placeholder")}
-                className="pl-8"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            <div className="flex items-center gap-2 w-full md:w-auto">
-              <Filter className="h-4 w-4 text-muted-foreground" />
-              <Select
-                value={statusFilter}
-                onValueChange={(v: any) => setStatusFilter(v)}>
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder={t("exercise_list.filter_status")} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">
-                    {t("exercise_list.filter_all")}
-                  </SelectItem>
-                  <SelectItem value="published">
-                    {t("exercise_list.filter_published")}
-                  </SelectItem>
-                  <SelectItem value="draft">
-                    {t("exercise_list.filter_draft")}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardHeader>
+        <CardHeader />
         <CardContent>
-          {isLoading ? (
-            <div className="flex h-48 items-center justify-center">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t("exercise_list.table.title")}</TableHead>
-                  <TableHead>{t("exercise_list.table.subject")}</TableHead>
-                  <TableHead>{t("exercise_list.table.difficulty")}</TableHead>
-                  <TableHead>{t("exercise_list.table.status")}</TableHead>
-                  <TableHead className="text-right">
-                    {t("exercise_list.table.submissions")}
-                  </TableHead>
-                  <TableHead className="w-[50px]"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredExercises.length > 0 ? (
-                  filteredExercises.map((ex) => (
-                    <TableRow key={ex.id}>
-                      <TableCell className="font-medium">
-                        {ex.title}
-                        <div className="text-xs text-muted-foreground mt-0.5">
-                          {t("exercise_list.created_on")}{" "}
-                          {format(new Date(ex.createdAt), "d MMM yyyy", {
-                            locale: es,
-                          })}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="font-medium text-sm">{ex.subject}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {ex.syllabus}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant="outline"
-                          className={getDifficultyColor(ex.difficulty)}>
-                          {ex.difficulty === "beginner"
-                            ? t("exercise_list.difficulty.easy")
-                            : ex.difficulty === "intermediate"
-                            ? t("exercise_list.difficulty.medium")
-                            : t("exercise_list.difficulty.hard")}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {ex.isPublished ? (
-                          <Badge
-                            variant="default"
-                            className="bg-green-600 hover:bg-green-700">
-                            {t("exercise_list.status_published")}
-                          </Badge>
-                        ) : (
-                          <Badge variant="secondary">
-                            {t("exercise_list.status_draft")}
-                          </Badge>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right text-muted-foreground">
-                        {ex.submissionCount}
-                      </TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={() =>
-                                navigate(`/dashboard/edit-exercise/${ex.id}`)
-                              }>
-                              {" "}
-                              <Pencil className="mr-2 h-4 w-4" />{" "}
-                              {t("exercise_list.actions.edit")}
-                            </DropdownMenuItem>
-
-                            <DropdownMenuItem
-                              onClick={() => cloneMutation.mutate(ex.id)}>
-                              <Copy className="mr-2 h-4 w-4" />{" "}
-                              {t("exercise_list.actions.duplicate")}
-                            </DropdownMenuItem>
-
-                            <DropdownMenuSeparator />
-
-                            <DropdownMenuItem
-                              onClick={() =>
-                                togglePublishMutation.mutate({
-                                  id: ex.id,
-                                  status: !ex.isPublished,
-                                })
-                              }>
-                              {ex.isPublished ? (
-                                <>
-                                  <EyeOff className="mr-2 h-4 w-4 text-orange-500" />{" "}
-                                  {t("exercise_list.actions.unpublish")}
-                                </>
-                              ) : (
-                                <>
-                                  <Eye className="mr-2 h-4 w-4 text-green-600" />{" "}
-                                  {t("exercise_list.actions.publish")}
-                                </>
-                              )}
-                            </DropdownMenuItem>
-
-                            <DropdownMenuSeparator />
-
-                            <DropdownMenuItem
-                              className="text-destructive focus:text-destructive"
-                              onClick={() => {
-                                if (
-                                  confirm(t("exercise_list.delete_confirm"))
-                                ) {
-                                  deleteMutation.mutate(ex.id);
-                                }
-                              }}>
-                              <Trash2 className="mr-2 h-4 w-4" />{" "}
-                              {t("exercise_list.actions.delete")}
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell
-                      colSpan={6}
-                      className="h-24 text-center text-muted-foreground">
-                      {t("exercise_list.no_exercises")}
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          )}
+          <DataTable<Exercise>
+            data={exercisesWithStatus}
+            columns={columns}
+            searchKeys={["title", "subject", "syllabus"]}
+            filterOptions={[
+              {
+                key: "status",
+                label: t("exercise_list.filter_status"),
+                options: [
+                  {
+                    value: "published",
+                    label: t("exercise_list.filter_published"),
+                  },
+                  { value: "draft", label: t("exercise_list.filter_draft") },
+                ],
+              },
+            ]}
+            getRowKey={(ex) => ex.id}
+            searchPlaceholder={t("exercise_list.search_placeholder")}
+            emptyMessage={t("exercise_list.no_exercises")}
+            isLoading={isLoading}
+            pageSize={10}
+          />
         </CardContent>
       </Card>
     </div>

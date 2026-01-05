@@ -67,7 +67,7 @@ export const dashboardService = {
     limit: number,
     column: string,
     direction: string,
-    status?: string,
+    verdict?: string,
     studentId?: string
   ) => {
     const params = new URLSearchParams({
@@ -75,7 +75,7 @@ export const dashboardService = {
       limit: limit.toString(),
       sortBy: column,
       sortOrder: direction,
-      ...(status && status !== "all" && { status }),
+      ...(verdict && verdict !== "all" && { verdict }),
       ...(studentId && { studentId }),
     });
 

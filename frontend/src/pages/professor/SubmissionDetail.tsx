@@ -1,5 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { useTranslation } from "react-i18next";
@@ -12,6 +13,8 @@ import {
   HardDrive,
   Loader2,
   AlertCircle,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -28,6 +31,11 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "@/components/ui/data/avatar";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/layout/collapsible";
 import { ScrollArea } from "@/components/ui/layout/scroll-area";
 import {
   Alert,
@@ -45,6 +53,16 @@ export default function SubmissionDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { t } = useTranslation();
+
+  const [openTestCases, setOpenTestCases] = useState<string[]>([]);
+
+  const toggleTestCase = (testId: string) => {
+    setOpenTestCases((prev) =>
+      prev.includes(testId)
+        ? prev.filter((id) => id !== testId)
+        : [...prev, testId]
+    );
+  };
 
   const {
     data: submission,
@@ -279,74 +297,110 @@ export default function SubmissionDetails() {
                   </div>
                 </CardHeader>
                 <div className="divide-y divide-border">
-                  {submission.testResults.map((test, index) => (
-                    <div
-                      key={test.id || index}
-                      className={`p-3 text-sm flex flex-col gap-2 transition-colors ${
-                        test.status === "failed" || test.status === "error"
-                          ? "bg-red-50/30"
-                          : "hover:bg-muted/30"
-                      }`}>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <div
-                            className={`h-2 w-2 rounded-full ${
-                              test.status === "passed"
-                                ? "bg-green-500"
-                                : "bg-red-500"
-                            }`}
-                          />
-                          <span className="font-medium">
-                            {t("submission_detail.test_number", {
-                              number: index + 1,
-                            })}
-                          </span>
-                        </div>
-                        <span className="text-xs text-muted-foreground font-mono">
-                          {test.executionTimeMs}ms
-                        </span>
-                      </div>
+                  {submission.testResults.map((test, index) => {
+                    const isOpen = openTestCases.includes(
+                      test.id || `test-${index}`
+                    );
+                    const testId = test.id || `test-${index}`;
 
-                      {/* Detalles del error (solo si falló) */}
-                      {(test.status === "failed" ||
-                        test.status === "error") && (
-                        <div className="mt-1 text-xs bg-background border rounded p-2 space-y-2">
-                          {test.errorMessage && (
-                            <div className="text-red-600 font-medium mb-1">
-                              {test.errorMessage}
-                            </div>
-                          )}
-                          <div className="grid grid-cols-1 gap-1">
-                            <div className="flex gap-2">
-                              <span className="text-muted-foreground w-16 shrink-0">
-                                {t("submission_detail.input")}
+                    return (
+                      <Collapsible
+                        key={testId}
+                        open={isOpen}
+                        onOpenChange={() => toggleTestCase(testId)}>
+                        <div
+                          className={`p-3 text-sm transition-colors ${
+                            test.status === "failed" || test.status === "error"
+                              ? "bg-red-50/30"
+                              : test.status === "passed"
+                              ? "bg-green-50/20"
+                              : "hover:bg-muted/30"
+                          }`}>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <div
+                                className={`h-2 w-2 rounded-full ${
+                                  test.status === "passed"
+                                    ? "bg-green-500"
+                                    : "bg-red-500"
+                                }`}
+                              />
+                              <span className="font-medium">
+                                {t("submission_detail.test_number", {
+                                  number: index + 1,
+                                })}
                               </span>
-                              <code className="bg-muted px-1 rounded flex-1 truncate">
-                                {test.input}
-                              </code>
                             </div>
-                            <div className="flex gap-2">
-                              <span className="text-green-600 w-16 shrink-0">
-                                {t("submission_detail.expected")}
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-muted-foreground font-mono">
+                                {test.executionTimeMs}ms
                               </span>
-                              <code className="bg-green-50 text-green-700 px-1 rounded flex-1 truncate">
-                                {test.expectedOutput}
-                              </code>
-                            </div>
-                            <div className="flex gap-2">
-                              <span className="text-red-600 w-16 shrink-0">
-                                {t("submission_detail.obtained")}
-                              </span>
-                              <code className="bg-red-50 text-red-700 px-1 rounded flex-1 truncate">
-                                {test.actualOutput ||
-                                  t("submission_detail.empty")}
-                              </code>
+                              <CollapsibleTrigger asChild>
+                                <button className="hover:bg-background/20 p-1 rounded transition-colors">
+                                  {isOpen ? (
+                                    <ChevronDown className="h-4 w-4" />
+                                  ) : (
+                                    <ChevronRight className="h-4 w-4" />
+                                  )}
+                                </button>
+                              </CollapsibleTrigger>
                             </div>
                           </div>
+
+                          <CollapsibleContent>
+                            <div className="mt-2 text-xs bg-background border rounded p-2 space-y-2">
+                              {test.errorMessage && (
+                                <div className="text-red-600 font-medium mb-2">
+                                  {test.errorMessage}
+                                </div>
+                              )}
+                              <div className="grid grid-cols-1 gap-2">
+                                {test.input && (
+                                  <div className="flex gap-2">
+                                    <span className="text-muted-foreground w-16 shrink-0">
+                                      {t("submission_detail.input")}
+                                    </span>
+                                    <code className="bg-muted px-1 rounded flex-1 truncate">
+                                      {test.input}
+                                    </code>
+                                  </div>
+                                )}
+                                {test.expectedOutput && (
+                                  <div className="flex gap-2">
+                                    <span className="text-green-600 w-16 shrink-0">
+                                      {t("submission_detail.expected")}
+                                    </span>
+                                    <code className="bg-green-50 text-green-700 px-1 rounded flex-1 truncate">
+                                      {test.expectedOutput}
+                                    </code>
+                                  </div>
+                                )}
+                                <div className="flex gap-2">
+                                  <span
+                                    className={`w-16 shrink-0 ${
+                                      test.status === "passed"
+                                        ? "text-green-600"
+                                        : "text-red-600"
+                                    }`}>
+                                    {t("submission_detail.obtained")}
+                                  </span>
+                                  <code
+                                    className={`px-1 rounded flex-1 truncate ${
+                                      test.status === "passed"
+                                        ? "bg-green-50 text-green-700"
+                                        : "bg-red-50 text-red-700"
+                                    }`}>
+                                    {test.actualOutput ||
+                                      t("submission_detail.empty")}
+                                  </code>
+                                </div>
+                              </div>
+                            </div>
+                          </CollapsibleContent>
                         </div>
-                      )}
-                    </div>
-                  ))}
+                      </Collapsible>
+                    );
+                  })}
                 </div>
               </Card>
             </div>

@@ -31,14 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/forms/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/data/table";
+import { DataTable, ColumnDef } from "@/components/ui/data/data-table";
 import { Badge } from "@/components/ui/data/badge";
 import { toast } from "sonner";
 
@@ -153,9 +146,6 @@ export default function CourseManagement() {
   const [editingItem, setEditingItem] = useState<Course | null>(null);
 
   const [selectedYearFilter, setSelectedYearFilter] = useState<string>("all");
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
 
   const { data: courses = [], isLoading } = useQuery({
     queryKey: ["courses"],
@@ -214,30 +204,72 @@ export default function CourseManagement() {
   const getDegreeName = (id: string) =>
     degrees.find((d) => d.id === id)?.name || t("admin.courses.unknown");
 
-  // Filtrado y paginación
-  const filtered = useMemo(() => {
-    let items = courses;
-    if (selectedYearFilter !== "all") {
-      items = items.filter((c) => c.academicYear === selectedYearFilter);
-    }
+  // Filtrado externo por año académico
+  const filteredCourses = useMemo(() => {
+    if (selectedYearFilter === "all") return courses;
+    return courses.filter((c) => c.academicYear === selectedYearFilter);
+  }, [courses, selectedYearFilter]);
 
-    const searchLower = search.toLowerCase();
-    items = items.filter((course) => {
-      const subject = subjects.find((s) => s.id === course.subjectId);
-      return (
-        course.academicYear?.toLowerCase().includes(searchLower) ||
-        subject?.name?.toLowerCase().includes(searchLower) ||
-        subject?.code?.toLowerCase().includes(searchLower)
-      );
-    });
-
-    return items;
-  }, [courses, selectedYearFilter, search, subjects]);
-
-  const total = filtered.length;
-  const totalPages = Math.ceil(total / limit);
-  const start = (page - 1) * limit;
-  const paginated = filtered.slice(start, start + limit);
+  // Definir columnas para DataTable
+  const courseColumns: ColumnDef<Course>[] = [
+    {
+      key: "academicYear",
+      label: t("admin.courses.year"),
+      sortable: true,
+      className: "font-mono",
+    },
+    {
+      key: "subjectId",
+      label: t("admin.courses.subject"),
+      sortable: true,
+      className: "font-medium",
+      render: (item) => {
+        const subject = subjects.find((s) => s.id === item.subjectId);
+        return subject
+          ? `${subject.name} (${subject.code})`
+          : t("admin.courses.unknown");
+      },
+    },
+    {
+      key: "degree",
+      label: t("admin.courses.degree"),
+      render: (item) => {
+        const subject = subjects.find((s) => s.id === item.subjectId);
+        return subject ? getDegreeName(subject.degreeId) : "-";
+      },
+      className: "text-muted-foreground text-sm",
+    },
+    {
+      key: "semester",
+      label: t("admin.courses.semester"),
+      sortable: true,
+      render: (item) => (item.semester === 1 ? "1º" : "2º"),
+    },
+    {
+      key: "status",
+      label: t("admin.courses.status"),
+      sortable: true,
+      render: (item) => (
+        <Badge variant={item.status === "active" ? "default" : "outline"}>
+          {item.status}
+        </Badge>
+      ),
+    },
+    {
+      key: "actions",
+      label: t("admin.courses.actions"),
+      headerClassName: "text-right",
+      className: "text-right",
+      render: (item) => (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => openEditDialog(item)}>
+          <Pencil className="h-4 w-4" />
+        </Button>
+      ),
+    },
+  ];
 
   return (
     <>
@@ -294,130 +326,19 @@ export default function CourseManagement() {
         <CardHeader>
           <CardTitle>{t("admin.courses.title")}</CardTitle>
           <CardDescription>{t("admin.courses.subtitle")}</CardDescription>
-          <div className="flex justify-between items-center gap-4 mt-4">
-            <div className="relative w-64">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder={t("admin.courses.search_course")}
-                className="pl-8"
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                  setPage(1);
-                }}
-              />
-            </div>
-            <Select
-              value={limit.toString()}
-              onValueChange={(v) => setLimit(Number(v))}>
-              <SelectTrigger className="w-[100px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="5">5 {t("common.rows")}</SelectItem>
-                <SelectItem value="10">10 {t("common.rows")}</SelectItem>
-                <SelectItem value="20">20 {t("common.rows")}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
-            <div className="flex justify-center p-4">
-              <Loader2 className="animate-spin" />
-            </div>
-          ) : (
-            <>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t("admin.courses.year")}</TableHead>
-                    <TableHead>{t("admin.courses.subject")}</TableHead>
-                    <TableHead>{t("admin.courses.degree")}</TableHead>
-                    <TableHead>{t("admin.courses.semester")}</TableHead>
-                    <TableHead>{t("admin.courses.status")}</TableHead>
-                    <TableHead className="text-right">
-                      {t("admin.courses.actions")}
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {paginated.length === 0 ? (
-                    <TableRow>
-                      <TableCell
-                        colSpan={6}
-                        className="text-center text-muted-foreground">
-                        {t("admin.courses.no_courses")}
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    paginated.map((course) => {
-                      const subject = subjects.find(
-                        (s) => s.id === course.subjectId
-                      );
-                      return (
-                        <TableRow key={course.id}>
-                          <TableCell className="font-mono">
-                            {course.academicYear}
-                          </TableCell>
-                          <TableCell className="font-medium">
-                            {subject
-                              ? `${subject.name} (${subject.code})`
-                              : t("admin.courses.unknown")}
-                          </TableCell>
-                          <TableCell className="text-muted-foreground text-sm">
-                            {subject ? getDegreeName(subject.degreeId) : "-"}
-                          </TableCell>
-                          <TableCell>
-                            {course.semester === 1 ? "1º" : "2º"}
-                          </TableCell>
-                          <TableCell>
-                            <Badge
-                              variant={
-                                course.status === "active"
-                                  ? "default"
-                                  : "outline"
-                              }>
-                              {course.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => openEditDialog(course)}>
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })
-                  )}
-                </TableBody>
-              </Table>
-              <div className="flex justify-center gap-2 mt-4">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page === 1}>
-                  {t("common.previous")}
-                </Button>
-                <div className="flex items-center text-sm text-muted-foreground">
-                  {t("common.page")} {page} {t("common.of")} {totalPages || 1}
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    setPage((p) => Math.min(totalPages || 1, p + 1))
-                  }
-                  disabled={page >= (totalPages || 1)}>
-                  {t("common.next")}
-                </Button>
-              </div>
-            </>
-          )}
+          <DataTable<Course>
+            data={filteredCourses}
+            columns={courseColumns}
+            searchKeys={["academicYear"]}
+            searchPlaceholder={t("admin.courses.search_course")}
+            pageSize={10}
+            emptyMessage={t("admin.courses.no_courses")}
+            getRowKey={(item) => item.id}
+            isLoading={isLoading}
+            loadingRows={5}
+          />
         </CardContent>
       </Card>
     </>

@@ -25,14 +25,6 @@ import {
   CardTitle,
 } from "@/components/ui/layout/card";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/data/table";
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -47,9 +39,8 @@ import {
 import { Badge } from "@/components/ui/data/badge";
 import { Progress } from "@/components/ui/feedback/progress";
 import { Alert, AlertDescription } from "@/components/ui/feedback/alert";
-import { Input } from "@/components/ui/forms/input";
 import { Button } from "@/components/ui/forms/button";
-import { ScrollArea } from "@/components/ui/layout/scroll-area";
+import { DataTable, ColumnDef } from "@/components/ui/data/data-table";
 import { dashboardService } from "@/services/dashboard.service";
 import { professorDashboardService } from "@/services/dashboard.professor.service";
 import { toast } from "sonner";
@@ -57,6 +48,16 @@ import { ProfessorSubmissionsByDayChart } from "@/components/professor/charts/Su
 import { AcceptanceRateByExerciseChart } from "@/components/professor/charts/AcceptanceRateByExerciseChart";
 import { StudentProgressChart } from "@/components/professor/charts/StudentProgressChart";
 import { SubmissionTrendChart } from "@/components/professor/charts/SubmissionTrendChart";
+
+interface Student {
+  id: string;
+  name: string;
+  email: string;
+  status: "active" | "inactive" | "risk";
+  progress: number;
+  averageScore: number;
+  avatarUrl: string | null;
+}
 
 export default function ProfessorDashboard() {
   const { t, i18n } = useTranslation();
@@ -67,7 +68,6 @@ export default function ProfessorDashboard() {
     localStorage.getItem("professorLastGroupId") || undefined
   );
 
-  const [studentFilter, setStudentFilter] = useState("");
   const [isExporting, setIsExporting] = useState(false);
   const [selectedExerciseId, setSelectedExerciseId] = useState<string>("all");
 
@@ -218,11 +218,86 @@ export default function ProfessorDashboard() {
   }
 
   // Filtrado de estudiantes
-  const filteredStudents = activeGroup.students.filter(
-    (student) =>
-      student.name.toLowerCase().includes(studentFilter.toLowerCase()) ||
-      student.email.toLowerCase().includes(studentFilter.toLowerCase())
-  );
+  const filteredStudents = activeGroup.students as Student[];
+
+  // Definir columnas para DataTable
+  const studentColumns: ColumnDef<Student>[] = [
+    {
+      key: "name",
+      label: t("professor.dashboard.student_column"),
+      sortable: true,
+      render: (student) => (
+        <div className="flex items-center gap-3">
+          <Avatar className="h-8 w-8">
+            <AvatarImage src={student.avatarUrl || ""} />
+            <AvatarFallback>
+              {student.name.substring(0, 2).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex flex-col">
+            <span className="font-medium">{student.name}</span>
+            <span className="text-xs text-muted-foreground">
+              {student.email}
+            </span>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: "status",
+      label: t("professor.dashboard.status_column"),
+      sortable: true,
+      render: (student) => {
+        if (student.status === "active") {
+          return (
+            <Badge
+              variant="default"
+              className="bg-green-100 text-green-800 hover:bg-green-100">
+              {t("professor.dashboard.status_active")}
+            </Badge>
+          );
+        }
+        if (student.status === "inactive") {
+          return (
+            <Badge variant="secondary">
+              {t("professor.dashboard.status_inactive")}
+            </Badge>
+          );
+        }
+        if (student.status === "risk") {
+          return (
+            <Badge variant="destructive">
+              {t("professor.dashboard.status_risk")}
+            </Badge>
+          );
+        }
+        return null;
+      },
+    },
+    {
+      key: "progress",
+      label: t("professor.dashboard.progress_column"),
+      sortable: true,
+      render: (student) => (
+        <div className="flex items-center gap-2 w-[140px]">
+          <Progress value={student.progress} className="h-2" />
+          <span className="text-xs text-muted-foreground">
+            {Math.round(student.progress)}%
+          </span>
+        </div>
+      ),
+    },
+    {
+      key: "averageScore",
+      label: t("professor.dashboard.avg_score_column"),
+      sortable: true,
+      className: "text-right",
+      headerClassName: "text-right",
+      render: (student) => (
+        <span className="font-medium">{student.averageScore.toFixed(1)}</span>
+      ),
+    },
+  ];
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -371,108 +446,43 @@ export default function ProfessorDashboard() {
         {/* PANEL CENTRAL: Lista de Estudiantes */}
         <Card className="lg:col-span-4 h-fit">
           <CardHeader>
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <CardTitle>{t("professor.dashboard.students_group")}</CardTitle>
-                <CardDescription>
-                  {t("professor.dashboard.students_group_desc")}
-                </CardDescription>
-              </div>
-              <div className="relative w-full sm:w-64">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder={t("professor.dashboard.search_student")}
-                  value={studentFilter}
-                  onChange={(e) => setStudentFilter(e.target.value)}
-                  className="pl-8"
-                />
-              </div>
-            </div>
+            <CardTitle>{t("professor.dashboard.students_group")}</CardTitle>
+            <CardDescription>
+              {t("professor.dashboard.students_group_desc")}
+            </CardDescription>
           </CardHeader>
           <CardContent className="p-0 sm:p-6 sm:pt-0">
-            <ScrollArea className="h-[600px] pr-4">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>
-                      {t("professor.dashboard.student_column")}
-                    </TableHead>
-                    <TableHead>
-                      {t("professor.dashboard.status_column")}
-                    </TableHead>
-                    <TableHead>
-                      {t("professor.dashboard.progress_column")}
-                    </TableHead>
-                    <TableHead className="text-right">
-                      {t("professor.dashboard.avg_score_column")}
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredStudents.length > 0 ? (
-                    filteredStudents.map((student) => (
-                      <TableRow key={student.id}>
-                        <TableCell className="flex items-center gap-3">
-                          <Avatar className="h-8 w-8">
-                            <AvatarImage src={student.avatarUrl || ""} />
-                            <AvatarFallback>
-                              {student.name.substring(0, 2).toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex flex-col">
-                            <span className="font-medium">{student.name}</span>
-                            <span className="text-xs text-muted-foreground">
-                              {student.email}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {student.status === "active" && (
-                            <Badge
-                              variant="default"
-                              className="bg-green-100 text-green-800 hover:bg-green-100">
-                              {t("professor.dashboard.status_active")}
-                            </Badge>
-                          )}
-                          {student.status === "inactive" && (
-                            <Badge variant="secondary">
-                              {t("professor.dashboard.status_inactive")}
-                            </Badge>
-                          )}
-                          {student.status === "risk" && (
-                            <Badge variant="destructive">
-                              {t("professor.dashboard.status_risk")}
-                            </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell className="w-[140px]">
-                          <div className="flex items-center gap-2">
-                            <Progress
-                              value={student.progress}
-                              className="h-2"
-                            />
-                            <span className="text-xs text-muted-foreground">
-                              {Math.round(student.progress)}%
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right font-medium">
-                          {student.averageScore.toFixed(1)}
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell
-                        colSpan={4}
-                        className="h-24 text-center text-muted-foreground">
-                        {t("professor.dashboard.no_students_found")}
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </ScrollArea>
+            <DataTable
+              data={filteredStudents}
+              columns={studentColumns}
+              searchKeys={["name", "email"]}
+              searchPlaceholder={t("professor.dashboard.search_student")}
+              filterOptions={[
+                {
+                  key: "status",
+                  label: t("professor.dashboard.filter_status"),
+                  options: [
+                    {
+                      value: "active",
+                      label: t("professor.dashboard.status_active"),
+                    },
+                    {
+                      value: "inactive",
+                      label: t("professor.dashboard.status_inactive"),
+                    },
+                    {
+                      value: "risk",
+                      label: t("professor.dashboard.status_risk"),
+                    },
+                  ],
+                },
+              ]}
+              pageSize={10}
+              emptyMessage={t("professor.dashboard.no_students_found")}
+              getRowKey={(student) => student.id}
+              isLoading={isLoading}
+              loadingRows={5}
+            />
           </CardContent>
         </Card>
 

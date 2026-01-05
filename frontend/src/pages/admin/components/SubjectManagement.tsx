@@ -38,6 +38,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/data/table";
+import { DataTable, ColumnDef } from "@/components/ui/data/data-table";
 import { toast } from "sonner";
 
 const SubjectForm = ({
@@ -141,10 +142,6 @@ export default function SubjectManagement() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Subject | null>(null);
 
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
-
   const { data: subjects = [], isLoading } = useQuery({
     queryKey: ["subjects"],
     queryFn: () => academicService.getSubjects(),
@@ -193,19 +190,53 @@ export default function SubjectManagement() {
     degrees.find((d) => d.id === id)?.name ||
     t("admin.subjects.unknown_degree");
 
-  // Filtrado y paginación
-  const filtered = subjects.filter((subject) => {
-    const searchLower = search.toLowerCase();
-    return (
-      subject.name?.toLowerCase().includes(searchLower) ||
-      subject.code?.toLowerCase().includes(searchLower)
-    );
-  });
-
-  const total = filtered.length;
-  const totalPages = Math.ceil(total / limit);
-  const start = (page - 1) * limit;
-  const paginated = filtered.slice(start, start + limit);
+  // Definir columnas para DataTable
+  const subjectColumns: ColumnDef<Subject>[] = [
+    {
+      key: "code",
+      label: t("admin.subjects.code"),
+      sortable: true,
+      className: "font-mono",
+    },
+    {
+      key: "name",
+      label: t("admin.subjects.name"),
+      sortable: true,
+      className: "font-medium",
+    },
+    {
+      key: "degreeId",
+      label: t("admin.subjects.degree"),
+      sortable: true,
+      render: (item) => getDegreeName(item.degreeId),
+    },
+    {
+      key: "credits",
+      label: t("admin.subjects.credits"),
+      sortable: true,
+      render: (item) => `${item.credits} ECTS`,
+    },
+    {
+      key: "semester",
+      label: t("admin.subjects.semester"),
+      sortable: true,
+      render: (item) => `${item.semester}º`,
+    },
+    {
+      key: "actions",
+      label: t("admin.subjects.actions"),
+      headerClassName: "text-right",
+      className: "text-right",
+      render: (item) => (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => openEditDialog(item)}>
+          <Pencil className="h-4 w-4" />
+        </Button>
+      ),
+    },
+  ];
 
   return (
     <>
@@ -239,110 +270,19 @@ export default function SubjectManagement() {
         <CardHeader>
           <CardTitle>{t("admin.subjects.title")}</CardTitle>
           <CardDescription>{t("admin.subjects.subtitle")}</CardDescription>
-          <div className="flex justify-between items-center gap-4 mt-4">
-            <div className="relative w-64">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder={t("admin.subjects.search_subject")}
-                className="pl-8"
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                  setPage(1);
-                }}
-              />
-            </div>
-            <Select
-              value={limit.toString()}
-              onValueChange={(v) => setLimit(Number(v))}>
-              <SelectTrigger className="w-[100px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="5">5 {t("common.rows")}</SelectItem>
-                <SelectItem value="10">10 {t("common.rows")}</SelectItem>
-                <SelectItem value="20">20 {t("common.rows")}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
-            <div className="flex justify-center p-4">
-              <Loader2 className="animate-spin" />
-            </div>
-          ) : (
-            <>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t("admin.subjects.code")}</TableHead>
-                    <TableHead>{t("admin.subjects.name")}</TableHead>
-                    <TableHead>{t("admin.subjects.degree")}</TableHead>
-                    <TableHead>{t("admin.subjects.credits")}</TableHead>
-                    <TableHead>{t("admin.subjects.semester")}</TableHead>
-                    <TableHead className="text-right">
-                      {t("admin.subjects.actions")}
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {paginated.length === 0 ? (
-                    <TableRow>
-                      <TableCell
-                        colSpan={6}
-                        className="text-center text-muted-foreground">
-                        {t("admin.subjects.no_subjects")}
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    paginated.map((subject) => (
-                      <TableRow key={subject.id}>
-                        <TableCell className="font-mono">
-                          {subject.code}
-                        </TableCell>
-                        <TableCell className="font-medium">
-                          {subject.name}
-                        </TableCell>
-                        <TableCell>{getDegreeName(subject.degreeId)}</TableCell>
-                        <TableCell>{subject.credits} ECTS</TableCell>
-                        <TableCell>{subject.semester}º</TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => openEditDialog(subject)}>
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-              <div className="flex justify-center gap-2 mt-4">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page === 1}>
-                  {t("common.previous")}
-                </Button>
-                <div className="flex items-center text-sm text-muted-foreground">
-                  {t("common.page")} {page} {t("common.of")} {totalPages || 1}
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    setPage((p) => Math.min(totalPages || 1, p + 1))
-                  }
-                  disabled={page >= (totalPages || 1)}>
-                  {t("common.next")}
-                </Button>
-              </div>
-            </>
-          )}
+          <DataTable<Subject>
+            data={subjects}
+            columns={subjectColumns}
+            searchKeys={["name", "code"]}
+            searchPlaceholder={t("admin.subjects.search_subject")}
+            pageSize={10}
+            emptyMessage={t("admin.subjects.no_subjects")}
+            getRowKey={(item) => item.id}
+            isLoading={isLoading}
+            loadingRows={5}
+          />
         </CardContent>
       </Card>
     </>
