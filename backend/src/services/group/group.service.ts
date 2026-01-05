@@ -40,6 +40,13 @@ export class GroupService {
     return await groupModel.listByCourse(courseId as UUID);
   }
 
+  async listBySubjectAndYear(subjectId: string, academicYear: string) {
+    return await groupModel.listBySubjectAndYear(
+      subjectId as UUID,
+      academicYear
+    );
+  }
+
   async enrollMember(groupId: string, input: EnrollMemberInput) {
     const group = await groupModel.getById(groupId as UUID);
 

@@ -206,36 +206,65 @@ export class UserModel {
   async list(
     page: number,
     limit: number,
-    filters?: { role?: UserRole; status?: UserStatus; search?: string }
+    filters?: {
+      role?: string;
+      status?: string;
+      search?: string;
+      groupId?: string;
+    }
   ) {
-    let whereClause = 'deleted_at IS NULL';
-    const filterValues: any[] = [];
+    let whereClause = 'u.deleted_at IS NULL';
+    const params: any[] = [];
+    let joinClause = '';
 
-    if (filters?.role) {
-      whereClause += ' AND role = ?';
-      filterValues.push(filters.role);
+    if (filters?.groupId) {
+      joinClause = 'JOIN user_groups ug ON u.id = ug.user_id';
+      whereClause += ' AND ug.group_id = ?';
+      params.push(filters.groupId);
     }
-    if (filters?.status) {
-      whereClause += ' AND status = ?';
-      filterValues.push(filters.status);
+
+    if (filters?.role && filters.role !== 'all') {
+      whereClause += ' AND u.role = ?';
+      params.push(filters.role);
     }
+
+    if (filters?.status && filters.status !== 'all') {
+      whereClause += ' AND u.status = ?';
+      params.push(filters.status);
+    }
+
     if (filters?.search) {
       whereClause +=
-        ' AND (email LIKE ? OR first_name LIKE ? OR last_name LIKE ?)';
-      const searchTerm = `%${filters.search}%`;
-      filterValues.push(searchTerm, searchTerm, searchTerm);
+        ' AND (u.email LIKE ? OR u.first_name LIKE ? OR u.last_name LIKE ?)';
+
+      const term = `%${filters.search}%`;
+      params.push(term, term, term);
     }
 
+    const countQuery = `SELECT COUNT(DISTINCT u.id) as count FROM users u ${joinClause} WHERE ${whereClause}`;
     const [countRows] = await this.getPool().execute<CountResult[]>(
-      `SELECT COUNT(*) as total FROM users WHERE ${whereClause}`,
-      filterValues
+      countQuery,
+      params
     );
-    const total = countRows[0].count;
+    const total = countRows[0]?.count || 0;
 
     const offset = (page - 1) * limit;
-    const query = `SELECT * FROM users WHERE ${whereClause} ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}`;
+    const query = `
+      SELECT DISTINCT u.id, u.auth_id, u.email, u.first_name, u.last_name, 
+      u.role, u.status, u.phone, u.bio, u.preferred_language, 
+      u.profile_image_url, u.created_at, u.updated_at, u.deleted_at
+      FROM users u 
+      ${joinClause} 
+      WHERE ${whereClause} 
+      ORDER BY u.created_at DESC 
+      LIMIT ? OFFSET ?
+    `;
 
-    const [rows] = await this.getPool().execute<UserRow[]>(query, filterValues);
+    const [rows] = await this.getPool().execute<UserRow[]>(query, [
+      ...params,
+      limit,
+      offset,
+    ]);
     const items = rows.map((row) => userMapper.toEntity(row));
 
     return {

@@ -75,6 +75,25 @@ export class GroupController {
     });
   });
 
+  listBySubjectAndYear = catchAsync(async (req: Request, res: Response) => {
+    const { subjectId, academicYear } = req.query;
+
+    if (!subjectId || !academicYear) {
+      throw new AppError(
+        'VALIDATION_ERROR',
+        400,
+        'Faltan parámetros subjectId o academicYear'
+      );
+    }
+
+    const result = await groupService.listBySubjectAndYear(
+      subjectId as string,
+      academicYear as string
+    );
+
+    return ApiResponse.success(res, groupMapper.toDTOList(result));
+  });
+
   getById = catchAsync(async (req: Request, res: Response) => {
     const result = await groupService.getGroupById(req.params.id);
 

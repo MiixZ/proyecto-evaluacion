@@ -54,6 +54,25 @@ export class GroupModel {
     return rows.map((row) => groupMapper.toEntity(row));
   }
 
+  async listBySubjectAndYear(
+    subjectId: UUID,
+    academicYear: string
+  ): Promise<GroupEntity[]> {
+    const query = `
+      SELECT g.* FROM \`groups\` g
+      JOIN courses c ON g.course_id = c.id
+      WHERE c.subject_id = ? AND c.academic_year = ?
+      ORDER BY g.name ASC
+    `;
+
+    const [rows] = await getPool().execute<GroupRow[]>(query, [
+      subjectId,
+      academicYear,
+    ]);
+
+    return rows.map((row) => groupMapper.toEntity(row));
+  }
+
   // --- MEMBERSHIP (user_groups) ---
 
   async addMember(

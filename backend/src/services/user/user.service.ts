@@ -70,8 +70,10 @@ export class UserService {
   async listUsers(
     page: number,
     limit: number,
-    filters: UserFilters
+    filters: UserFilters,
+    groupId?: string
   ): Promise<PaginatedResponse<UserEntity>> {
+    filters.groupId = groupId;
     return await userModel.list(page, limit, filters);
   }
 
@@ -140,17 +142,13 @@ export class UserService {
       throw new NotFoundError('Usuario no encontrado');
     }
 
-    const updatedUser = await userModel.update(userId as UUID, {
+    await userModel.update(userId as UUID, {
       firstName: input.firstName,
       lastName: input.lastName,
       phone: input.phone,
       bio: input.bio,
       preferredLanguage: input.preferredLanguage,
     });
-
-    if (!updatedUser) {
-      throw new Error('Error al actualizar el perfil');
-    }
 
     await auditService.log(
       'UPDATE_PROFILE',
@@ -160,7 +158,8 @@ export class UserService {
       userId as UUID
     );
 
-    const userDTO = userMapper.toDTO(updatedUser);
+    const updatedUser = await userModel.getById(userId as UUID);
+    const userDTO = userMapper.toDTO(updatedUser!);
 
     const enrollments = await userModel.getEnrollments(userId as UUID);
     userDTO.enrollments = enrollments.map((e) => ({

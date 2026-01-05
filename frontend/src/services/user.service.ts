@@ -19,7 +19,8 @@ export const userService = {
     limit = 1000,
     search = "",
     role?: UserRole | "all",
-    status?: UserStatus | "all"
+    status?: UserStatus | "all",
+    groupId?: string
   ): Promise<PaginatedResponse<User>> => {
     const params = new URLSearchParams({
       page: page.toString(),
@@ -27,6 +28,7 @@ export const userService = {
       ...(search && { search }),
       ...(role && role !== "all" && { role }),
       ...(status && status !== "all" && { status }),
+      ...(groupId && { groupId }),
     });
 
     const { data } = await api.get<ApiResponse<PaginatedResponse<User>>>(

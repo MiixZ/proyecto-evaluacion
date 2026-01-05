@@ -27,6 +27,15 @@ export const groupService = {
     const { data } = await api.get<{ data: GroupDetails }>(
       `/v1/groups/${groupId}`
     );
+
+    return data.data;
+  },
+
+  getBySubjectAndYear: async (subjectId: string, academicYear: string) => {
+    const { data } = await api.get(`/v1/groups/search/context`, {
+      params: { subjectId, academicYear },
+    });
+
     return data.data;
   },
 

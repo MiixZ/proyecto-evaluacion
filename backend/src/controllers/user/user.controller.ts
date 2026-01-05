@@ -35,11 +35,16 @@ export class UserController {
   listUsers = catchAsync(async (req: Request, res: Response) => {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
+    const search = req.query.search as string;
+    const role = req.query.role as string;
+    const status = req.query.status as string;
+    const groupId = req.query.groupId as string;
 
     const result = await userService.listUsers(page, limit, {
-      role: req.query.role as UserRole,
-      status: req.query.status as UserStatus,
-      search: req.query.search as string,
+      role: role as UserRole,
+      status: status as UserStatus,
+      search,
+      groupId,
     });
 
     const dtos = userMapper.toDTOList(result.items);

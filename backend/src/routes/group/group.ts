@@ -36,6 +36,12 @@ router.post(
 );
 router.post('/:groupId/students', groupController.addStudent);
 
+router.get(
+  '/search/context',
+  authMiddleware,
+  groupController.listBySubjectAndYear
+);
+
 router.put('/:groupId/students/:studentId', groupController.updateStudent);
 router.patch(
   '/:groupId/students/:studentId/status',
