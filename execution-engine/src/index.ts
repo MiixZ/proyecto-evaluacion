@@ -5,10 +5,11 @@ import { ExecutionRequest } from "./types/execution.types";
 const app = express();
 const executionManager = new ExecutionManager();
 
-// Middleware
 app.use(express.json({ limit: "50mb" }));
 
-// API Key validation
+/**
+ * Middleware de validación de API Key
+ */
 app.use((req: Request, res: Response, next: Function) => {
   const apiKey = req.headers["x-api-key"];
   const expectedKey = process.env.EXECUTION_ENGINE_API_KEY;

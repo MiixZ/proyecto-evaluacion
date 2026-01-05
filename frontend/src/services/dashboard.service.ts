@@ -13,7 +13,14 @@ interface ApiResponse<T> {
   timestamp: string;
 }
 
+/**
+ * Servicio para obtención de estadísticas y datos del dashboard
+ * Incluye métricas para profesores, admin, y actividad de grupos
+ */
 export const dashboardService = {
+  /**
+   * Obtiene estadísticas del dashboard de profesor
+   */
   getProfessorStats: async (
     groupId?: string
   ): Promise<ProfessorDashboardResponse> => {
@@ -28,6 +35,9 @@ export const dashboardService = {
     return data.data;
   },
 
+  /**
+   * Obtiene estadísticas del dashboard de administrador
+   */
   getAdminStats: async (
     academicYear?: string,
     search?: string
@@ -43,6 +53,9 @@ export const dashboardService = {
     return data.data;
   },
 
+  /**
+   * Obtiene lista de años académicos disponibles
+   */
   getAcademicYears: async (): Promise<string[]> => {
     const { data } = await api.get<ApiResponse<string[]>>(
       "/v1/dashboard/academic-years"
@@ -51,6 +64,9 @@ export const dashboardService = {
     return data.data;
   },
 
+  /**
+   * Obtiene envíos recientes
+   */
   getRecentSubmissions: async (
     limit: number = 5
   ): Promise<DashboardSubmission[]> => {
@@ -61,6 +77,9 @@ export const dashboardService = {
     return data.data.items;
   },
 
+  /**
+   * Obtiene actividad de un grupo con filtros y ordenamiento
+   */
   getGroupActivity: async (
     groupId: string,
     page: number,
@@ -86,6 +105,9 @@ export const dashboardService = {
     return data.data;
   },
 
+  /**
+   * Obtiene casos de plagio detectados en un grupo
+   */
   getGroupPlagiarism: async (
     groupId: string,
     page: number = 1,

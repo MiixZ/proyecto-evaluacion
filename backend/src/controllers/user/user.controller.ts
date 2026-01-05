@@ -8,7 +8,14 @@ import { catchAsync } from '@utils/async.handler';
 import { ApiResponse } from '@utils/response.handler';
 import { UpdateUserInput } from '@validators/user.validator';
 
+/**
+ * Controlador para endpoints de gestión de usuarios
+ * Maneja CRUD, perfiles, asignación de grupos y listados
+ */
 export class UserController {
+  /**
+   * Crea un nuevo usuario (solo admin)
+   */
   createUser = catchAsync(async (req: AuthRequest, res: Response) => {
     this.validateAdmin(req);
 
@@ -17,6 +24,9 @@ export class UserController {
     return ApiResponse.created(res, newUser);
   });
 
+  /**
+   * Obtiene el perfil del usuario autenticado
+   */
   getProfile = catchAsync(async (req: AuthRequest, res: Response) => {
     const userId = this.validateAuthenticated(req);
 
@@ -25,6 +35,9 @@ export class UserController {
     return ApiResponse.success(res, user);
   });
 
+  /**
+   * Obtiene un usuario por ID
+   */
   getUserById = catchAsync(async (req: Request, res: Response) => {
     const { id } = req.params;
     const user = await userService.getUserById(id);
@@ -48,6 +61,9 @@ export class UserController {
     );
   });
 
+  /**
+   * Lista usuarios con paginación, filtros y enrollments
+   */
   listUsers = catchAsync(async (req: Request, res: Response) => {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;

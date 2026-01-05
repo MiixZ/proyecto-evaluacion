@@ -1,4 +1,13 @@
+/**
+ * Clase base para errores personalizados de la aplicación
+ */
 export class AppError extends Error {
+  /**
+   * @param code - Código identificador del error
+   * @param statusCode - Código de estado HTTP
+   * @param message - Mensaje descriptivo del error
+   * @param details - Detalles adicionales opcionales
+   */
   constructor(
     public code: string,
     public statusCode: number,
@@ -10,6 +19,9 @@ export class AppError extends Error {
   }
 }
 
+/**
+ * Error de validación de datos (400 Bad Request)
+ */
 export class ValidationError extends AppError {
   constructor(message: string, details?: Record<string, unknown>) {
     super('VALIDATION_ERROR', 400, message, details);
@@ -17,6 +29,9 @@ export class ValidationError extends AppError {
   }
 }
 
+/**
+ * Error de autenticación - usuario no identificado (401 Unauthorized)
+ */
 export class UnauthorizedError extends AppError {
   constructor(message: string = 'No autenticado') {
     super('UNAUTHORIZED', 401, message);
@@ -24,6 +39,9 @@ export class UnauthorizedError extends AppError {
   }
 }
 
+/**
+ * Error de autorización - usuario sin permisos suficientes (403 Forbidden)
+ */
 export class ForbiddenError extends AppError {
   constructor(message: string = 'No autorizado') {
     super('FORBIDDEN', 403, message);
@@ -31,6 +49,9 @@ export class ForbiddenError extends AppError {
   }
 }
 
+/**
+ * Error de recurso no encontrado (404 Not Found)
+ */
 export class NotFoundError extends AppError {
   constructor(resource: string) {
     super('NOT_FOUND', 404, `${resource} no encontrado`);
@@ -38,6 +59,9 @@ export class NotFoundError extends AppError {
   }
 }
 
+/**
+ * Error de conflicto con el estado actual (409 Conflict)
+ */
 export class ConflictError extends AppError {
   constructor(message: string) {
     super('CONFLICT', 409, message);
@@ -45,6 +69,9 @@ export class ConflictError extends AppError {
   }
 }
 
+/**
+ * Error interno del servidor (500 Internal Server Error)
+ */
 export class InternalServerError extends AppError {
   constructor(message: string = 'Error interno del servidor') {
     super('INTERNAL_SERVER_ERROR', 500, message);

@@ -1,6 +1,10 @@
 import Docker, { Container } from "dockerode";
 import { DOCKER_CONFIG, getDockerClient } from "../config/docker.config";
 
+/**
+ * Gestor de contenedores Docker para ejecución aislada
+ * Crea, configura y destruye contenedores sandbox con límites de recursos
+ */
 export class ContainerManager {
   private docker: Docker;
   private activeContainers: Map<string, string> = new Map();
@@ -9,6 +13,13 @@ export class ContainerManager {
     this.docker = getDockerClient();
   }
 
+  /**
+   * Crea un contenedor sandbox aislado para ejecución de código
+   * Aplica límites de CPU, memoria y seguridad
+   * @param language - Lenguaje de programación
+   * @param executionId - ID único de la ejecución
+   * @returns Contenedor Docker creado
+   */
   async createSandboxContainer(
     language: string,
     executionId: string
@@ -74,7 +85,8 @@ export class ContainerManager {
   }
 
   /**
-   * Destruir contenedor (limpiar después de ejecución)
+   * Destruye un contenedor sandbox tras finalizar la ejecución
+   * @param executionId - ID de la ejecución
    */
   async destroySandboxContainer(executionId: string): Promise<void> {
     const containerId = this.activeContainers.get(executionId);
@@ -118,7 +130,8 @@ export class ContainerManager {
   }
 
   /**
-   * Limpiar contenedores huérfanos
+   * Limpia contenedores huérfanos que superan el tiempo máximo de vida
+   * Elimina contenedores sandbox con más de 5 minutos de antigüedad
    */
   async cleanupOrphanedContainers(): Promise<void> {
     try {

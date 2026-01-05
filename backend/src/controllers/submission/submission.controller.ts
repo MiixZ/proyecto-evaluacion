@@ -6,7 +6,14 @@ import { submissionService } from '@services/submission/submission.service';
 import { UUID } from '@CustomTypes/common.types';
 import { CreateSubmissionInput } from '@validators/submission.validator';
 
+/**
+ * Controlador para envíos de código de estudiantes
+ * Maneja envío, evaluación y consulta de historial
+ */
 export class SubmissionController {
+  /**
+   * Envía y evalúa código de un estudiante
+   */
   submitCode = catchAsync(async (req: AuthRequest, res: Response) => {
     const userId = req.user!.id;
 
@@ -27,6 +34,9 @@ export class SubmissionController {
     );
   });
 
+  /**
+   * Obtiene el historial de envíos del estudiante autenticado
+   */
   getHistory = catchAsync(async (req: AuthRequest, res: Response) => {
     const userId = req.user!.id;
     const { exerciseId } = req.query;
@@ -39,6 +49,9 @@ export class SubmissionController {
     return ApiResponse.success(res, history, 200, 'Historial recuperado');
   });
 
+  /**
+   * Obtiene detalles de un envío específico
+   */
   getById = catchAsync(async (req: AuthRequest, res: Response) => {
     const result = await submissionService.getSubmissionById(
       req.params.id as UUID,

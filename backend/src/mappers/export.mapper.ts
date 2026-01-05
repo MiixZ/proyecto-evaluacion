@@ -30,7 +30,6 @@ class ExportMapper extends BaseMapper<ExportEntity, ExportDTO, ExportRow> {
       purpose: entity.purpose,
       sizeBytes: entity.fileSizeBytes,
       createdAt: entity.createdAt,
-      // TODO: URL ficticia para descargar el archivo (se implementaría en un endpoint de descarga)
       downloadUrl: `/api/v1/exports/${entity.id}/download`,
     };
   }

@@ -11,7 +11,16 @@ import { submissionService } from '@services/submission/submission.service';
 import { FeedbackVisibility } from '@models/feedback/feedback.entity';
 import { feedbackService } from '@services/feedback/feedback.service';
 
+/**
+ * Servicio para detección y revisión de plagio académico
+ * Coordina la comparación de código y aplicación de penalizaciones
+ */
 export class PlagiarismService {
+  /**
+   * Crea un nuevo registro de chequeo de plagio
+   * @param input - Datos del chequeo incluyendo envíos comparados
+   * @returns Registro del chequeo creado
+   */
   async createCheck(input: CreatePlagiarismCheckInput) {
     await submissionModel.getById(input.submissionId as UUID);
     await submissionModel.getById(input.comparedWithSubmissionId as UUID);
@@ -27,6 +36,13 @@ export class PlagiarismService {
     return await plagiarismModel.listBySubmission(submissionId as UUID);
   }
 
+  /**
+   * Revisa un chequeo de plagio y aplica penalizaciones si procede
+   * @param id - ID del chequeo de plagio
+   * @param input - Datos de la revisión (flagged, notas)
+   * @param reviewerId - ID del revisor
+   * @returns Chequeo actualizado
+   */
   async reviewCheck(
     id: string,
     input: ReviewPlagiarismInput,
@@ -85,6 +101,12 @@ export class PlagiarismService {
     return await plagiarismModel.list(page, limit, filters);
   }
 
+  /**
+   * Ejecuta una comparación automática entre dos envíos usando Winnowing
+   * @param submissionId - ID del envío fuente
+   * @param targetSubmissionId - ID del envío a comparar
+   * @returns Porcentaje de similitud (0-100)
+   */
   async runBasicComparison(
     submissionId: UUID,
     targetSubmissionId: UUID

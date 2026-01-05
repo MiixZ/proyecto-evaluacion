@@ -46,13 +46,22 @@ export interface ExerciseListItem {
   createdAt: string;
 }
 
+/**
+ * Servicio para gestión de ejercicios de programación
+ * Incluye CRUD, envíos, historial y pistas
+ */
 export const exerciseService = {
+  /**
+   * Obtiene un ejercicio por ID
+   */
   getById: async (id: string): Promise<Exercise> => {
     const { data } = await api.get<ApiResponse<Exercise>>(`v1/exercises/${id}`);
     return data.data;
   },
 
-  // Método para Admin: Listar todos los ejercicios paginados
+  /**
+   * Lista todos los ejercicios con paginación (solo admin)
+   */
   getAll: async (
     page: number = 1,
     limit: number = 20,
@@ -70,6 +79,9 @@ export const exerciseService = {
     return data.data;
   },
 
+  /**
+   * Crea un nuevo ejercicio
+   */
   create: async (payload: CreateExercisePayload): Promise<Exercise> => {
     const { data } = await api.post<ApiResponse<Exercise>>(
       "v1/exercises",
@@ -78,6 +90,9 @@ export const exerciseService = {
     return data.data;
   },
 
+  /**
+   * Envía una solución de código para evaluación
+   */
   submitSolution: async (payload: {
     exerciseId: string;
     courseId: string;
@@ -91,6 +106,9 @@ export const exerciseService = {
     return data.data;
   },
 
+  /**
+   * Obtiene el historial de envíos de un ejercicio
+   */
   getHistory: async (exerciseId: string): Promise<SubmissionHistoryItem[]> => {
     const { data } = await api.get<ApiResponse<SubmissionHistoryItem[]>>(
       "v1/submissions",
@@ -101,6 +119,9 @@ export const exerciseService = {
     return data.data || [];
   },
 
+  /**
+   * Solicita una pista para un caso de prueba
+   */
   requestHint: async (
     submissionId: string,
     testCaseId: string

@@ -2,6 +2,10 @@ import nodemailer from 'nodemailer';
 import config from '@config/environment';
 import { logger } from '@utils/logger';
 
+/**
+ * Servicio de envío de correos electrónicos
+ * Soporta SMTP real o modo mock para desarrollo
+ */
 export class EmailService {
   private transporter: nodemailer.Transporter | null = null;
 
@@ -22,6 +26,12 @@ export class EmailService {
     }
   }
 
+  /**
+   * Envía email de bienvenida a nuevo usuario con credenciales
+   * @param to - Email del destinatario
+   * @param _name - Nombre del usuario (sin usar actualmente)
+   * @param password - Contraseña generada
+   */
   async sendWelcomeEmail(to: string, _name: string, password: string) {
     const subject = 'Bienvenido a la Plataforma de Evaluación';
     const html = `... (HTML Content) ...`;

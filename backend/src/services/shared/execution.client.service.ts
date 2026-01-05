@@ -6,6 +6,9 @@ import axios, { AxiosInstance } from 'axios';
 import config from '@config/environment';
 import { logger } from '@utils/logger';
 
+/**
+ * Estadísticas del motor de ejecución
+ */
 export interface EngineStats {
   uptime: number;
   memoryUsage: {
@@ -16,6 +19,10 @@ export interface EngineStats {
   activeExecutions: number;
 }
 
+/**
+ * Cliente HTTP para comunicación con el motor de ejecución de código
+ * Gestiona envíos, health checks y estadísticas
+ */
 export class ExecutionEngineClient {
   private client: AxiosInstance;
 
@@ -30,6 +37,11 @@ export class ExecutionEngineClient {
     });
   }
 
+  /**
+   * Envía código para ejecución y evaluación
+   * @param request - Solicitud con código, test cases y límites
+   * @returns Resultado de ejecución con veredicto y detalles
+   */
   async executeCode(request: ExecutionRequest): Promise<ExecutionResult> {
     try {
       logger.debug(`Enviando a Execution Engine: ${request.id}`);
@@ -49,6 +61,10 @@ export class ExecutionEngineClient {
     }
   }
 
+  /**
+   * Verifica si el motor de ejecución está disponible
+   * @returns true si el servicio responde correctamente
+   */
   async health(): Promise<boolean> {
     try {
       await this.client.get('/health');
@@ -59,6 +75,10 @@ export class ExecutionEngineClient {
     }
   }
 
+  /**
+   * Obtiene estadísticas del motor de ejecución
+   * @returns Estadísticas o null si hay error
+   */
   async getStats(): Promise<EngineStats | null> {
     try {
       const response = await this.client.get<EngineStats>('/stats');

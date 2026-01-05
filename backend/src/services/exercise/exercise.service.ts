@@ -31,7 +31,17 @@ interface ExerciseDetailDTO extends ExerciseDTO {
   courseId?: UUID;
 }
 
+/**
+ * Servicio para gestión de ejercicios de programación
+ * Maneja creación, listado, publicación y clonado de ejercicios
+ */
 export class ExerciseService {
+  /**
+   * Crea un nuevo ejercicio con sus casos de prueba
+   * @param input - Datos del ejercicio incluyendo test cases
+   * @param teacherId - ID del profesor que crea el ejercicio
+   * @returns DTO del ejercicio creado
+   */
   async createExercise(
     input: CreateExerciseInput,
     teacherId: UUID
@@ -63,6 +73,12 @@ export class ExerciseService {
     return exerciseMapper.toDTO(exercise);
   }
 
+  /**
+   * Obtiene un ejercicio por su ID con opciones de visibilidad
+   * @param id - ID del ejercicio
+   * @param isStudent - Si es true, oculta casos de prueba privados
+   * @returns DTO del ejercicio con detalles completos o limitados
+   */
   async getExerciseById(
     id: UUID,
     isStudent: boolean = false
@@ -153,6 +169,11 @@ export class ExerciseService {
     };
   }
 
+  /**
+   * Publica un ejercicio haciéndolo visible para estudiantes
+   * @param id - ID del ejercicio
+   * @returns DTO del ejercicio actualizado
+   */
   async publishExercise(id: UUID): Promise<ExerciseDTO> {
     const exercise = await exerciseModel.setPublishedStatus(id, true);
 
@@ -167,6 +188,11 @@ export class ExerciseService {
     return exerciseMapper.toDTO(exercise);
   }
 
+  /**
+   * Oculta un ejercicio para que no sea visible para estudiantes
+   * @param id - ID del ejercicio
+   * @returns DTO del ejercicio actualizado
+   */
   async unpublishExercise(id: UUID): Promise<ExerciseDTO> {
     const exercise = await exerciseModel.setPublishedStatus(id, false);
 

@@ -28,6 +28,10 @@ import { submissionErrorService } from '@services/catalog/submission-error.servi
 import { plagiarismService } from '@services/plagiarism/plagiarism.service';
 import { hintUsageModel } from '@models/hint/hint-usage.model';
 
+/**
+ * Servicio para gestión de envíos de código y ejecución
+ * Coordina la ejecución, evaluación y detección de plagio
+ */
 export class SubmissionService {
   private executionClient: ExecutionEngineClient;
 
@@ -35,6 +39,12 @@ export class SubmissionService {
     this.executionClient = new ExecutionEngineClient();
   }
 
+  /**
+   * Obtiene el historial de envíos de un estudiante
+   * @param userId - ID del estudiante
+   * @param exerciseId - ID del ejercicio (opcional)
+   * @returns Lista de envíos
+   */
   async getStudentHistory(userId: UUID, exerciseId?: UUID): Promise<any[]> {
     if (exerciseId) {
       return await submissionModel.findByUserAndExercise(userId, exerciseId);
@@ -74,8 +84,16 @@ export class SubmissionService {
 
     return submission;
   }
-  // --------------------
-
+  /**
+   * Procesa un envío de código completo:
+   * - Valida intentos disponibles y permisos
+   * - Ejecuta el código contra casos de prueba
+   * - Calcula puntuación con penalizaciones
+   * - Registra auditoría y dispara detección de plagio
+   * @param userId - ID del estudiante
+   * @param input - Datos del envío (código, lenguaje, ejercicio)
+   * @returns DTO del envío procesado con resultados
+   */
   async processSubmission(
     userId: UUID,
     input: CreateSubmissionInput & { courseId: UUID }
@@ -282,6 +300,9 @@ export class SubmissionService {
     return submissionDTO;
   }
 
+  /**
+   * Mapea el veredicto del motor de ejecución al veredicto interno
+   */
   private mapEngineVerdict(engineVerdict: EngineVerdict): SubmissionVerdict {
     const map: Record<EngineVerdict, SubmissionVerdict> = {
       [EngineVerdict.ACCEPTED]: SubmissionVerdict.ACCEPTED,
@@ -296,6 +317,10 @@ export class SubmissionService {
     return map[engineVerdict] || SubmissionVerdict.RUNTIME_ERROR;
   }
 
+  /**
+   * Calcula el orden de eficiencia según tiempo y memoria usados
+   * @returns Clasificación de eficiencia (BEST, GOOD, ACCEPTABLE, ANY)
+   */
   private calculateEfficiency(
     executionTime: number,
     timeLimit: number,

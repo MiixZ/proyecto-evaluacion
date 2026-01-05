@@ -7,7 +7,14 @@ import { CreateExerciseInput } from '@validators/exercise.validator';
 import { UserRole, UUID } from '@CustomTypes/common.types';
 import { AppError } from '@utils/errors';
 
+/**
+ * Controlador para gestión de ejercicios de programación
+ * Maneja creación, consulta, publicación y listado de ejercicios
+ */
 export class ExerciseController {
+  /**
+   * Crea un nuevo ejercicio (profesores y admin)
+   */
   create = catchAsync(async (req: AuthRequest, res: Response) => {
     if (req.user?.role === UserRole.STUDENT) {
       throw new AppError(
@@ -23,6 +30,10 @@ export class ExerciseController {
     return ApiResponse.created(res, result, 'Ejercicio creado correctamente');
   });
 
+  /**
+   * Obtiene un ejercicio por ID
+   * Filtra información sensible si el usuario es estudiante
+   */
   getById = catchAsync(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     const isStudent = req.user?.role === UserRole.STUDENT;
@@ -66,6 +77,9 @@ export class ExerciseController {
     return ApiResponse.success(res, result);
   });
 
+  /**
+   * Publica u oculta un ejercicio (profesores y admin)
+   */
   togglePublish = catchAsync(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     const { isPublished } = req.body;

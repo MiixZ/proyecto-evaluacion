@@ -14,7 +14,17 @@ import { auditService } from '@services/audit/audit.service';
 import { ConflictError, NotFoundError } from '@utils/errors';
 import crypto from 'crypto';
 
+/**
+ * Servicio para gestión de usuarios del sistema
+ * Incluye creación, actualización, listado y asignación a grupos
+ */
 export class UserService {
+  /**
+   * Crea un nuevo usuario en el sistema
+   * @param input - Datos del usuario a crear
+   * @param creatorId - ID del usuario que crea (para auditoría)
+   * @returns DTO del usuario creado
+   */
   async createUser(input: CreateUserInput, creatorId?: UUID): Promise<UserDTO> {
     const existingUser = await userModel.existsByEmail(input.email);
 
@@ -55,6 +65,12 @@ export class UserService {
     return userMapper.toDTO(newUser);
   }
 
+  /**
+   * Obtiene un usuario por su ID
+   * @param id - ID del usuario
+   * @returns DTO del usuario
+   * @throws NotFoundError si el usuario no existe
+   */
   async getUserById(id: string): Promise<UserDTO> {
     const user = await userModel.getById(id as UUID);
 
@@ -67,6 +83,13 @@ export class UserService {
     return await userModel.getByEmail(email);
   }
 
+  /**
+   * Lista usuarios con paginación y filtros
+   * @param page - Número de página
+   * @param limit - Cantidad de resultados por página
+   * @param filters - Filtros de búsqueda
+   * @returns Respuesta paginada con usuarios
+   */
   async listUsers(
     page: number,
     limit: number,
@@ -125,6 +148,14 @@ export class UserService {
     return userDTO;
   }
 
+  /**
+   * Busca un estudiante por email o lo crea si no existe
+   * Útil para importaciones masivas de estudiantes
+   * @param email - Email del estudiante
+   * @param firstName - Nombre del estudiante
+   * @param lastName - Apellidos del estudiante
+   * @returns DTO del estudiante encontrado o creado
+   */
   async findOrCreateStudent(
     email: string,
     firstName: string,
@@ -199,10 +230,22 @@ export class UserService {
     return userDTO;
   }
 
+  /**
+   * Cambia el rol de un usuario
+   * @param id - ID del usuario
+   * @param role - Nuevo rol
+   * @returns Usuario actualizado
+   */
   async changeRole(id: string, role: UserRole): Promise<UserEntity> {
     return await userModel.updateRole(id as UUID, role);
   }
 
+  /**
+   * Cambia el estado de un usuario (activo/inactivo/pendiente)
+   * @param id - ID del usuario
+   * @param status - Nuevo estado
+   * @returns Usuario actualizado
+   */
   async changeStatus(id: string, status: UserStatus): Promise<UserEntity> {
     return await userModel.updateStatus(id as UUID, status);
   }

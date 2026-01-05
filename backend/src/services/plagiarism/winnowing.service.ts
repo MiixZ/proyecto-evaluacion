@@ -1,5 +1,10 @@
 import { createHash } from 'crypto';
 
+/**
+ * Implementación del algoritmo Winnowing para detección de plagio
+ * Basado en huellas digitales robustas ante cambios estéticos
+ * Referencia: Schleimer, S., Wilkerson, D. S., & Aiken, A. (2003)
+ */
 export class WinnowingService {
   private readonly K_GRAM = 5;
   private readonly WINDOW_SIZE = 4;
@@ -41,7 +46,10 @@ export class WinnowingService {
 
   /**
    * Algoritmo Winnowing principal:
-   * Selecciona una huella digital (hash mínimo) dentro de cada ventana deslizante.
+   * Selecciona una huella digital (hash mínimo) dentro de cada ventana deslizante
+   * Esto reduce el número de hashes manteniendo la capacidad de detección
+   * @param code - Código fuente a analizar
+   * @returns Conjunto de huellas digitales únicas
    */
   public getFingerprints(code: string): Set<number> {
     const normalized = this.normalize(code);
@@ -67,8 +75,11 @@ export class WinnowingService {
   }
 
   /**
-   * Calcula la similitud usando el Coeficiente de Jaccard sobre los fingerprints.
-   * Retorna: 0.0 a 1.0
+   * Calcula la similitud usando el Coeficiente de Jaccard sobre las huellas digitales
+   * Fórmula: |A ∩ B| / |A ∪ B|
+   * @param code1 - Código fuente 1
+   * @param code2 - Código fuente 2
+   * @returns Similitud entre 0.0 (diferente) y 1.0 (idéntico)
    */
   public calculateSimilarity(code1: string, code2: string): number {
     const fp1 = this.getFingerprints(code1);
