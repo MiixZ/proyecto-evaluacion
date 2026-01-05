@@ -128,14 +128,16 @@ export default function PlagiarismHistory() {
       <div className="flex items-center gap-4">
         <Button variant="ghost" onClick={() => navigate("/dashboard")}>
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Volver
+          {t("plagiarism.history.back")}
         </Button>
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-orange-700 flex items-center gap-2">
             <AlertTriangle className="h-6 w-6" />
-            Alertas de Plagio
+            {t("plagiarism.history.title")}
           </h1>
-          <p className="text-muted-foreground">Casos detectados en el grupo</p>
+          <p className="text-muted-foreground">
+            {t("plagiarism.history.subtitle")}
+          </p>
         </div>
       </div>
 
@@ -143,9 +145,12 @@ export default function PlagiarismHistory() {
         <CardHeader>
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <CardTitle>Listado de Alertas</CardTitle>
+              <CardTitle>{t("plagiarism.history.list_title")}</CardTitle>
               <CardDescription>
-                Mostrando {data?.items.length || 0} de {data?.total || 0} casos
+                {t("plagiarism.history.showing", {
+                  count: data?.items.length || 0,
+                  total: data?.total || 0,
+                })}
               </CardDescription>
             </div>
 
@@ -158,12 +163,20 @@ export default function PlagiarismHistory() {
                   setPage(1);
                 }}>
                 <SelectTrigger className="w-[160px]">
-                  <SelectValue placeholder="Estado" />
+                  <SelectValue
+                    placeholder={t("plagiarism.history.filter_status")}
+                  />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="pending">Pendientes</SelectItem>
-                  <SelectItem value="reviewed">Revisados</SelectItem>
+                  <SelectItem value="all">
+                    {t("plagiarism.history.filter_all")}
+                  </SelectItem>
+                  <SelectItem value="pending">
+                    {t("plagiarism.history.filter_pending")}
+                  </SelectItem>
+                  <SelectItem value="reviewed">
+                    {t("plagiarism.history.filter_reviewed")}
+                  </SelectItem>
                 </SelectContent>
               </Select>
 
@@ -175,13 +188,23 @@ export default function PlagiarismHistory() {
                   setPage(1);
                 }}>
                 <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Tipo de plagio" />
+                  <SelectValue
+                    placeholder={t("plagiarism.history.filter_type")}
+                  />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todos los tipos</SelectItem>
-                  <SelectItem value="internal">Copia entre alumnos</SelectItem>
-                  <SelectItem value="external">Fuente externa</SelectItem>
-                  <SelectItem value="ai_generated">IA Generativa</SelectItem>
+                  <SelectItem value="all">
+                    {t("plagiarism.history.filter_all_types")}
+                  </SelectItem>
+                  <SelectItem value="internal">
+                    {t("plagiarism.history.filter_internal")}
+                  </SelectItem>
+                  <SelectItem value="external">
+                    {t("plagiarism.history.filter_external")}
+                  </SelectItem>
+                  <SelectItem value="ai_generated">
+                    {t("plagiarism.history.filter_ai")}
+                  </SelectItem>
                 </SelectContent>
               </Select>
 
@@ -193,13 +216,21 @@ export default function PlagiarismHistory() {
                   setPage(1);
                 }}>
                 <SelectTrigger className="w-[130px]">
-                  <SelectValue placeholder="Filas" />
+                  <SelectValue placeholder={t("plagiarism.history.rows")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="5">5 por pág.</SelectItem>
-                  <SelectItem value="10">10 por pág.</SelectItem>
-                  <SelectItem value="20">20 por pág.</SelectItem>
-                  <SelectItem value="50">50 por pág.</SelectItem>
+                  <SelectItem value="5">
+                    5 {t("plagiarism.history.per_page")}
+                  </SelectItem>
+                  <SelectItem value="10">
+                    10 {t("plagiarism.history.per_page")}
+                  </SelectItem>
+                  <SelectItem value="20">
+                    20 {t("plagiarism.history.per_page")}
+                  </SelectItem>
+                  <SelectItem value="50">
+                    50 {t("plagiarism.history.per_page")}
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -213,38 +244,45 @@ export default function PlagiarismHistory() {
                   className="cursor-pointer hover:bg-muted/50"
                   onClick={() => handleSort("studentName")}>
                   <div className="flex items-center">
-                    Estudiante <SortIcon column="studentName" />
+                    {t("plagiarism.history.table.student")}{" "}
+                    <SortIcon column="studentName" />
                   </div>
                 </TableHead>
                 <TableHead
                   className="cursor-pointer hover:bg-muted/50"
                   onClick={() => handleSort("exerciseTitle")}>
                   <div className="flex items-center">
-                    Ejercicio <SortIcon column="exerciseTitle" />
+                    {t("plagiarism.history.table.exercise")}{" "}
+                    <SortIcon column="exerciseTitle" />
                   </div>
                 </TableHead>
                 <TableHead
                   className="cursor-pointer hover:bg-muted/50"
                   onClick={() => handleSort("type")}>
                   <div className="flex items-center">
-                    Tipo <SortIcon column="type" />
+                    {t("plagiarism.history.table.type")}{" "}
+                    <SortIcon column="type" />
                   </div>
                 </TableHead>
                 <TableHead
                   className="cursor-pointer hover:bg-muted/50"
                   onClick={() => handleSort("similarity")}>
                   <div className="flex items-center">
-                    Similitud <SortIcon column="similarity" />
+                    {t("plagiarism.history.table.similarity")}{" "}
+                    <SortIcon column="similarity" />
                   </div>
                 </TableHead>
                 <TableHead
                   className="text-right cursor-pointer hover:bg-muted/50"
                   onClick={() => handleSort("date")}>
                   <div className="flex items-center justify-end">
-                    Fecha Detección <SortIcon column="date" />
+                    {t("plagiarism.history.table.date")}{" "}
+                    <SortIcon column="date" />
                   </div>
                 </TableHead>
-                <TableHead className="text-right">Acciones</TableHead>
+                <TableHead className="text-right">
+                  {t("plagiarism.history.table.actions")}
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -255,13 +293,13 @@ export default function PlagiarismHistory() {
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-2">
                       {alert.isReviewed ? (
-                        <span title="Revisado">
+                        <span title={t("plagiarism.history.reviewed")}>
                           <CheckCircle className="h-4 w-4 text-green-600" />
                         </span>
                       ) : (
                         <div
                           className="h-2 w-2 rounded-full bg-orange-500"
-                          title="Pendiente"
+                          title={t("plagiarism.history.pending")}
                         />
                       )}
                       {alert.studentName}
@@ -270,10 +308,10 @@ export default function PlagiarismHistory() {
                   <TableCell>{alert.exerciseTitle}</TableCell>
                   <TableCell className="capitalize">
                     {alert.type === "ai_generated"
-                      ? "IA Generativa"
+                      ? t("plagiarism.history.type_ai")
                       : alert.type === "internal"
-                      ? "Copia interna"
-                      : "Fuente externa"}
+                      ? t("plagiarism.history.type_internal")
+                      : t("plagiarism.history.type_external")}
                   </TableCell>
                   <TableCell>{getSimilarityBadge(alert.similarity)}</TableCell>
                   <TableCell className="text-right flex items-center justify-end gap-2 text-muted-foreground">
@@ -288,7 +326,9 @@ export default function PlagiarismHistory() {
                         navigate(`/plagiarism/compare/${alert.id}`)
                       }>
                       <Eye className="h-4 w-4 mr-2" />
-                      {alert.isReviewed ? "Ver Detalle" : "Revisar"}
+                      {alert.isReviewed
+                        ? t("plagiarism.history.view_detail")
+                        : t("plagiarism.history.review")}
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -298,8 +338,7 @@ export default function PlagiarismHistory() {
                   <TableCell
                     colSpan={6}
                     className="h-24 text-center text-muted-foreground">
-                    No se han detectado casos de plagio con los filtros
-                    actuales.
+                    {t("plagiarism.history.no_cases")}
                   </TableCell>
                 </TableRow>
               )}

@@ -40,6 +40,7 @@ import {
   CreateExercisePayload,
 } from "@/services/exercise.service";
 import { dashboardService } from "@/services/dashboard.service";
+import { languageService } from "@/services/language.service";
 
 type TestCaseForm = {
   id: string;
@@ -99,6 +100,13 @@ export default function CreateExercise() {
     queryKey: ["professorStats"],
     queryFn: () => dashboardService.getProfessorStats(),
   });
+
+  const { data: availableLanguages = [], isLoading: isLoadingLanguages } =
+    useQuery({
+      queryKey: ["languages"],
+      queryFn: languageService.getActiveLanguages,
+      staleTime: 1000 * 60 * 60,
+    });
 
   const groups = useMemo(
     () => dashboardData?.groups || [],
@@ -178,16 +186,19 @@ export default function CreateExercise() {
     },
     onSuccess: () => {
       toast({
-        title: isEditMode ? "Ejercicio actualizado" : "Ejercicio creado",
-        description: "Los cambios se han guardado correctamente.",
+        title: isEditMode
+          ? t("professor.create_exercise.success_updated")
+          : t("professor.create_exercise.success_created"),
+        description: t("professor.create_exercise.success_desc"),
       });
       navigate("/dashboard/manage-exercises");
     },
     onError: (error: any) => {
       toast({
-        title: "Error",
+        title: t("professor.create_exercise.error_title"),
         description:
-          error.response?.data?.message || "Error al crear el ejercicio",
+          error.response?.data?.message ||
+          t("professor.create_exercise.error_desc"),
         variant: "destructive",
       });
     },
@@ -230,8 +241,8 @@ export default function CreateExercise() {
 
     if (!syllabusId) {
       toast({
-        title: "Falta información",
-        description: "Debes seleccionar un temario.",
+        title: t("professor.create_exercise.missing_info_title"),
+        description: t("professor.create_exercise.missing_syllabus"),
         variant: "destructive",
       });
       return;
@@ -269,14 +280,16 @@ export default function CreateExercise() {
         <div className="flex items-center gap-4">
           <Button variant="ghost" onClick={() => navigate(-1)}>
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Cancelar
+            {t("professor.create_exercise.cancel")}
           </Button>
           <div>
             <h1 className="text-2xl font-bold tracking-tight">
-              {isEditMode ? "Editar Ejercicio" : "Crear Nuevo Ejercicio"}
+              {isEditMode
+                ? t("professor.create_exercise.title_edit")
+                : t("professor.create_exercise.title_create")}
             </h1>
             <p className="text-muted-foreground">
-              Define el enunciado y las pruebas automáticas
+              {t("professor.create_exercise.subtitle")}
             </p>
           </div>
         </div>
@@ -286,7 +299,7 @@ export default function CreateExercise() {
           ) : (
             <Save className="mr-2 h-4 w-4" />
           )}
-          Guardar Ejercicio
+          {t("professor.create_exercise.save")}
         </Button>
       </div>
 
@@ -297,18 +310,26 @@ export default function CreateExercise() {
         <div className="lg:col-span-2 space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Información General</CardTitle>
-              <CardDescription>Detalles básicos del problema</CardDescription>
+              <CardTitle>
+                {t("professor.create_exercise.general_info")}
+              </CardTitle>
+              <CardDescription>
+                {t("professor.create_exercise.general_info_desc")}
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               {/* SELECTOR DE CURSO/ASIGNATURA */}
               <div className="space-y-2">
-                <Label>Asignatura / Grupo</Label>
+                <Label>{t("professor.create_exercise.subject_group")}</Label>
                 <Select
                   value={selectedGroupId}
                   onValueChange={setSelectedGroupId}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecciona una asignatura" />
+                    <SelectValue
+                      placeholder={t(
+                        "professor.create_exercise.select_subject"
+                      )}
+                    />
                   </SelectTrigger>
                   <SelectContent>
                     {groups.map((g) => (
@@ -319,15 +340,17 @@ export default function CreateExercise() {
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground">
-                  El ejercicio se creará en el curso asociado a este grupo.
+                  {t("professor.create_exercise.subject_help")}
                 </p>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="title">Título del Ejercicio</Label>
+                <Label htmlFor="title">
+                  {t("professor.create_exercise.title_label")}
+                </Label>
                 <Input
                   id="title"
-                  placeholder="Ej: Calcular Factorial"
+                  placeholder={t("professor.create_exercise.title_placeholder")}
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   required
@@ -336,12 +359,14 @@ export default function CreateExercise() {
 
               <div className="space-y-2">
                 <Label htmlFor="description">
-                  Enunciado (Markdown soportado)
+                  {t("professor.create_exercise.description_label")}
                 </Label>
                 <Textarea
                   id="description"
                   className="min-h-[150px] font-mono text-sm"
-                  placeholder="Describe el problema, entradas y salidas..."
+                  placeholder={t(
+                    "professor.create_exercise.description_placeholder"
+                  )}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   required
@@ -350,7 +375,7 @@ export default function CreateExercise() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Temario / Unidad</Label>
+                  <Label>{t("professor.create_exercise.syllabus_label")}</Label>
                   <Select
                     value={syllabusId}
                     onValueChange={setSyllabusId}
@@ -359,8 +384,8 @@ export default function CreateExercise() {
                       <SelectValue
                         placeholder={
                           isLoadingSyllabi
-                            ? "Cargando..."
-                            : "Seleccionar tema..."
+                            ? t("professor.create_exercise.loading")
+                            : t("professor.create_exercise.select_syllabus")
                         }
                       />
                     </SelectTrigger>
@@ -375,7 +400,9 @@ export default function CreateExercise() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Dificultad</Label>
+                  <Label>
+                    {t("professor.create_exercise.difficulty_label")}
+                  </Label>
                   <Select
                     value={difficulty}
                     onValueChange={(v: any) => setDifficulty(v)}>
@@ -383,9 +410,15 @@ export default function CreateExercise() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="beginner">Principiante</SelectItem>
-                      <SelectItem value="intermediate">Intermedio</SelectItem>
-                      <SelectItem value="advanced">Avanzado</SelectItem>
+                      <SelectItem value="beginner">
+                        {t("professor.create_exercise.difficulty_beginner")}
+                      </SelectItem>
+                      <SelectItem value="intermediate">
+                        {t("professor.create_exercise.difficulty_intermediate")}
+                      </SelectItem>
+                      <SelectItem value="advanced">
+                        {t("professor.create_exercise.difficulty_advanced")}
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -396,23 +429,35 @@ export default function CreateExercise() {
           {/* Editor de Plantilla */}
           <Card>
             <CardHeader>
-              <CardTitle>Plantilla de Código (Opcional)</CardTitle>
+              <CardTitle>
+                {t("professor.create_exercise.template_title")}
+              </CardTitle>
               <CardDescription>
-                Código inicial que verá el estudiante. Selecciona el lenguaje
-                principal.
+                {t("professor.create_exercise.template_desc")}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="w-48">
                 <Select value={language} onValueChange={setLanguage}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Lenguaje" />
+                    <SelectValue
+                      placeholder={t(
+                        "professor.create_exercise.language_label"
+                      )}
+                    />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="python">Python</SelectItem>
-                    <SelectItem value="javascript">JavaScript</SelectItem>
-                    <SelectItem value="java">Java</SelectItem>
-                    <SelectItem value="cpp">C++</SelectItem>
+                    {isLoadingLanguages ? (
+                      <SelectItem value="" disabled>
+                        {t("professor.create_exercise.loading")}
+                      </SelectItem>
+                    ) : (
+                      availableLanguages.map((lang) => (
+                        <SelectItem key={lang.code} value={lang.code}>
+                          {lang.name}
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -432,10 +477,11 @@ export default function CreateExercise() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
-                <CardTitle>Casos de Prueba</CardTitle>
+                <CardTitle>
+                  {t("professor.create_exercise.test_cases_title")}
+                </CardTitle>
                 <CardDescription>
-                  Define las entradas y salidas esperadas para la validación
-                  automática.
+                  {t("professor.create_exercise.test_cases_desc")}
                 </CardDescription>
               </div>
               <Button
@@ -443,7 +489,8 @@ export default function CreateExercise() {
                 size="sm"
                 variant="outline"
                 onClick={handleAddTestCase}>
-                <Plus className="mr-2 h-4 w-4" /> Añadir Caso
+                <Plus className="mr-2 h-4 w-4" />{" "}
+                {t("professor.create_exercise.add_case")}
               </Button>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -465,7 +512,9 @@ export default function CreateExercise() {
 
                   <div className="flex items-center gap-2 mb-2">
                     <span className="font-semibold text-sm bg-primary/10 text-primary px-2 py-1 rounded">
-                      Caso #{index + 1}
+                      {t("professor.create_exercise.case_number", {
+                        number: index + 1,
+                      })}
                     </span>
                     <div className="flex items-center space-x-2 ml-4">
                       <Checkbox
@@ -478,26 +527,30 @@ export default function CreateExercise() {
                       <Label
                         htmlFor={`hidden-${tc.id}`}
                         className="text-sm font-normal">
-                        Oculto al estudiante (Caso privado)
+                        {t("professor.create_exercise.hidden_label")}
                       </Label>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label className="text-xs">Entrada (stdin)</Label>
+                      <Label className="text-xs">
+                        {t("professor.create_exercise.input_label")}
+                      </Label>
                       <Textarea
                         className="font-mono text-xs min-h-[80px]"
                         value={tc.input}
                         onChange={(e) =>
                           updateTestCase(tc.id, "input", e.target.value)
                         }
-                        placeholder="Ej: 5"
+                        placeholder={t(
+                          "professor.create_exercise.input_placeholder"
+                        )}
                       />
                     </div>
                     <div className="space-y-2">
                       <Label className="text-xs">
-                        Salida Esperada (stdout)
+                        {t("professor.create_exercise.output_label")}
                       </Label>
                       <Textarea
                         className="font-mono text-xs min-h-[80px]"
@@ -509,14 +562,18 @@ export default function CreateExercise() {
                             e.target.value
                           )
                         }
-                        placeholder="Ej: 120"
+                        placeholder={t(
+                          "professor.create_exercise.output_placeholder"
+                        )}
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-2">
                     <div className="space-y-1">
-                      <Label className="text-xs">Tiempo (s)</Label>
+                      <Label className="text-xs">
+                        {t("professor.create_exercise.time_label")}
+                      </Label>
                       <Input
                         type="number"
                         className="h-8"
@@ -531,7 +588,9 @@ export default function CreateExercise() {
                       />
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-xs">Memoria (MB)</Label>
+                      <Label className="text-xs">
+                        {t("professor.create_exercise.memory_label")}
+                      </Label>
                       <Input
                         type="number"
                         className="h-8"
@@ -551,10 +610,13 @@ export default function CreateExercise() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className="md:col-span-2 space-y-1">
                         <Label className="text-xs flex items-center gap-1">
-                          <HelpCircle className="h-3 w-3" /> Pista (opcional)
+                          <HelpCircle className="h-3 w-3" />{" "}
+                          {t("professor.create_exercise.hint_label")}
                         </Label>
                         <Input
-                          placeholder="Ej: Usa recursividad..."
+                          placeholder={t(
+                            "professor.create_exercise.hint_placeholder"
+                          )}
                           className="h-8 text-sm"
                           value={tc.hintText}
                           onChange={(e) =>
@@ -564,7 +626,7 @@ export default function CreateExercise() {
                       </div>
                       <div className="space-y-1">
                         <Label className="text-xs">
-                          Penalización Pista (%)
+                          {t("professor.create_exercise.hint_penalty_label")}
                         </Label>
                         <Input
                           type="number"
@@ -591,11 +653,13 @@ export default function CreateExercise() {
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Configuración</CardTitle>
+              <CardTitle>
+                {t("professor.create_exercise.config_title")}
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label>Puntos Máximos</Label>
+                <Label>{t("professor.create_exercise.points_label")}</Label>
                 <Input
                   type="number"
                   value={points}
@@ -604,7 +668,9 @@ export default function CreateExercise() {
               </div>
 
               <div className="space-y-2">
-                <Label>Intentos Máximos</Label>
+                <Label>
+                  {t("professor.create_exercise.max_attempts_label")}
+                </Label>
                 <Input
                   type="number"
                   value={maxAttempts}
@@ -613,7 +679,7 @@ export default function CreateExercise() {
               </div>
 
               <div className="space-y-2">
-                <Label>Fecha Límite</Label>
+                <Label>{t("professor.create_exercise.deadline_label")}</Label>
                 <Input
                   type="datetime-local"
                   value={deadline}
@@ -622,7 +688,9 @@ export default function CreateExercise() {
               </div>
 
               <div className="space-y-2">
-                <Label>Penalización por retraso (%)</Label>
+                <Label>
+                  {t("professor.create_exercise.late_penalty_label")}
+                </Label>
                 <div className="flex items-center gap-2">
                   <Input
                     type="number"

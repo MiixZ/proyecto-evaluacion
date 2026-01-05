@@ -2,6 +2,7 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   Plus,
   Search,
@@ -50,6 +51,7 @@ import { exerciseService } from "@/services/exercise.service";
 export default function ExercisesList() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<
     "all" | "published" | "draft"
@@ -66,14 +68,14 @@ export default function ExercisesList() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["my-exercises"] });
       toast({
-        title: "Estado actualizado",
-        description: "La visibilidad del ejercicio ha cambiado.",
+        title: t("exercise_list.toast.status_updated"),
+        description: t("exercise_list.toast.status_updated_desc"),
       });
     },
     onError: () => {
       toast({
-        title: "Error",
-        description: "No se pudo cambiar el estado.",
+        title: t("common.error"),
+        description: t("exercise_list.toast.status_error"),
         variant: "destructive",
       });
     },
@@ -83,7 +85,7 @@ export default function ExercisesList() {
     mutationFn: (id: string) => exerciseService.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["my-exercises"] });
-      toast({ title: "Ejercicio eliminado" });
+      toast({ title: t("exercise_list.toast.deleted") });
     },
     onError: (err: any) => {
       const serverMessage = err.response?.data?.message;
@@ -102,14 +104,14 @@ export default function ExercisesList() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["my-exercises"] });
       toast({
-        title: "Ejercicio duplicado",
-        description: "Se ha creado una copia en estado borrador.",
+        title: t("exercise_list.toast.duplicated"),
+        description: t("exercise_list.toast.duplicated_desc"),
       });
     },
     onError: () => {
       toast({
-        title: "Error",
-        description: "Falló la clonación del ejercicio.",
+        title: t("common.error"),
+        description: t("exercise_list.toast.clone_error"),
         variant: "destructive",
       });
     },
@@ -150,15 +152,12 @@ export default function ExercisesList() {
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <FileCode className="h-6 w-6 text-primary" />
-            Mis Ejercicios
+            {t("exercise_list.title")}
           </h1>
-          <p className="text-muted-foreground">
-            Gestiona, edita y publica los problemas de programación para tus
-            asignaturas.
-          </p>
+          <p className="text-muted-foreground">{t("exercise_list.subtitle")}</p>
         </div>
         <Button onClick={() => navigate("/dashboard/create")}>
-          <Plus className="mr-2 h-4 w-4" /> Crear Nuevo
+          <Plus className="mr-2 h-4 w-4" /> {t("exercise_list.create_new")}
         </Button>
       </div>
 
@@ -168,7 +167,7 @@ export default function ExercisesList() {
             <div className="relative w-full md:w-72">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Buscar por título o asignatura..."
+                placeholder={t("exercise_list.search_placeholder")}
                 className="pl-8"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -180,12 +179,18 @@ export default function ExercisesList() {
                 value={statusFilter}
                 onValueChange={(v: any) => setStatusFilter(v)}>
                 <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Estado" />
+                  <SelectValue placeholder={t("exercise_list.filter_status")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todos los estados</SelectItem>
-                  <SelectItem value="published">Publicados</SelectItem>
-                  <SelectItem value="draft">Borradores</SelectItem>
+                  <SelectItem value="all">
+                    {t("exercise_list.filter_all")}
+                  </SelectItem>
+                  <SelectItem value="published">
+                    {t("exercise_list.filter_published")}
+                  </SelectItem>
+                  <SelectItem value="draft">
+                    {t("exercise_list.filter_draft")}
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -200,11 +205,13 @@ export default function ExercisesList() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Título</TableHead>
-                  <TableHead>Asignatura / Tema</TableHead>
-                  <TableHead>Dificultad</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead className="text-right">Entregas</TableHead>
+                  <TableHead>{t("exercise_list.table.title")}</TableHead>
+                  <TableHead>{t("exercise_list.table.subject")}</TableHead>
+                  <TableHead>{t("exercise_list.table.difficulty")}</TableHead>
+                  <TableHead>{t("exercise_list.table.status")}</TableHead>
+                  <TableHead className="text-right">
+                    {t("exercise_list.table.submissions")}
+                  </TableHead>
                   <TableHead className="w-[50px]"></TableHead>
                 </TableRow>
               </TableHeader>
@@ -215,7 +222,7 @@ export default function ExercisesList() {
                       <TableCell className="font-medium">
                         {ex.title}
                         <div className="text-xs text-muted-foreground mt-0.5">
-                          Creado el{" "}
+                          {t("exercise_list.created_on")}{" "}
                           {format(new Date(ex.createdAt), "d MMM yyyy", {
                             locale: es,
                           })}
@@ -232,10 +239,10 @@ export default function ExercisesList() {
                           variant="outline"
                           className={getDifficultyColor(ex.difficulty)}>
                           {ex.difficulty === "beginner"
-                            ? "Fácil"
+                            ? t("exercise_list.difficulty.easy")
                             : ex.difficulty === "intermediate"
-                            ? "Medio"
-                            : "Difícil"}
+                            ? t("exercise_list.difficulty.medium")
+                            : t("exercise_list.difficulty.hard")}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -243,10 +250,12 @@ export default function ExercisesList() {
                           <Badge
                             variant="default"
                             className="bg-green-600 hover:bg-green-700">
-                            Publicado
+                            {t("exercise_list.status_published")}
                           </Badge>
                         ) : (
-                          <Badge variant="secondary">Borrador</Badge>
+                          <Badge variant="secondary">
+                            {t("exercise_list.status_draft")}
+                          </Badge>
                         )}
                       </TableCell>
                       <TableCell className="text-right text-muted-foreground">
@@ -265,12 +274,14 @@ export default function ExercisesList() {
                                 navigate(`/dashboard/edit-exercise/${ex.id}`)
                               }>
                               {" "}
-                              <Pencil className="mr-2 h-4 w-4" /> Editar
+                              <Pencil className="mr-2 h-4 w-4" />{" "}
+                              {t("exercise_list.actions.edit")}
                             </DropdownMenuItem>
 
                             <DropdownMenuItem
                               onClick={() => cloneMutation.mutate(ex.id)}>
-                              <Copy className="mr-2 h-4 w-4" /> Duplicar
+                              <Copy className="mr-2 h-4 w-4" />{" "}
+                              {t("exercise_list.actions.duplicate")}
                             </DropdownMenuItem>
 
                             <DropdownMenuSeparator />
@@ -285,12 +296,12 @@ export default function ExercisesList() {
                               {ex.isPublished ? (
                                 <>
                                   <EyeOff className="mr-2 h-4 w-4 text-orange-500" />{" "}
-                                  Despublicar
+                                  {t("exercise_list.actions.unpublish")}
                                 </>
                               ) : (
                                 <>
                                   <Eye className="mr-2 h-4 w-4 text-green-600" />{" "}
-                                  Publicar
+                                  {t("exercise_list.actions.publish")}
                                 </>
                               )}
                             </DropdownMenuItem>
@@ -301,14 +312,13 @@ export default function ExercisesList() {
                               className="text-destructive focus:text-destructive"
                               onClick={() => {
                                 if (
-                                  confirm(
-                                    "¿Estás seguro? Esta acción no se puede deshacer."
-                                  )
+                                  confirm(t("exercise_list.delete_confirm"))
                                 ) {
                                   deleteMutation.mutate(ex.id);
                                 }
                               }}>
-                              <Trash2 className="mr-2 h-4 w-4" /> Eliminar
+                              <Trash2 className="mr-2 h-4 w-4" />{" "}
+                              {t("exercise_list.actions.delete")}
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -320,7 +330,7 @@ export default function ExercisesList() {
                     <TableCell
                       colSpan={6}
                       className="h-24 text-center text-muted-foreground">
-                      No se encontraron ejercicios.
+                      {t("exercise_list.no_exercises")}
                     </TableCell>
                   </TableRow>
                 )}

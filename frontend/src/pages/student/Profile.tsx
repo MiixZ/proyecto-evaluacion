@@ -55,7 +55,7 @@ import { Separator } from "@/components/ui/layout/separator";
 import { Alert, AlertDescription } from "@/components/ui/feedback/alert";
 import { ScrollArea } from "@/components/ui/layout/scroll-area";
 import { UpdateProfilePayload } from "@/types/user.type";
-import { ProfileFormValues, profileSchema } from "@/schemas/profile.schema";
+import { ProfileFormValues, getProfileSchema } from "@/schemas/profile.schema";
 
 export default function ProfilePage() {
   const { t } = useTranslation();
@@ -73,7 +73,7 @@ export default function ProfilePage() {
   });
 
   const form = useForm<ProfileFormValues>({
-    resolver: zodResolver(profileSchema),
+    resolver: zodResolver(getProfileSchema(t)),
     defaultValues: {
       firstName: "",
       lastName: "",

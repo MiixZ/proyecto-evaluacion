@@ -73,7 +73,7 @@ export const Navbar = () => {
                 <Button variant="ghost" asChild>
                   <Link to="/dashboard">
                     <LayoutDashboard className="mr-2 h-4 w-4" />
-                    Dashboard
+                    {t("sidebar.menu.dashboard")}
                   </Link>
                 </Button>
 
@@ -106,13 +106,13 @@ export const Navbar = () => {
                     <DropdownMenuItem asChild>
                       <Link to="/dashboard">
                         <LayoutDashboard className="mr-2 h-4 w-4" />
-                        Dashboard
+                        {t("sidebar.menu.dashboard")}
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <Link to="/dashboard/profile">
                         <User className="mr-2 h-4 w-4" />
-                        Perfil
+                        {t("sidebar.profile")}
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
@@ -178,7 +178,7 @@ export const Navbar = () => {
                       onClick={() => setIsOpen(false)}>
                       <Link to="/dashboard">
                         <LayoutDashboard className="mr-2 h-4 w-4" />
-                        Ir al Dashboard
+                        {t("navbar.go_to_dashboard")}
                       </Link>
                     </Button>
                     <Button

@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { academicService } from "@/services/academic.service";
 import { Course } from "@/types/academic.types";
 import { useForm } from "react-hook-form";
@@ -53,6 +54,7 @@ const CourseForm = ({
   const { register, handleSubmit, setValue } = useForm<Course>({
     defaultValues,
   });
+  const { t } = useTranslation();
 
   const { data: subjects = [] } = useQuery({
     queryKey: ["subjects"],
@@ -69,13 +71,13 @@ const CourseForm = ({
       )}
       className="space-y-4">
       <div className="space-y-2">
-        <Label>Asignatura</Label>
+        <Label>{t("admin.courses.subject")}</Label>
         <Select
           onValueChange={(val) => setValue("subjectId", val)}
           defaultValue={defaultValues?.subjectId}
           required>
           <SelectTrigger>
-            <SelectValue placeholder="Selecciona..." />
+            <SelectValue placeholder={t("admin.courses.select_subject")} />
           </SelectTrigger>
           <SelectContent>
             {subjects.map((s) => (
@@ -88,15 +90,15 @@ const CourseForm = ({
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label>Año Académico</Label>
+          <Label>{t("admin.courses.academic_year")}</Label>
           <Input
             {...register("academicYear")}
-            placeholder="2024-2025"
+            placeholder={t("admin.courses.academic_year_placeholder")}
             required
           />
         </div>
         <div className="space-y-2">
-          <Label>Semestre</Label>
+          <Label>{t("admin.courses.semester")}</Label>
           <Select
             onValueChange={(val) => setValue("semester", Number(val))}
             defaultValue={defaultValues?.semester?.toString() || "1"}>
@@ -104,14 +106,18 @@ const CourseForm = ({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="1">1er Semestre</SelectItem>
-              <SelectItem value="2">2do Semestre</SelectItem>
+              <SelectItem value="1">
+                {t("admin.courses.first_semester")}
+              </SelectItem>
+              <SelectItem value="2">
+                {t("admin.courses.second_semester")}
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>
       </div>
       <div className="space-y-2">
-        <Label>Estado</Label>
+        <Label>{t("admin.courses.status")}</Label>
         <Select
           onValueChange={(val: any) => setValue("status", val)}
           defaultValue={defaultValues?.status || "planning"}>
@@ -119,16 +125,22 @@ const CourseForm = ({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="planning">Planificación</SelectItem>
-            <SelectItem value="active">Activo</SelectItem>
-            <SelectItem value="closed">Cerrado</SelectItem>
-            <SelectItem value="archived">Archivado</SelectItem>
+            <SelectItem value="planning">
+              {t("admin.courses.planning")}
+            </SelectItem>
+            <SelectItem value="active">{t("admin.courses.active")}</SelectItem>
+            <SelectItem value="closed">{t("admin.courses.closed")}</SelectItem>
+            <SelectItem value="archived">
+              {t("admin.courses.archived")}
+            </SelectItem>
           </SelectContent>
         </Select>
       </div>
       <Button type="submit" className="w-full" disabled={isPending}>
         {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-        {defaultValues ? "Guardar Cambios" : "Crear Curso"}
+        {defaultValues
+          ? t("admin.courses.save_changes")
+          : t("admin.courses.create_course")}
       </Button>
     </form>
   );
@@ -136,6 +148,7 @@ const CourseForm = ({
 
 export default function CourseManagement() {
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Course | null>(null);
 
@@ -172,11 +185,15 @@ export default function CourseManagement() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["courses"] });
       toast.success(
-        `Curso ${editingItem ? "actualizado" : "creado"} correctamente`
+        t("admin.courses.course_saved", {
+          action: editingItem
+            ? t("admin.courses.updated")
+            : t("admin.courses.created"),
+        })
       );
       closeDialog();
     },
-    onError: () => toast.error("Error al guardar curso"),
+    onError: () => toast.error(t("admin.courses.save_error")),
   });
 
   const closeDialog = () => {
@@ -195,7 +212,7 @@ export default function CourseManagement() {
   };
 
   const getDegreeName = (id: string) =>
-    degrees.find((d) => d.id === id)?.name || "Desconocida";
+    degrees.find((d) => d.id === id)?.name || t("admin.courses.unknown");
 
   // Filtrado y paginación
   const filtered = useMemo(() => {
@@ -227,7 +244,9 @@ export default function CourseManagement() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
         <div className="flex items-center gap-2">
           <Filter className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm font-medium">Año:</span>
+          <span className="text-sm font-medium">
+            {t("admin.courses.year")}:
+          </span>
           <Select
             value={selectedYearFilter}
             onValueChange={setSelectedYearFilter}>
@@ -235,7 +254,9 @@ export default function CourseManagement() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Todos los años</SelectItem>
+              <SelectItem value="all">
+                {t("admin.courses.all_years")}
+              </SelectItem>
               {uniqueYears.map((year) => (
                 <SelectItem key={year} value={year}>
                   {year}
@@ -245,7 +266,7 @@ export default function CourseManagement() {
           </Select>
         </div>
         <Button onClick={openCreateDialog}>
-          <Plus className="mr-2 h-4 w-4" /> Nuevo Curso
+          <Plus className="mr-2 h-4 w-4" /> {t("admin.courses.new_course")}
         </Button>
       </div>
 
@@ -254,7 +275,12 @@ export default function CourseManagement() {
         onOpenChange={(open) => !open && closeDialog()}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingItem ? "Editar" : "Crear"} Curso</DialogTitle>
+            <DialogTitle>
+              {editingItem
+                ? t("admin.courses.edit")
+                : t("admin.courses.create")}{" "}
+              {t("admin.courses.create_course")}
+            </DialogTitle>
           </DialogHeader>
           <CourseForm
             defaultValues={editingItem || undefined}
@@ -266,15 +292,13 @@ export default function CourseManagement() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Cursos Académicos</CardTitle>
-          <CardDescription>
-            Instancias de asignaturas impartidas por año.
-          </CardDescription>
+          <CardTitle>{t("admin.courses.title")}</CardTitle>
+          <CardDescription>{t("admin.courses.subtitle")}</CardDescription>
           <div className="flex justify-between items-center gap-4 mt-4">
             <div className="relative w-64">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Buscar curso..."
+                placeholder={t("admin.courses.search_course")}
                 className="pl-8"
                 value={search}
                 onChange={(e) => {
@@ -290,9 +314,9 @@ export default function CourseManagement() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="5">5 filas</SelectItem>
-                <SelectItem value="10">10 filas</SelectItem>
-                <SelectItem value="20">20 filas</SelectItem>
+                <SelectItem value="5">5 {t("common.rows")}</SelectItem>
+                <SelectItem value="10">10 {t("common.rows")}</SelectItem>
+                <SelectItem value="20">20 {t("common.rows")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -307,12 +331,14 @@ export default function CourseManagement() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Año</TableHead>
-                    <TableHead>Asignatura</TableHead>
-                    <TableHead>Titulación</TableHead>
-                    <TableHead>Semestre</TableHead>
-                    <TableHead>Estado</TableHead>
-                    <TableHead className="text-right">Acciones</TableHead>
+                    <TableHead>{t("admin.courses.year")}</TableHead>
+                    <TableHead>{t("admin.courses.subject")}</TableHead>
+                    <TableHead>{t("admin.courses.degree")}</TableHead>
+                    <TableHead>{t("admin.courses.semester")}</TableHead>
+                    <TableHead>{t("admin.courses.status")}</TableHead>
+                    <TableHead className="text-right">
+                      {t("admin.courses.actions")}
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -321,7 +347,7 @@ export default function CourseManagement() {
                       <TableCell
                         colSpan={6}
                         className="text-center text-muted-foreground">
-                        No se encontraron cursos
+                        {t("admin.courses.no_courses")}
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -337,7 +363,7 @@ export default function CourseManagement() {
                           <TableCell className="font-medium">
                             {subject
                               ? `${subject.name} (${subject.code})`
-                              : "Desconocida"}
+                              : t("admin.courses.unknown")}
                           </TableCell>
                           <TableCell className="text-muted-foreground text-sm">
                             {subject ? getDegreeName(subject.degreeId) : "-"}
@@ -375,10 +401,10 @@ export default function CourseManagement() {
                   size="sm"
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page === 1}>
-                  Anterior
+                  {t("common.previous")}
                 </Button>
                 <div className="flex items-center text-sm text-muted-foreground">
-                  Pág {page} de {totalPages || 1}
+                  {t("common.page")} {page} {t("common.of")} {totalPages || 1}
                 </div>
                 <Button
                   variant="outline"
@@ -387,7 +413,7 @@ export default function CourseManagement() {
                     setPage((p) => Math.min(totalPages || 1, p + 1))
                   }
                   disabled={page >= (totalPages || 1)}>
-                  Siguiente
+                  {t("common.next")}
                 </Button>
               </div>
             </>

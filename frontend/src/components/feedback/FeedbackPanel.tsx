@@ -4,6 +4,7 @@ import { MessageSquarePlus, Trash2, User } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/forms/button";
 import { Textarea } from "@/components/ui/forms/textarea";
@@ -39,6 +40,7 @@ export default function FeedbackPanel({
   submissionId,
   readOnly = false,
 }: FeedbackPanelProps) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
@@ -61,12 +63,12 @@ export default function FeedbackPanel({
 
       queryClient.invalidateQueries({ queryKey: ["submission", submissionId] });
 
-      toast.success("Feedback añadido y nota actualizada");
+      toast.success(t("feedback.success_added"));
       setContent("");
       setScoreAdjustment("0");
     },
     onError: () => {
-      toast.error("Error al añadir feedback");
+      toast.error(t("feedback.error_adding"));
     },
   });
 
@@ -77,7 +79,7 @@ export default function FeedbackPanel({
 
       queryClient.invalidateQueries({ queryKey: ["submission", submissionId] });
 
-      toast.success("Feedback eliminado y nota recalculada");
+      toast.success(t("feedback.success_deleted"));
     },
   });
 
@@ -97,11 +99,11 @@ export default function FeedbackPanel({
   const getVisibilityLabel = (vis: FeedbackVisibility) => {
     switch (vis) {
       case FeedbackVisibility.PRIVATE:
-        return "Privado (Solo profes)";
+        return t("feedback.visibility.private");
       case FeedbackVisibility.STUDENT:
-        return "Visible al estudiante";
+        return t("feedback.visibility.student");
       case FeedbackVisibility.GROUP:
-        return "Visible al grupo";
+        return t("feedback.visibility.group");
       default:
         return vis;
     }
@@ -112,18 +114,18 @@ export default function FeedbackPanel({
       {/* LISTA DE FEEDBACK */}
       <div className="space-y-4">
         <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-          Historial de Retroalimentación
+          {t("feedback.history_title")}
         </h3>
 
         {isLoading && (
           <p className="text-sm text-muted-foreground">
-            Cargando comentarios...
+            {t("feedback.loading")}
           </p>
         )}
 
         {!isLoading && feedbacks.length === 0 && (
           <div className="text-center p-4 border rounded-lg border-dashed text-muted-foreground text-sm">
-            No hay comentarios aún.
+            {t("feedback.no_comments")}
           </div>
         )}
 
@@ -168,7 +170,8 @@ export default function FeedbackPanel({
                         ? "text-green-600"
                         : "text-red-600"
                     }`}>
-                    Ajuste de nota: {item.scoreAdjustment > 0 ? "+" : ""}
+                    {t("feedback.score_adjustment")}:{" "}
+                    {item.scoreAdjustment > 0 ? "+" : ""}
                     {item.scoreAdjustment} pts
                   </div>
                 )}
@@ -184,13 +187,13 @@ export default function FeedbackPanel({
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <MessageSquarePlus className="h-4 w-4" />
-              Añadir Comentario
+              {t("feedback.add_feedback")}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <Textarea
-                placeholder="Escribe tu feedback aquí..."
+                placeholder={t("feedback.write_comment")}
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 className="min-h-[100px]"
@@ -199,7 +202,7 @@ export default function FeedbackPanel({
               <div className="flex flex-col sm:flex-row gap-4">
                 <div className="flex-1 space-y-1">
                   <label className="text-xs font-medium text-muted-foreground">
-                    Visibilidad
+                    {t("feedback.visibility_label")}
                   </label>
                   <Select
                     value={visibility}
@@ -211,13 +214,13 @@ export default function FeedbackPanel({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value={FeedbackVisibility.STUDENT}>
-                        Estudiante
+                        {t("feedback.visibility.student")}
                       </SelectItem>
                       <SelectItem value={FeedbackVisibility.PRIVATE}>
-                        Privado (Solo Profesores)
+                        {t("feedback.visibility.private")}
                       </SelectItem>
                       <SelectItem value={FeedbackVisibility.GROUP}>
-                        Todo el Grupo
+                        {t("feedback.visibility.group")}
                       </SelectItem>
                     </SelectContent>
                   </Select>
@@ -225,7 +228,7 @@ export default function FeedbackPanel({
 
                 <div className="w-full sm:w-[150px] space-y-1">
                   <label className="text-xs font-medium text-muted-foreground">
-                    Ajuste Nota
+                    {t("feedback.score_adjustment")}
                   </label>
                   <Input
                     type="number"
@@ -242,8 +245,8 @@ export default function FeedbackPanel({
                   size="sm"
                   disabled={createMutation.isPending || !content.trim()}>
                   {createMutation.isPending
-                    ? "Guardando..."
-                    : "Publicar Feedback"}
+                    ? t("common.loading")
+                    : t("feedback.submit")}
                 </Button>
               </div>
             </form>

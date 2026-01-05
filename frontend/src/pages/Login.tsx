@@ -68,13 +68,12 @@ const Login = () => {
     } catch (error: any) {
       console.error("Login error:", error);
       const errorMessage =
-        error.response?.data?.error?.message ||
-        "Credenciales inválidas o error de conexión";
+        error.response?.data?.error?.message || t("auth.login.error_desc");
       setServerError(errorMessage);
 
       toast({
         variant: "destructive",
-        title: "Error",
+        title: t("auth.login.error_title"),
         description: errorMessage,
       });
     } finally {

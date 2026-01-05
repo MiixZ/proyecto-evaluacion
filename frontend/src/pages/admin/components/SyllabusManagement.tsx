@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { academicService } from "@/services/academic.service";
 import { Syllabus } from "@/types/academic.types";
 import { useForm } from "react-hook-form";
@@ -58,6 +59,7 @@ const SyllabusForm = ({
     },
   });
   const isPublic = watch("isPublic");
+  const { t } = useTranslation();
 
   const { data: courses = [] } = useQuery({
     queryKey: ["courses"],
@@ -79,13 +81,13 @@ const SyllabusForm = ({
       )}
       className="space-y-4">
       <div className="space-y-2">
-        <Label>Curso Académico</Label>
+        <Label>{t("admin.syllabus.academic_year")}</Label>
         <Select
           onValueChange={(val) => setValue("courseId", val)}
           defaultValue={defaultValues?.courseId}
           required>
           <SelectTrigger>
-            <SelectValue placeholder="Selecciona un curso activo" />
+            <SelectValue placeholder={t("admin.syllabus.select_course")} />
           </SelectTrigger>
           <SelectContent>
             {courses.map((c) => {
@@ -100,23 +102,23 @@ const SyllabusForm = ({
         </Select>
       </div>
       <div className="space-y-2">
-        <Label>Título del Tema/Módulo</Label>
+        <Label>{t("admin.syllabus.topic_title")}</Label>
         <Input
           {...register("title")}
-          placeholder="Ej: Introducción a punteros"
+          placeholder={t("admin.syllabus.topic_title_placeholder")}
           required
         />
       </div>
       <div className="space-y-2">
-        <Label>Descripción</Label>
+        <Label>{t("admin.syllabus.description")}</Label>
         <Input
           {...register("description")}
-          placeholder="Breve descripción del contenido"
+          placeholder={t("admin.syllabus.description_placeholder")}
         />
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label>Tipo de Contenido</Label>
+          <Label>{t("admin.syllabus.content_type")}</Label>
           <Select
             onValueChange={(val: any) => setValue("contentType", val)}
             defaultValue={defaultValues?.contentType || "module"}>
@@ -124,14 +126,18 @@ const SyllabusForm = ({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="module">Módulo</SelectItem>
-              <SelectItem value="topic">Tema</SelectItem>
-              <SelectItem value="lesson">Lección</SelectItem>
+              <SelectItem value="module">
+                {t("admin.syllabus.module")}
+              </SelectItem>
+              <SelectItem value="topic">{t("admin.syllabus.topic")}</SelectItem>
+              <SelectItem value="lesson">
+                {t("admin.syllabus.lesson")}
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>
         <div className="space-y-2">
-          <Label>Orden</Label>
+          <Label>{t("admin.syllabus.order")}</Label>
           <Input type="number" {...register("orderIndex")} defaultValue={1} />
         </div>
       </div>
@@ -140,11 +146,13 @@ const SyllabusForm = ({
           checked={isPublic}
           onCheckedChange={(checked) => setValue("isPublic", checked)}
         />
-        <Label>Visible para estudiantes</Label>
+        <Label>{t("admin.syllabus.visible_students")}</Label>
       </div>
       <Button type="submit" className="w-full" disabled={isPending}>
         {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-        {defaultValues ? "Guardar Cambios" : "Crear Tema"}
+        {defaultValues
+          ? t("admin.syllabus.save_changes")
+          : t("admin.syllabus.create_topic")}
       </Button>
     </form>
   );
@@ -152,6 +160,7 @@ const SyllabusForm = ({
 
 export default function SyllabusManagement() {
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Syllabus | null>(null);
 
@@ -184,11 +193,15 @@ export default function SyllabusManagement() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["syllabi"] });
       toast.success(
-        `Tema ${editingItem ? "actualizado" : "creado"} correctamente`
+        t("admin.syllabus.topic_saved", {
+          action: editingItem
+            ? t("admin.syllabus.updated")
+            : t("admin.syllabus.created"),
+        })
       );
       closeDialog();
     },
-    onError: () => toast.error("Error al guardar tema"),
+    onError: () => toast.error(t("admin.syllabus.save_error")),
   });
 
   const closeDialog = () => {
@@ -208,7 +221,7 @@ export default function SyllabusManagement() {
 
   const getCourseLabel = (id: string) => {
     const course = courses.find((c) => c.id === id);
-    if (!course) return "Curso desconocido";
+    if (!course) return t("admin.syllabus.unknown_course");
     const subject = subjects.find((s) => s.id === course.subjectId);
     return `${subject?.name} (${course.academicYear})`;
   };
@@ -241,15 +254,21 @@ export default function SyllabusManagement() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
         <div className="flex items-center gap-2">
           <Filter className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm font-medium">Filtrar por Curso:</span>
+          <span className="text-sm font-medium">
+            {t("admin.syllabus.filter_by_course")}:
+          </span>
           <Select
             value={selectedCourseFilter}
             onValueChange={setSelectedCourseFilter}>
             <SelectTrigger className="w-[280px]">
-              <SelectValue placeholder="Selecciona un curso" />
+              <SelectValue
+                placeholder={t("admin.syllabus.select_course_filter")}
+              />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Todos los cursos</SelectItem>
+              <SelectItem value="all">
+                {t("admin.syllabus.all_courses")}
+              </SelectItem>
               {courses.map((c) => (
                 <SelectItem key={c.id} value={c.id}>
                   {getCourseLabel(c.id)}
@@ -259,7 +278,7 @@ export default function SyllabusManagement() {
           </Select>
         </div>
         <Button onClick={openCreateDialog}>
-          <Plus className="mr-2 h-4 w-4" /> Nuevo Tema
+          <Plus className="mr-2 h-4 w-4" /> {t("admin.syllabus.new_topic")}
         </Button>
       </div>
 
@@ -268,7 +287,12 @@ export default function SyllabusManagement() {
         onOpenChange={(open) => !open && closeDialog()}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{editingItem ? "Editar" : "Crear"} Tema</DialogTitle>
+            <DialogTitle>
+              {editingItem
+                ? t("admin.syllabus.edit")
+                : t("admin.syllabus.create")}{" "}
+              {t("admin.syllabus.topic")}
+            </DialogTitle>
           </DialogHeader>
           <SyllabusForm
             defaultValues={editingItem || undefined}
@@ -280,15 +304,13 @@ export default function SyllabusManagement() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Temarios y Módulos</CardTitle>
-          <CardDescription>
-            Estructura de contenidos para los cursos.
-          </CardDescription>
+          <CardTitle>{t("admin.syllabus.title")}</CardTitle>
+          <CardDescription>{t("admin.syllabus.subtitle")}</CardDescription>
           <div className="flex justify-between items-center gap-4 mt-4">
             <div className="relative w-64">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Buscar tema..."
+                placeholder={t("admin.syllabus.search_topic")}
                 className="pl-8"
                 value={search}
                 onChange={(e) => {
@@ -304,9 +326,9 @@ export default function SyllabusManagement() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="5">5 filas</SelectItem>
-                <SelectItem value="10">10 filas</SelectItem>
-                <SelectItem value="20">20 filas</SelectItem>
+                <SelectItem value="5">5 {t("common.rows")}</SelectItem>
+                <SelectItem value="10">10 {t("common.rows")}</SelectItem>
+                <SelectItem value="20">20 {t("common.rows")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -321,12 +343,14 @@ export default function SyllabusManagement() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Curso</TableHead>
-                    <TableHead>Orden</TableHead>
-                    <TableHead>Título</TableHead>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead>Visibilidad</TableHead>
-                    <TableHead className="text-right">Acciones</TableHead>
+                    <TableHead>{t("admin.syllabus.course")}</TableHead>
+                    <TableHead>{t("admin.syllabus.order")}</TableHead>
+                    <TableHead>{t("admin.syllabus.title_column")}</TableHead>
+                    <TableHead>{t("admin.syllabus.type")}</TableHead>
+                    <TableHead>{t("admin.syllabus.visibility")}</TableHead>
+                    <TableHead className="text-right">
+                      {t("admin.syllabus.actions")}
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -335,7 +359,7 @@ export default function SyllabusManagement() {
                       <TableCell
                         colSpan={6}
                         className="text-center text-muted-foreground">
-                        No se encontraron temas
+                        {t("admin.syllabus.no_topics")}
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -358,7 +382,9 @@ export default function SyllabusManagement() {
                             variant={
                               syllabus.isPublic ? "default" : "secondary"
                             }>
-                            {syllabus.isPublic ? "Público" : "Oculto"}
+                            {syllabus.isPublic
+                              ? t("admin.syllabus.public")
+                              : t("admin.syllabus.hidden")}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
@@ -380,10 +406,10 @@ export default function SyllabusManagement() {
                   size="sm"
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page === 1}>
-                  Anterior
+                  {t("common.previous")}
                 </Button>
                 <div className="flex items-center text-sm text-muted-foreground">
-                  Pág {page} de {totalPages || 1}
+                  {t("common.page")} {page} {t("common.of")} {totalPages || 1}
                 </div>
                 <Button
                   variant="outline"
@@ -392,7 +418,7 @@ export default function SyllabusManagement() {
                     setPage((p) => Math.min(totalPages || 1, p + 1))
                   }
                   disabled={page >= (totalPages || 1)}>
-                  Siguiente
+                  {t("common.next")}
                 </Button>
               </div>
             </>

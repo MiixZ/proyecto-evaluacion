@@ -2,6 +2,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { useTranslation } from "react-i18next";
 import {
   ArrowLeft,
   Calendar,
@@ -43,6 +44,7 @@ import { exportService } from "@/services/export.service";
 export default function SubmissionDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const {
     data: submission,
@@ -57,12 +59,12 @@ export default function SubmissionDetails() {
   const handleDownload = async (format: "zip" | "json") => {
     if (!submission) return;
     try {
-      toast.info("Iniciando descarga...");
+      toast.info(t("submission_detail.download.starting"));
       await exportService.downloadSubmission(submission.id, format);
-      toast.success("Descarga completada");
+      toast.success(t("submission_detail.download.completed"));
     } catch (err) {
       console.error(err);
-      toast.error("Error en la descarga");
+      toast.error(t("submission_detail.download.error"));
     }
   };
 
@@ -77,12 +79,12 @@ export default function SubmissionDetails() {
     };
 
     const labels: Record<string, string> = {
-      accepted: "Aceptado",
-      wrong_answer: "Respuesta Incorrecta",
-      time_limit: "Tiempo Excedido",
-      runtime_error: "Error en Ejecución",
-      compilation_error: "Error de Compilación",
-      pending: "Pendiente",
+      accepted: t("editor.verdict.accepted"),
+      wrong_answer: t("editor.verdict.wrong_answer"),
+      time_limit: t("editor.verdict.time_limit"),
+      runtime_error: t("editor.verdict.runtime_error"),
+      compilation_error: t("editor.verdict.compilation_error"),
+      pending: t("editor.verdict.pending"),
     };
 
     return (
@@ -105,14 +107,13 @@ export default function SubmissionDetails() {
       <div className="p-6">
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
+          <AlertTitle>{t("submission_detail.error_title")}</AlertTitle>
           <AlertDescription>
-            No se pudo cargar la entrega. Es posible que no exista o no tengas
-            permisos.
+            {t("submission_detail.error_load")}
           </AlertDescription>
         </Alert>
         <Button variant="outline" className="mt-4" onClick={() => navigate(-1)}>
-          <ArrowLeft className="mr-2 h-4 w-4" /> Volver
+          <ArrowLeft className="mr-2 h-4 w-4" /> {t("submission_detail.back")}
         </Button>
       </div>
     );
@@ -129,7 +130,7 @@ export default function SubmissionDetails() {
           <div>
             <div className="flex items-center gap-3">
               <h1 className="text-xl font-bold tracking-tight">
-                Detalle de Entrega
+                {t("submission_detail.title")}
               </h1>
               {getVerdictBadge(submission.verdict)}
             </div>
@@ -147,13 +148,15 @@ export default function SubmissionDetails() {
             variant="outline"
             size="sm"
             onClick={() => handleDownload("json")}>
-            <Download className="mr-2 h-4 w-4" /> Reporte JSON
+            <Download className="mr-2 h-4 w-4" />{" "}
+            {t("submission_detail.report_json")}
           </Button>
           <Button
             variant="default"
             size="sm"
             onClick={() => handleDownload("zip")}>
-            <Download className="mr-2 h-4 w-4" /> Descargar Código
+            <Download className="mr-2 h-4 w-4" />{" "}
+            {t("submission_detail.download_code")}
           </Button>
         </div>
       </div>
@@ -193,7 +196,7 @@ export default function SubmissionDetails() {
           <Card className="shrink-0 border-muted">
             <CardHeader className="py-3 px-4 bg-muted/10 border-b">
               <CardTitle className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                Estudiante
+                {t("submission_detail.student")}
               </CardTitle>
             </CardHeader>
             <CardContent className="p-4">
@@ -227,7 +230,7 @@ export default function SubmissionDetails() {
                   <CardContent className="p-4 flex flex-col items-center justify-center text-center">
                     <div className="text-2xl font-bold">{submission.score}</div>
                     <div className="text-[10px] text-muted-foreground uppercase mt-1 tracking-wider">
-                      Puntuación
+                      {t("submission_detail.score")}
                     </div>
                   </CardContent>
                 </Card>
@@ -235,7 +238,8 @@ export default function SubmissionDetails() {
                   <CardContent className="p-4 flex flex-col justify-center gap-2 h-full">
                     <div className="flex items-center justify-between text-xs">
                       <span className="flex items-center gap-1 text-muted-foreground">
-                        <Clock className="h-3 w-3" /> Tiempo
+                        <Clock className="h-3 w-3" />{" "}
+                        {t("submission_detail.time")}
                       </span>
                       <span className="font-mono font-medium">
                         {submission.executionTimeMs || 0}ms
@@ -243,7 +247,8 @@ export default function SubmissionDetails() {
                     </div>
                     <div className="flex items-center justify-between text-xs">
                       <span className="flex items-center gap-1 text-muted-foreground">
-                        <HardDrive className="h-3 w-3" /> Memoria
+                        <HardDrive className="h-3 w-3" />{" "}
+                        {t("submission_detail.memory")}
                       </span>
                       <span className="font-mono font-medium">
                         {submission.memoryUsedMb || 0}MB
@@ -261,7 +266,7 @@ export default function SubmissionDetails() {
                 <CardHeader className="py-3 px-4 border-b">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-sm font-medium">
-                      Casos de Prueba
+                      {t("submission_detail.test_cases")}
                     </CardTitle>
                     <Badge variant="secondary" className="text-xs">
                       {
@@ -291,7 +296,11 @@ export default function SubmissionDetails() {
                                 : "bg-red-500"
                             }`}
                           />
-                          <span className="font-medium">Test #{index + 1}</span>
+                          <span className="font-medium">
+                            {t("submission_detail.test_number", {
+                              number: index + 1,
+                            })}
+                          </span>
                         </div>
                         <span className="text-xs text-muted-foreground font-mono">
                           {test.executionTimeMs}ms
@@ -310,7 +319,7 @@ export default function SubmissionDetails() {
                           <div className="grid grid-cols-1 gap-1">
                             <div className="flex gap-2">
                               <span className="text-muted-foreground w-16 shrink-0">
-                                Entrada:
+                                {t("submission_detail.input")}
                               </span>
                               <code className="bg-muted px-1 rounded flex-1 truncate">
                                 {test.input}
@@ -318,7 +327,7 @@ export default function SubmissionDetails() {
                             </div>
                             <div className="flex gap-2">
                               <span className="text-green-600 w-16 shrink-0">
-                                Esperado:
+                                {t("submission_detail.expected")}
                               </span>
                               <code className="bg-green-50 text-green-700 px-1 rounded flex-1 truncate">
                                 {test.expectedOutput}
@@ -326,10 +335,11 @@ export default function SubmissionDetails() {
                             </div>
                             <div className="flex gap-2">
                               <span className="text-red-600 w-16 shrink-0">
-                                Obtenido:
+                                {t("submission_detail.obtained")}
                               </span>
                               <code className="bg-red-50 text-red-700 px-1 rounded flex-1 truncate">
-                                {test.actualOutput || "(vacío)"}
+                                {test.actualOutput ||
+                                  t("submission_detail.empty")}
                               </code>
                             </div>
                           </div>

@@ -92,7 +92,7 @@ export default function ProfessorDashboard() {
 
   const handleExportData = () => {
     if (!dashboardData?.activeGroup) {
-      toast.error("No hay datos de grupo para exportar.");
+      toast.error(t("professor.dashboard.no_export_data"));
       return;
     }
 
@@ -164,10 +164,10 @@ export default function ProfessorDashboard() {
       link.click();
       document.body.removeChild(link);
 
-      toast.success("Reporte generado correctamente");
+      toast.success(t("professor.dashboard.export_success"));
     } catch (err) {
       console.error(err);
-      toast.error("Error al generar el archivo de exportación");
+      toast.error(t("professor.dashboard.export_error"));
     } finally {
       setIsExporting(false);
     }
@@ -200,7 +200,7 @@ export default function ProfessorDashboard() {
   if (!activeGroup) {
     return (
       <div className="p-6 text-center text-muted-foreground">
-        No tienes grupos asignados. Contacta con el administrador.
+        {t("professor.dashboard.no_groups")}
       </div>
     );
   }
@@ -219,11 +219,14 @@ export default function ProfessorDashboard() {
         <div className="flex flex-col gap-1">
           <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
             <GraduationCap className="h-6 w-6 text-primary" />
-            Panel del Profesor
+            {t("professor.dashboard.panel_title")}
           </h1>
           <p className="text-muted-foreground">
-            {activeGroup.info.groupName} - {activeGroup.info.subjectName} •{" "}
-            {activeGroup.info.studentCount} estudiantes
+            {t("professor.dashboard.group_info", {
+              groupName: activeGroup.info.groupName,
+              subjectName: activeGroup.info.subjectName,
+              count: activeGroup.info.studentCount,
+            })}
           </p>
         </div>
 
@@ -242,7 +245,7 @@ export default function ProfessorDashboard() {
                 })
               }>
               <UserPlus className="mr-2 h-4 w-4" />
-              Agregar estudiante
+              {t("professor.dashboard.add_student")}
             </Button>
 
             <Button
@@ -255,7 +258,9 @@ export default function ProfessorDashboard() {
               ) : (
                 <Download className="mr-2 h-4 w-4" />
               )}
-              {isExporting ? "Exportando..." : "Exportar datos"}
+              {isExporting
+                ? t("professor.dashboard.exporting")
+                : t("professor.dashboard.export_data")}
             </Button>
           </div>
 
@@ -265,7 +270,9 @@ export default function ProfessorDashboard() {
               value={selectedGroupId}
               onValueChange={(value) => setSelectedGroupId(value)}>
               <SelectTrigger>
-                <SelectValue placeholder="Seleccionar grupo" />
+                <SelectValue
+                  placeholder={t("professor.dashboard.select_group")}
+                />
               </SelectTrigger>
               <SelectContent>
                 {groups.map((g) => (
@@ -284,7 +291,7 @@ export default function ProfessorDashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Nota Media Grupo
+              {t("professor.dashboard.stats.avg_score")}
             </CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
@@ -293,14 +300,14 @@ export default function ProfessorDashboard() {
               {activeGroup.info.avgScore.toFixed(1)}
             </div>
             <p className="text-xs text-muted-foreground">
-              sobre 10 puntos posibles
+              {t("professor.dashboard.stats.avg_score_desc")}
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Progreso Curso
+              {t("professor.dashboard.stats.course_progress")}
             </CardTitle>
             <BookOpen className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
@@ -317,7 +324,7 @@ export default function ProfessorDashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Alertas de Plagio
+              {t("professor.dashboard.stats.plagiarism_alerts")}
             </CardTitle>
             <AlertTriangle className="h-4 w-4 text-orange-500" />
           </CardHeader>
@@ -326,14 +333,14 @@ export default function ProfessorDashboard() {
               {activeGroup.plagiarismAlerts.length}
             </div>
             <p className="text-xs text-muted-foreground">
-              Detectadas en el último mes
+              {t("professor.dashboard.stats.plagiarism_desc")}
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Actividad Reciente
+              {t("professor.dashboard.stats.recent_activity")}
             </CardTitle>
             <Activity className="h-4 w-4 text-blue-500" />
           </CardHeader>
@@ -342,7 +349,7 @@ export default function ProfessorDashboard() {
               {activeGroup.recentActivity.length}
             </div>
             <p className="text-xs text-muted-foreground">
-              Entregas en las últimas 24h
+              {t("professor.dashboard.stats.recent_activity_desc")}
             </p>
           </CardContent>
         </Card>
@@ -354,15 +361,15 @@ export default function ProfessorDashboard() {
           <CardHeader>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <CardTitle>Estudiantes del Grupo</CardTitle>
+                <CardTitle>{t("professor.dashboard.students_group")}</CardTitle>
                 <CardDescription>
-                  Progreso y estado de los alumnos matriculados
+                  {t("professor.dashboard.students_group_desc")}
                 </CardDescription>
               </div>
               <div className="relative w-full sm:w-64">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Buscar estudiante..."
+                  placeholder={t("professor.dashboard.search_student")}
                   value={studentFilter}
                   onChange={(e) => setStudentFilter(e.target.value)}
                   className="pl-8"
@@ -375,10 +382,18 @@ export default function ProfessorDashboard() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Estudiante</TableHead>
-                    <TableHead>Estado</TableHead>
-                    <TableHead>Progreso</TableHead>
-                    <TableHead className="text-right">Nota Media</TableHead>
+                    <TableHead>
+                      {t("professor.dashboard.student_column")}
+                    </TableHead>
+                    <TableHead>
+                      {t("professor.dashboard.status_column")}
+                    </TableHead>
+                    <TableHead>
+                      {t("professor.dashboard.progress_column")}
+                    </TableHead>
+                    <TableHead className="text-right">
+                      {t("professor.dashboard.avg_score_column")}
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -404,14 +419,18 @@ export default function ProfessorDashboard() {
                             <Badge
                               variant="default"
                               className="bg-green-100 text-green-800 hover:bg-green-100">
-                              Activo
+                              {t("professor.dashboard.status_active")}
                             </Badge>
                           )}
                           {student.status === "inactive" && (
-                            <Badge variant="secondary">Inactivo</Badge>
+                            <Badge variant="secondary">
+                              {t("professor.dashboard.status_inactive")}
+                            </Badge>
                           )}
                           {student.status === "risk" && (
-                            <Badge variant="destructive">Riesgo</Badge>
+                            <Badge variant="destructive">
+                              {t("professor.dashboard.status_risk")}
+                            </Badge>
                           )}
                         </TableCell>
                         <TableCell className="w-[140px]">
@@ -435,7 +454,7 @@ export default function ProfessorDashboard() {
                       <TableCell
                         colSpan={4}
                         className="h-24 text-center text-muted-foreground">
-                        No se encontraron estudiantes.
+                        {t("professor.dashboard.no_students_found")}
                       </TableCell>
                     </TableRow>
                   )}
@@ -450,8 +469,12 @@ export default function ProfessorDashboard() {
           {/* Actividad Reciente */}
           <Card>
             <CardHeader>
-              <CardTitle>Actividad Reciente</CardTitle>
-              <CardDescription>Últimas entregas del grupo</CardDescription>
+              <CardTitle>
+                {t("professor.dashboard.recent_activity_title")}
+              </CardTitle>
+              <CardDescription>
+                {t("professor.dashboard.recent_submissions")}
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
@@ -486,7 +509,7 @@ export default function ProfessorDashboard() {
                 ))}
                 {activeGroup.recentActivity.length === 0 && (
                   <p className="text-sm text-muted-foreground text-center py-4">
-                    Sin actividad reciente.
+                    {t("professor.dashboard.no_recent_activity")}
                   </p>
                 )}
               </div>
@@ -497,7 +520,8 @@ export default function ProfessorDashboard() {
                 onClick={() =>
                   navigate(`/dashboard/group/${selectedGroupId}/activity`)
                 }>
-                Ver toda la actividad <ChevronRight className="h-3 w-3 ml-1" />
+                {t("professor.dashboard.view_all_activity")}{" "}
+                <ChevronRight className="h-3 w-3 ml-1" />
               </Button>
             </CardContent>
           </Card>
@@ -507,7 +531,7 @@ export default function ProfessorDashboard() {
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-orange-700">
                 <AlertTriangle className="h-5 w-5" />
-                Alertas de Plagio
+                {t("professor.dashboard.plagiarism_alerts_title")}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -533,7 +557,7 @@ export default function ProfessorDashboard() {
                 ))}
                 {activeGroup.plagiarismAlerts.length === 0 && (
                   <p className="text-sm text-muted-foreground text-center py-2">
-                    No se han detectado plagios recientes.
+                    {t("professor.dashboard.no_plagiarism")}
                   </p>
                 )}
               </div>
@@ -544,7 +568,8 @@ export default function ProfessorDashboard() {
                   onClick={() =>
                     navigate(`/dashboard/group/${selectedGroupId}/plagiarism`)
                   }>
-                  Ver todos los casos <ChevronRight className="h-3 w-3 ml-1" />
+                  {t("professor.dashboard.view_all_cases")}{" "}
+                  <ChevronRight className="h-3 w-3 ml-1" />
                 </Button>
               </div>
             </CardContent>

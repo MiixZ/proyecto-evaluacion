@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { academicService } from "@/services/academic.service";
 import { Subject } from "@/types/academic.types";
 import { useForm } from "react-hook-form";
@@ -51,6 +52,7 @@ const SubjectForm = ({
   const { register, handleSubmit, setValue } = useForm<Subject>({
     defaultValues,
   });
+  const { t } = useTranslation();
 
   const { data: degrees = [] } = useQuery({
     queryKey: ["degrees"],
@@ -68,13 +70,13 @@ const SubjectForm = ({
       )}
       className="space-y-4">
       <div className="space-y-2">
-        <Label>Titulación</Label>
+        <Label>{t("admin.subjects.degree")}</Label>
         <Select
           onValueChange={(val) => setValue("degreeId", val)}
           defaultValue={defaultValues?.degreeId}
           required>
           <SelectTrigger>
-            <SelectValue placeholder="Selecciona..." />
+            <SelectValue placeholder={t("admin.subjects.select_degree")} />
           </SelectTrigger>
           <SelectContent>
             {degrees.map((d) => (
@@ -86,38 +88,48 @@ const SubjectForm = ({
         </Select>
       </div>
       <div className="space-y-2">
-        <Label>Nombre</Label>
+        <Label>{t("admin.subjects.name")}</Label>
         <Input
           {...register("name")}
-          placeholder="Ej: Programación I"
+          placeholder={t("admin.subjects.name_placeholder")}
           required
         />
       </div>
       <div className="space-y-2">
-        <Label>Descripción</Label>
+        <Label>{t("admin.subjects.description")}</Label>
         <textarea
           {...register("description")}
-          placeholder="Descripción de la asignatura..."
+          placeholder={t("admin.subjects.description_placeholder")}
           className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
         />
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label>Código</Label>
-          <Input {...register("code")} placeholder="PR1" required />
+          <Label>{t("admin.subjects.code")}</Label>
+          <Input
+            {...register("code")}
+            placeholder={t("admin.subjects.code_placeholder")}
+            required
+          />
         </div>
         <div className="space-y-2">
-          <Label>Créditos ECTS</Label>
+          <Label>{t("admin.subjects.credits")}</Label>
           <Input type="number" {...register("credits")} defaultValue={6} />
         </div>
       </div>
       <div className="space-y-2">
-        <Label>Semestre (Plan)</Label>
-        <Input type="number" {...register("semester")} placeholder="1-8" />
+        <Label>{t("admin.subjects.semester")}</Label>
+        <Input
+          type="number"
+          {...register("semester")}
+          placeholder={t("admin.subjects.semester_placeholder")}
+        />
       </div>
       <Button type="submit" className="w-full" disabled={isPending}>
         {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-        {defaultValues ? "Guardar Cambios" : "Crear Asignatura"}
+        {defaultValues
+          ? t("admin.subjects.save_changes")
+          : t("admin.subjects.create_subject")}
       </Button>
     </form>
   );
@@ -125,6 +137,7 @@ const SubjectForm = ({
 
 export default function SubjectManagement() {
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Subject | null>(null);
 
@@ -150,11 +163,15 @@ export default function SubjectManagement() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["subjects"] });
       toast.success(
-        `Asignatura ${editingItem ? "actualizada" : "creada"} correctamente`
+        t("admin.subjects.subject_saved", {
+          action: editingItem
+            ? t("admin.subjects.updated")
+            : t("admin.subjects.created"),
+        })
       );
       closeDialog();
     },
-    onError: () => toast.error("Error al guardar asignatura"),
+    onError: () => toast.error(t("admin.subjects.save_error")),
   });
 
   const closeDialog = () => {
@@ -173,7 +190,8 @@ export default function SubjectManagement() {
   };
 
   const getDegreeName = (id: string) =>
-    degrees.find((d) => d.id === id)?.name || "Desconocida";
+    degrees.find((d) => d.id === id)?.name ||
+    t("admin.subjects.unknown_degree");
 
   // Filtrado y paginación
   const filtered = subjects.filter((subject) => {
@@ -193,7 +211,7 @@ export default function SubjectManagement() {
     <>
       <div className="flex justify-end mb-4">
         <Button onClick={openCreateDialog}>
-          <Plus className="mr-2 h-4 w-4" /> Nueva Asignatura
+          <Plus className="mr-2 h-4 w-4" /> {t("admin.subjects.new_subject")}
         </Button>
       </div>
 
@@ -203,7 +221,10 @@ export default function SubjectManagement() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {editingItem ? "Editar" : "Crear"} Asignatura
+              {editingItem
+                ? t("admin.subjects.edit")
+                : t("admin.subjects.create")}{" "}
+              {t("admin.subjects.title")}
             </DialogTitle>
           </DialogHeader>
           <SubjectForm
@@ -216,13 +237,13 @@ export default function SubjectManagement() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Asignaturas</CardTitle>
-          <CardDescription>Catálogo de asignaturas base.</CardDescription>
+          <CardTitle>{t("admin.subjects.title")}</CardTitle>
+          <CardDescription>{t("admin.subjects.subtitle")}</CardDescription>
           <div className="flex justify-between items-center gap-4 mt-4">
             <div className="relative w-64">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Buscar asignatura..."
+                placeholder={t("admin.subjects.search_subject")}
                 className="pl-8"
                 value={search}
                 onChange={(e) => {
@@ -238,9 +259,9 @@ export default function SubjectManagement() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="5">5 filas</SelectItem>
-                <SelectItem value="10">10 filas</SelectItem>
-                <SelectItem value="20">20 filas</SelectItem>
+                <SelectItem value="5">5 {t("common.rows")}</SelectItem>
+                <SelectItem value="10">10 {t("common.rows")}</SelectItem>
+                <SelectItem value="20">20 {t("common.rows")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -255,12 +276,14 @@ export default function SubjectManagement() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Código</TableHead>
-                    <TableHead>Nombre</TableHead>
-                    <TableHead>Titulación</TableHead>
-                    <TableHead>Créditos</TableHead>
-                    <TableHead>Semestre</TableHead>
-                    <TableHead className="text-right">Acciones</TableHead>
+                    <TableHead>{t("admin.subjects.code")}</TableHead>
+                    <TableHead>{t("admin.subjects.name")}</TableHead>
+                    <TableHead>{t("admin.subjects.degree")}</TableHead>
+                    <TableHead>{t("admin.subjects.credits")}</TableHead>
+                    <TableHead>{t("admin.subjects.semester")}</TableHead>
+                    <TableHead className="text-right">
+                      {t("admin.subjects.actions")}
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -269,7 +292,7 @@ export default function SubjectManagement() {
                       <TableCell
                         colSpan={6}
                         className="text-center text-muted-foreground">
-                        No se encontraron asignaturas
+                        {t("admin.subjects.no_subjects")}
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -303,10 +326,10 @@ export default function SubjectManagement() {
                   size="sm"
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page === 1}>
-                  Anterior
+                  {t("common.previous")}
                 </Button>
                 <div className="flex items-center text-sm text-muted-foreground">
-                  Pág {page} de {totalPages || 1}
+                  {t("common.page")} {page} {t("common.of")} {totalPages || 1}
                 </div>
                 <Button
                   variant="outline"
@@ -315,7 +338,7 @@ export default function SubjectManagement() {
                     setPage((p) => Math.min(totalPages || 1, p + 1))
                   }
                   disabled={page >= (totalPages || 1)}>
-                  Siguiente
+                  {t("common.next")}
                 </Button>
               </div>
             </>

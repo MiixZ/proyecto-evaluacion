@@ -171,14 +171,20 @@ export default function GroupsPage() {
       setIsAddOpen(false);
       setNewStudent({ firstName: "", lastName: "", email: "" });
       toast({
-        title: "Estudiante añadido",
-        description: "Matriculado correctamente.",
+        title: t("professor.groups.student_added", "Estudiante añadido"),
+        description: t(
+          "professor.groups.student_added_desc",
+          "Matriculado correctamente."
+        ),
       });
     },
     onError: () => {
       toast({
-        title: "Error",
-        description: "No se pudo añadir al estudiante.",
+        title: t("common.error", "Error"),
+        description: t(
+          "professor.groups.add_error",
+          "No se pudo añadir al estudiante."
+        ),
         variant: "destructive",
       });
     },
@@ -193,12 +199,18 @@ export default function GroupsPage() {
       });
       setIsImportOpen(false);
       setCsvFile(null);
-      toast({ title: "Importación completada", description: response.message });
+      toast({
+        title: t("professor.groups.import_completed", "Importación completada"),
+        description: response.message,
+      });
     },
     onError: () => {
       toast({
-        title: "Error",
-        description: "Falló la importación.",
+        title: t("common.error", "Error"),
+        description: t(
+          "professor.groups.import_failed",
+          "Falló la importación."
+        ),
         variant: "destructive",
       });
     },
@@ -212,8 +224,11 @@ export default function GroupsPage() {
         queryKey: ["groupStudents", selectedGroupId],
       });
       toast({
-        title: "Estudiante eliminado",
-        description: "Se ha quitado del grupo.",
+        title: t("professor.groups.student_removed", "Estudiante eliminado"),
+        description: t(
+          "professor.groups.student_removed_desc",
+          "Se ha quitado del grupo."
+        ),
       });
     },
   });
@@ -228,13 +243,22 @@ export default function GroupsPage() {
       setIsEditOpen(false);
       setEditingStudent(null);
       toast({
-        title: "Estudiante actualizado",
-        description: "Datos guardados correctamente.",
+        title: t("professor.groups.student_updated", "Estudiante actualizado"),
+        description: t(
+          "professor.groups.student_updated_desc",
+          "Datos guardados correctamente."
+        ),
       });
     },
     onError: (err: any) => {
-      const msg = err.response?.data?.message || "No se pudo actualizar.";
-      toast({ title: "Error", description: msg, variant: "destructive" });
+      const msg =
+        err.response?.data?.message ||
+        t("professor.groups.update_error", "No se pudo actualizar.");
+      toast({
+        title: t("common.error", "Error"),
+        description: msg,
+        variant: "destructive",
+      });
     },
   });
 
@@ -245,12 +269,18 @@ export default function GroupsPage() {
       queryClient.invalidateQueries({
         queryKey: ["groupStudents", selectedGroupId],
       });
-      toast({ title: "Estado actualizado", description: response.message });
+      toast({
+        title: t("professor.groups.status_updated", "Estado actualizado"),
+        description: response.message,
+      });
     },
     onError: () => {
       toast({
-        title: "Error",
-        description: "No se pudo cambiar el estado.",
+        title: t("common.error", "Error"),
+        description: t(
+          "professor.groups.status_error",
+          "No se pudo cambiar el estado."
+        ),
         variant: "destructive",
       });
     },
@@ -337,17 +367,22 @@ export default function GroupsPage() {
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <Users className="h-6 w-6 text-primary" />
-            Gestión de Grupos
+            {t("professor.groups.title")}
           </h1>
           <p className="text-muted-foreground">
-            Administra los estudiantes y grupos de tus asignaturas
+            {t("professor.groups.subtitle")}
           </p>
         </div>
 
         <div className="w-full md:w-[300px]">
           <Select value={selectedGroupId} onValueChange={setSelectedGroupId}>
             <SelectTrigger>
-              <SelectValue placeholder="Selecciona un grupo" />
+              <SelectValue
+                placeholder={t(
+                  "professor.groups.select_group",
+                  "Selecciona un grupo"
+                )}
+              />
             </SelectTrigger>
             <SelectContent>
               {groups.map((g) => (
@@ -365,9 +400,15 @@ export default function GroupsPage() {
           <CardHeader>
             <div className="flex flex-col xl:flex-row justify-between xl:items-center gap-4">
               <div className="flex flex-col gap-1">
-                <CardTitle>Listado de Estudiantes</CardTitle>
+                <CardTitle>
+                  {t("professor.groups.student_list", "Listado de Estudiantes")}
+                </CardTitle>
                 <CardDescription>
-                  Mostrando {processedStudents.length} estudiantes matriculados
+                  {t(
+                    "professor.groups.showing_students",
+                    "Mostrando {{count}} estudiantes matriculados",
+                    { count: processedStudents.length }
+                  )}
                 </CardDescription>
               </div>
 
@@ -380,20 +421,28 @@ export default function GroupsPage() {
                     setPage(1);
                   }}>
                   <SelectTrigger className="w-[130px]">
-                    <SelectValue placeholder="Filas" />
+                    <SelectValue placeholder={t("common.rows", "Filas")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="5">5 por pág.</SelectItem>
-                    <SelectItem value="10">10 por pág.</SelectItem>
-                    <SelectItem value="20">20 por pág.</SelectItem>
-                    <SelectItem value="50">50 por pág.</SelectItem>
+                    <SelectItem value="5">
+                      5 {t("common.per_page", "por pág.")}
+                    </SelectItem>
+                    <SelectItem value="10">
+                      10 {t("common.per_page", "por pág.")}
+                    </SelectItem>
+                    <SelectItem value="20">
+                      20 {t("common.per_page", "por pág.")}
+                    </SelectItem>
+                    <SelectItem value="50">
+                      50 {t("common.per_page", "por pág.")}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
 
                 <div className="relative w-full sm:w-64">
                   <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Buscar por nombre o email..."
+                    placeholder={t("professor.groups.search_placeholder")}
                     className="pl-8"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -404,19 +453,30 @@ export default function GroupsPage() {
                   <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
                     <DialogTrigger asChild>
                       <Button className="flex-1 sm:flex-none">
-                        <UserPlus className="mr-2 h-4 w-4" /> Añadir
+                        <UserPlus className="mr-2 h-4 w-4" />{" "}
+                        {t("professor.groups.add_button", "Añadir")}
                       </Button>
                     </DialogTrigger>
                     <DialogContent>
                       <DialogHeader>
-                        <DialogTitle>Añadir Estudiante</DialogTitle>
+                        <DialogTitle>
+                          {t(
+                            "professor.groups.add_student_title",
+                            "Añadir Estudiante"
+                          )}
+                        </DialogTitle>
                         <DialogDescription>
-                          Matricula a un estudiante manualmente.
+                          {t(
+                            "professor.groups.add_student_desc",
+                            "Matricula a un estudiante manualmente."
+                          )}
                         </DialogDescription>
                       </DialogHeader>
                       <form onSubmit={handleAddSubmit} className="space-y-4">
                         <div className="space-y-2">
-                          <Label>Nombre</Label>
+                          <Label>
+                            {t("profile_page.fields.first_name", "Nombre")}
+                          </Label>
                           <Input
                             required
                             value={newStudent.firstName}
@@ -429,7 +489,9 @@ export default function GroupsPage() {
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label>Apellidos</Label>
+                          <Label>
+                            {t("profile_page.fields.last_name", "Apellidos")}
+                          </Label>
                           <Input
                             required
                             value={newStudent.lastName}
@@ -462,7 +524,7 @@ export default function GroupsPage() {
                             {addStudentMutation.isPending && (
                               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                             )}{" "}
-                            Añadir
+                            {t("professor.groups.add_button", "Añadir")}
                           </Button>
                         </DialogFooter>
                       </form>
@@ -477,9 +539,17 @@ export default function GroupsPage() {
                     </DialogTrigger>
                     <DialogContent>
                       <DialogHeader>
-                        <DialogTitle>Importación Masiva</DialogTitle>
+                        <DialogTitle>
+                          {t(
+                            "professor.groups.bulk_import",
+                            "Importación Masiva"
+                          )}
+                        </DialogTitle>
                         <DialogDescription>
-                          Formato: email, firstName, lastName
+                          {t(
+                            "professor.groups.csv_format",
+                            "Formato: email, firstName, lastName"
+                          )}
                         </DialogDescription>
                       </DialogHeader>
                       <div className="grid w-full max-w-sm items-center gap-1.5 py-4">
@@ -497,7 +567,7 @@ export default function GroupsPage() {
                             csvFile && importCsvMutation.mutate(csvFile)
                           }
                           disabled={!csvFile || importCsvMutation.isPending}>
-                          Importar
+                          {t("professor.groups.import_button", "Importar")}
                         </Button>
                       </DialogFooter>
                     </DialogContent>
@@ -520,7 +590,8 @@ export default function GroupsPage() {
                         className="cursor-pointer hover:bg-muted/50 transition-colors"
                         onClick={() => handleSort("name")}>
                         <div className="flex items-center">
-                          Estudiante <SortIcon column="name" />
+                          {t("professor.groups.student", "Estudiante")}{" "}
+                          <SortIcon column="name" />
                         </div>
                       </TableHead>
                       <TableHead
@@ -534,17 +605,21 @@ export default function GroupsPage() {
                         className="cursor-pointer hover:bg-muted/50 transition-colors"
                         onClick={() => handleSort("status")}>
                         <div className="flex items-center">
-                          Estado <SortIcon column="status" />
+                          {t("professor.groups.status", "Estado")}{" "}
+                          <SortIcon column="status" />
                         </div>
                       </TableHead>
                       <TableHead
                         className="text-right cursor-pointer hover:bg-muted/50 transition-colors"
                         onClick={() => handleSort("progress")}>
                         <div className="flex items-center justify-end">
-                          Progreso <SortIcon column="progress" />
+                          {t("professor.groups.progress", "Progreso")}{" "}
+                          <SortIcon column="progress" />
                         </div>
                       </TableHead>
-                      <TableHead className="w-[100px] text-right">Acciones</TableHead>
+                      <TableHead className="w-[100px] text-right">
+                        {t("common.actions", "Acciones")}
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -563,13 +638,22 @@ export default function GroupsPage() {
                           <TableCell>{student.email}</TableCell>
                           <TableCell>
                             {student.status === "active" && (
-                              <Badge variant="default">Activo</Badge>
+                              <Badge variant="default">
+                                {t("professor.groups.status_active", "Activo")}
+                              </Badge>
                             )}
                             {student.status === "inactive" && (
-                              <Badge variant="secondary">Inactivo</Badge>
+                              <Badge variant="secondary">
+                                {t(
+                                  "professor.groups.status_inactive",
+                                  "Inactivo"
+                                )}
+                              </Badge>
                             )}
                             {student.status === "risk" && (
-                              <Badge variant="destructive">Riesgo</Badge>
+                              <Badge variant="destructive">
+                                {t("professor.groups.status_risk", "Riesgo")}
+                              </Badge>
                             )}
                           </TableCell>
                           <TableCell className="text-right font-medium">
@@ -582,7 +666,10 @@ export default function GroupsPage() {
                                 variant="ghost"
                                 size="icon"
                                 className="h-8 w-8 text-muted-foreground hover:text-primary"
-                                title="Ver entregas y feedback"
+                                title={t(
+                                  "professor.groups.view_submissions",
+                                  "Ver entregas y feedback"
+                                )}
                                 onClick={() =>
                                   navigate(
                                     `/dashboard/group/${selectedGroupId}/activity?studentId=${student.id}`
@@ -593,7 +680,9 @@ export default function GroupsPage() {
 
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" className="h-8 w-8 p-0">
+                                  <Button
+                                    variant="ghost"
+                                    className="h-8 w-8 p-0">
                                     <MoreVertical className="h-4 w-4" />
                                   </Button>
                                 </DropdownMenuTrigger>
@@ -604,12 +693,16 @@ export default function GroupsPage() {
                                         `/dashboard/group/${selectedGroupId}/activity?studentId=${student.id}`
                                       )
                                     }>
-                                    <History className="mr-2 h-4 w-4" /> Ver
-                                    Actividad
+                                    <History className="mr-2 h-4 w-4" />{" "}
+                                    {t(
+                                      "professor.groups.view_activity",
+                                      "Ver Actividad"
+                                    )}
                                   </DropdownMenuItem>
                                   <DropdownMenuItem
                                     onClick={() => openEditModal(student)}>
-                                    <Pencil className="mr-2 h-4 w-4" /> Editar
+                                    <Pencil className="mr-2 h-4 w-4" />{" "}
+                                    {t("common.edit", "Editar")}
                                   </DropdownMenuItem>
                                   <DropdownMenuItem
                                     onClick={() =>
@@ -618,12 +711,18 @@ export default function GroupsPage() {
                                     {student.status === "inactive" ? (
                                       <>
                                         <Power className="mr-2 h-4 w-4 text-green-600" />{" "}
-                                        Activar
+                                        {t(
+                                          "professor.groups.activate",
+                                          "Activar"
+                                        )}
                                       </>
                                     ) : (
                                       <>
                                         <PowerOff className="mr-2 h-4 w-4 text-orange-600" />{" "}
-                                        Desactivar
+                                        {t(
+                                          "professor.groups.deactivate",
+                                          "Desactivar"
+                                        )}
                                       </>
                                     )}
                                   </DropdownMenuItem>
@@ -633,8 +732,11 @@ export default function GroupsPage() {
                                     onClick={() =>
                                       removeStudentMutation.mutate(student.id)
                                     }>
-                                    <Trash2 className="mr-2 h-4 w-4" /> Eliminar
-                                    del grupo
+                                    <Trash2 className="mr-2 h-4 w-4" />{" "}
+                                    {t(
+                                      "professor.groups.remove_from_group",
+                                      "Eliminar del grupo"
+                                    )}
                                   </DropdownMenuItem>
                                 </DropdownMenuContent>
                               </DropdownMenu>
@@ -646,8 +748,14 @@ export default function GroupsPage() {
                       <TableRow>
                         <TableCell colSpan={5} className="h-24 text-center">
                           {processedStudents.length === 0
-                            ? "No hay estudiantes que coincidan con la búsqueda."
-                            : "No hay estudiantes en esta página."}
+                            ? t(
+                                "professor.groups.no_students_match",
+                                "No hay estudiantes que coincidan con la búsqueda."
+                              )
+                            : t(
+                                "professor.groups.no_students_page",
+                                "No hay estudiantes en esta página."
+                              )}
                         </TableCell>
                       </TableRow>
                     )}
@@ -726,12 +834,16 @@ export default function GroupsPage() {
         <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Editar Estudiante</DialogTitle>
+              <DialogTitle>
+                {t("professor.groups.edit_student", "Editar Estudiante")}
+              </DialogTitle>
             </DialogHeader>
             {editingStudent && (
               <form onSubmit={handleEditSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label>Nombre Completo</Label>
+                  <Label>
+                    {t("professor.groups.full_name", "Nombre Completo")}
+                  </Label>
                   <Input
                     value={editingStudent.name}
                     onChange={(e) =>
@@ -761,7 +873,7 @@ export default function GroupsPage() {
                     {updateStudentMutation.isPending && (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     )}{" "}
-                    Guardar
+                    {t("common.save", "Guardar")}
                   </Button>
                 </DialogFooter>
               </form>

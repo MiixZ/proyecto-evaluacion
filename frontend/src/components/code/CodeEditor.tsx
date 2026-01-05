@@ -150,7 +150,7 @@ export const CodeEditor = ({
             onValueChange={setSelectedLanguage}
             disabled={readOnly || isSubmitting}>
             <SelectTrigger className="w-[140px] h-8 text-xs bg-background">
-              <SelectValue placeholder="Lenguaje" />
+              <SelectValue placeholder={t("editor.language")} />
             </SelectTrigger>
             <SelectContent>
               {availableLanguages.map((lang) => (

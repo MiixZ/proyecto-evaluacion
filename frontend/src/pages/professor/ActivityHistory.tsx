@@ -118,12 +118,12 @@ export default function ActivityHistory() {
   ) => {
     try {
       setDownloadingId(submissionId);
-      toast.info("Iniciando descarga...");
+      toast.info(t("activity_history.download.starting"));
       await exportService.downloadSubmission(submissionId, format);
-      toast.success("Archivo descargado correctamente");
+      toast.success(t("activity_history.download.success"));
     } catch (error) {
       console.error(error);
-      toast.error("Error al descargar el archivo");
+      toast.error(t("activity_history.download.error"));
     } finally {
       setDownloadingId(null);
     }
@@ -150,20 +150,34 @@ export default function ActivityHistory() {
     switch (status) {
       case "success":
       case "completed":
-        return <Badge variant="default">Aceptado</Badge>;
+        return (
+          <Badge variant="default">
+            {t("activity_history.status.accepted")}
+          </Badge>
+        );
       case "error":
       case "failed":
-        return <Badge variant="destructive">Error</Badge>;
+        return (
+          <Badge variant="destructive">
+            {t("activity_history.status.error")}
+          </Badge>
+        );
       case "warning":
         return (
           <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
-            Incorrecto
+            {t("activity_history.status.incorrect")}
           </Badge>
         );
       case "pending":
-        return <Badge variant="outline">Pendiente</Badge>;
+        return (
+          <Badge variant="outline">
+            {t("activity_history.status.pending")}
+          </Badge>
+        );
       default:
-        return <Badge variant="outline">Info</Badge>;
+        return (
+          <Badge variant="outline">{t("activity_history.status.info")}</Badge>
+        );
     }
   };
 
@@ -180,14 +194,17 @@ export default function ActivityHistory() {
       <div className="flex items-center gap-4">
         <Button variant="ghost" onClick={() => navigate("/dashboard")}>
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Volver
+          {t("activity_history.back")}
         </Button>
         <div>
           <h1 className="text-2xl font-bold tracking-tight">
-            Historial de Actividad
+            {t("activity_history.title")}
           </h1>
           <p className="text-muted-foreground">
-            Registro completo de entregas del grupo
+            {t("activity_history.subtitle", {
+              name: data?.group?.name || "",
+              subject: data?.group?.subject?.name || "",
+            })}
           </p>
         </div>
       </div>
@@ -196,9 +213,16 @@ export default function ActivityHistory() {
       {studentIdParam && (
         <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-md flex items-center justify-between shadow-sm">
           <div className="flex flex-col">
-            <span className="font-semibold text-sm">Filtro activo</span>
+            <span className="font-semibold text-sm">
+              {t("activity_history.filter_active")}
+            </span>
             <span className="text-xs opacity-90">
-              Mostrando solo las entregas del estudiante seleccionado.
+              {t("activity_history.filter_student_only", {
+                student:
+                  data?.students?.find(
+                    (s: any) => s.id.toString() === studentIdParam
+                  )?.name || "",
+              })}
             </span>
           </div>
           <Button
@@ -207,7 +231,7 @@ export default function ActivityHistory() {
             onClick={clearStudentFilter}
             className="h-auto py-1 px-3 hover:bg-blue-100 text-blue-800 hover:text-blue-900 transition-colors">
             <X className="h-3 w-3 mr-2" />
-            Ver todo el grupo
+            {t("activity_history.view_all")}
           </Button>
         </div>
       )}
@@ -216,10 +240,13 @@ export default function ActivityHistory() {
         <CardHeader>
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <CardTitle>Entregas</CardTitle>
+              <CardTitle>{t("activity_history.submissions_title")}</CardTitle>
               <CardDescription>
-                Mostrando {data?.items.length || 0} de {data?.total || 0}{" "}
-                registros
+                {t("activity_history.showing", {
+                  start: (page - 1) * limit + 1,
+                  end: Math.min(page * limit, data?.total || 0),
+                  total: data?.total || 0,
+                })}
               </CardDescription>
             </div>
 
@@ -231,13 +258,23 @@ export default function ActivityHistory() {
                   setPage(1);
                 }}>
                 <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Estado" />
+                  <SelectValue
+                    placeholder={t("activity_history.filter_status")}
+                  />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Todos los estados</SelectItem>
-                  <SelectItem value="passed">Aceptados</SelectItem>
-                  <SelectItem value="failed">Fallidos</SelectItem>
-                  <SelectItem value="pending">Pendientes</SelectItem>
+                  <SelectItem value="all">
+                    {t("activity_history.filter_all")}
+                  </SelectItem>
+                  <SelectItem value="passed">
+                    {t("activity_history.filter_passed")}
+                  </SelectItem>
+                  <SelectItem value="failed">
+                    {t("activity_history.filter_failed")}
+                  </SelectItem>
+                  <SelectItem value="pending">
+                    {t("activity_history.filter_pending")}
+                  </SelectItem>
                 </SelectContent>
               </Select>
 
@@ -248,13 +285,21 @@ export default function ActivityHistory() {
                   setPage(1);
                 }}>
                 <SelectTrigger className="w-[130px]">
-                  <SelectValue placeholder="Filas" />
+                  <SelectValue placeholder={t("activity_history.rows")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="5">5 por pág.</SelectItem>
-                  <SelectItem value="10">10 por pág.</SelectItem>
-                  <SelectItem value="20">20 por pág.</SelectItem>
-                  <SelectItem value="50">50 por pág.</SelectItem>
+                  <SelectItem value="5">
+                    5 {t("activity_history.per_page")}
+                  </SelectItem>
+                  <SelectItem value="10">
+                    10 {t("activity_history.per_page")}
+                  </SelectItem>
+                  <SelectItem value="20">
+                    20 {t("activity_history.per_page")}
+                  </SelectItem>
+                  <SelectItem value="50">
+                    50 {t("activity_history.per_page")}
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -268,28 +313,32 @@ export default function ActivityHistory() {
                   className="cursor-pointer hover:bg-muted/50 transition-colors"
                   onClick={() => handleSort("studentName")}>
                   <div className="flex items-center">
-                    Estudiante <SortIcon column="studentName" />
+                    {t("activity_history.table.student")}{" "}
+                    <SortIcon column="studentName" />
                   </div>
                 </TableHead>
                 <TableHead
                   className="cursor-pointer hover:bg-muted/50 transition-colors"
                   onClick={() => handleSort("exerciseTitle")}>
                   <div className="flex items-center">
-                    Ejercicio <SortIcon column="exerciseTitle" />
+                    {t("activity_history.table.exercise")}{" "}
+                    <SortIcon column="exerciseTitle" />
                   </div>
                 </TableHead>
                 <TableHead
                   className="cursor-pointer hover:bg-muted/50 transition-colors"
                   onClick={() => handleSort("status")}>
                   <div className="flex items-center">
-                    Estado <SortIcon column="status" />
+                    {t("activity_history.table.status")}{" "}
+                    <SortIcon column="status" />
                   </div>
                 </TableHead>
                 <TableHead
                   className="text-right cursor-pointer hover:bg-muted/50 transition-colors"
                   onClick={() => handleSort("date")}>
                   <div className="flex items-center justify-end">
-                    Fecha <SortIcon column="date" />
+                    {t("activity_history.table.date")}{" "}
+                    <SortIcon column="date" />
                   </div>
                 </TableHead>
                 <TableHead className="w-[50px]"></TableHead>
@@ -305,7 +354,7 @@ export default function ActivityHistory() {
                     {/* Fallback para mostrar título o acción genérica */}
                     {activity.exerciseTitle ||
                       activity.action ||
-                      "Entrega de código"}
+                      t("activity_history.generic_submission")}
                   </TableCell>
                   <TableCell>{getStatusBadge(activity.status)}</TableCell>
                   <TableCell className="text-right flex items-center justify-end gap-2 text-muted-foreground">
@@ -318,7 +367,9 @@ export default function ActivityHistory() {
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="h-8 w-8 p-0">
-                          <span className="sr-only">Abrir menú</span>
+                          <span className="sr-only">
+                            {t("activity_history.actions.menu")}
+                          </span>
                           {downloadingId === activity.id ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
                           ) : (
@@ -327,23 +378,25 @@ export default function ActivityHistory() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                        <DropdownMenuLabel>
+                          {t("activity_history.actions.title")}
+                        </DropdownMenuLabel>
                         <DropdownMenuItem
                           onClick={() => handleDownload(activity.id, "zip")}>
                           <FileCode className="mr-2 h-4 w-4" />
-                          Descargar código fuente
+                          {t("activity_history.actions.download_code")}
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => handleDownload(activity.id, "json")}>
                           <FileJson className="mr-2 h-4 w-4" />
-                          Descargar informe JSON
+                          {t("activity_history.actions.download_json")}
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                           onClick={() =>
                             navigate(`/submissions/${activity.id}`)
                           }>
-                          Ver detalles
+                          {t("activity_history.actions.view_details")}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -353,7 +406,7 @@ export default function ActivityHistory() {
               {data?.items.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={5} className="h-24 text-center">
-                    No se encontraron resultados con los filtros actuales.
+                    {t("activity_history.no_results")}
                   </TableCell>
                 </TableRow>
               )}

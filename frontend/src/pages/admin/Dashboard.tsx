@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { dashboardService } from "@/services/dashboard.service";
 import { degreeService } from "@/services/degree.service";
 import { subjectService } from "@/services/subject.service";
@@ -64,6 +65,7 @@ import { Link } from "react-router-dom";
 
 const AdminDashboard = () => {
   const { toast } = useToast();
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -115,7 +117,7 @@ const AdminDashboard = () => {
   const createDegreeMutation = useMutation({
     mutationFn: degreeService.create,
     onSuccess: () => {
-      toast({ title: "Titulación creada correctamente" });
+      toast({ title: t("admin.dashboard.degree_created") });
       setCreateDegreeOpen(false);
       setNewDegreeName("");
       setNewDegreeCode("");
@@ -123,7 +125,7 @@ const AdminDashboard = () => {
     },
     onError: () => {
       toast({
-        title: "Error al crear titulación",
+        title: t("admin.dashboard.degree_error"),
         variant: "destructive",
       });
     },
@@ -132,7 +134,7 @@ const AdminDashboard = () => {
   const createSubjectMutation = useMutation({
     mutationFn: subjectService.create,
     onSuccess: () => {
-      toast({ title: "Asignatura añadida correctamente" });
+      toast({ title: t("admin.dashboard.subject_added") });
       setCreateSubjectOpen(false);
       setNewSubjectName("");
       setNewSubjectCode("");
@@ -140,7 +142,7 @@ const AdminDashboard = () => {
     },
     onError: () => {
       toast({
-        title: "Error al añadir asignatura",
+        title: t("admin.dashboard.subject_error"),
         variant: "destructive",
       });
     },
@@ -152,7 +154,7 @@ const AdminDashboard = () => {
       return userService.userService.create(userData);
     },
     onSuccess: () => {
-      toast({ title: "Profesor creado correctamente" });
+      toast({ title: t("admin.dashboard.professor_created") });
       setCreateUserOpen(false);
       setNewUser({
         firstName: "",
@@ -164,7 +166,7 @@ const AdminDashboard = () => {
     },
     onError: (err: any) => {
       toast({
-        title: "Error al crear profesor",
+        title: t("admin.dashboard.professor_error"),
         description: err.response?.data?.message,
         variant: "destructive",
       });
@@ -219,9 +221,11 @@ const AdminDashboard = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 p-5 mb-8">
         <div>
-          <h1 className="text-2xl font-bold mb-1">Panel de Administración</h1>
+          <h1 className="text-2xl font-bold mb-1">
+            {t("admin.dashboard.title")}
+          </h1>
           <p className="text-muted-foreground">
-            Visión global del sistema académico
+            {t("admin.dashboard.subtitle")}
           </p>
         </div>
 
@@ -232,13 +236,13 @@ const AdminDashboard = () => {
               <SelectTrigger>
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <SelectValue placeholder="Curso académico" />
+                  <SelectValue placeholder={t("admin.dashboard.select_year")} />
                 </div>
               </SelectTrigger>
               <SelectContent>
                 {academicYears.map((year) => (
                   <SelectItem key={year} value={year}>
-                    Curso {year}
+                    {t("admin.dashboard.academic_year")} {year}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -251,31 +255,37 @@ const AdminDashboard = () => {
             <DialogTrigger asChild>
               <Button variant="outline">
                 <GraduationCap className="h-4 w-4 mr-2" />
-                Nueva titulación
+                {t("admin.dashboard.new_degree")}
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Crear Nueva Titulación</DialogTitle>
+                <DialogTitle>
+                  {t("admin.dashboard.create_degree_title")}
+                </DialogTitle>
                 <DialogDescription>
-                  Añade una nueva titulación al sistema educativo.
+                  {t("admin.dashboard.create_degree_desc")}
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
-                  <Label htmlFor="degree-name">Nombre de la titulación</Label>
+                  <Label htmlFor="degree-name">
+                    {t("admin.dashboard.degree_name")}
+                  </Label>
                   <Input
                     id="degree-name"
-                    placeholder="Ej: Grado en Ingeniería Informática"
+                    placeholder={t("admin.dashboard.degree_name_placeholder")}
                     value={newDegreeName}
                     onChange={(e) => setNewDegreeName(e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="code">Código / Alias</Label>
+                  <Label htmlFor="code">
+                    {t("admin.dashboard.degree_code")}
+                  </Label>
                   <Input
                     id="code"
-                    placeholder="Ej: GII"
+                    placeholder={t("admin.dashboard.degree_code_placeholder")}
                     value={newDegreeCode}
                     onChange={(e) => setNewDegreeCode(e.target.value)}
                   />
@@ -285,7 +295,7 @@ const AdminDashboard = () => {
                 <Button
                   variant="outline"
                   onClick={() => setCreateDegreeOpen(false)}>
-                  Cancelar
+                  {t("common.cancel")}
                 </Button>
                 <Button
                   onClick={handleCreateDegree}
@@ -293,7 +303,7 @@ const AdminDashboard = () => {
                   {createDegreeMutation.isPending && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   )}
-                  Crear titulación
+                  {t("admin.dashboard.create_degree_button")}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -303,46 +313,57 @@ const AdminDashboard = () => {
           <Dialog open={createSubjectOpen} onOpenChange={setCreateSubjectOpen}>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Añadir Asignatura</DialogTitle>
+                <DialogTitle>
+                  {t("admin.dashboard.add_subject_title")}
+                </DialogTitle>
                 <DialogDescription>
-                  Asocia una nueva asignatura a la titulación seleccionada.
+                  {t("admin.dashboard.add_subject_desc")}
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
-                  <Label>Titulación ID</Label>
+                  <Label>{t("admin.dashboard.degree_id")}</Label>
                   <Input value={selectedDegreeId || ""} disabled />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="subject-name">Nombre de la Asignatura</Label>
+                  <Label htmlFor="subject-name">
+                    {t("admin.dashboard.subject_name")}
+                  </Label>
                   <Input
                     id="subject-name"
-                    placeholder="Ej: Estructuras de Datos"
+                    placeholder={t("admin.dashboard.subject_name_placeholder")}
                     value={newSubjectName}
                     onChange={(e) => setNewSubjectName(e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="subject-code">Código / Alias</Label>
+                  <Label htmlFor="subject-code">
+                    {t("admin.dashboard.subject_code")}
+                  </Label>
                   <Input
                     id="subject-code"
-                    placeholder="Ej: ED o 12345"
+                    placeholder={t("admin.dashboard.subject_code_placeholder")}
                     value={newSubjectCode}
                     onChange={(e) => setNewSubjectCode(e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="semester">Semestre</Label>
+                  <Label htmlFor="semester">
+                    {t("admin.dashboard.semester")}
+                  </Label>
                   <Select
                     value={newSubjectSemester}
                     onValueChange={setNewSubjectSemester}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecciona semestre" />
+                      <SelectValue
+                        placeholder={t("admin.dashboard.select_semester")}
+                      />
                     </SelectTrigger>
                     <SelectContent>
                       {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
                         <SelectItem key={n} value={n.toString()}>
-                          {n}º Semestre
+                          {n}
+                          {t("admin.dashboard.semester_ordinal")}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -353,7 +374,7 @@ const AdminDashboard = () => {
                 <Button
                   variant="outline"
                   onClick={() => setCreateSubjectOpen(false)}>
-                  Cancelar
+                  {t("admin.dashboard.cancel")}
                 </Button>
                 <Button
                   onClick={handleCreateSubject}
@@ -361,7 +382,7 @@ const AdminDashboard = () => {
                   {createSubjectMutation.isPending && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   )}
-                  Añadir asignatura
+                  {t("admin.dashboard.add_subject_button")}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -372,22 +393,22 @@ const AdminDashboard = () => {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <StatCard
-          title="Titulaciones Activas"
+          title={t("admin.dashboard.active_degrees")}
           value={kpis?.activeDegrees || 0}
           icon={<GraduationCap className="h-5 w-5" />}
         />
         <StatCard
-          title="Asignaturas Activas"
+          title={t("admin.dashboard.active_subjects")}
           value={kpis?.activeSubjects || 0}
           icon={<BookOpen className="h-5 w-5" />}
         />
         <StatCard
-          title="Profesores Activos"
+          title={t("admin.dashboard.active_teachers")}
           value={kpis?.activeTeachers || 0}
           icon={<Users className="h-5 w-5" />}
         />
         <StatCard
-          title="Ejercicios Totales"
+          title={t("admin.dashboard.total_exercises")}
           value={kpis?.totalExercises || 0}
           icon={<FileCode className="h-5 w-5" />}
         />
@@ -406,7 +427,7 @@ const AdminDashboard = () => {
                 <div className="relative w-64">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Buscar titulación..."
+                    placeholder={t("admin.dashboard.search_degree")}
                     className="pl-9"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
@@ -501,10 +522,12 @@ const AdminDashboard = () => {
           <Card>
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-base">Profesores</CardTitle>
+                <CardTitle className="text-base">
+                  {t("admin.dashboard.professors")}
+                </CardTitle>
                 <Link to="/dashboard/users?role=teacher">
                   <Button variant="ghost" size="sm">
-                    Ver todos
+                    {t("admin.dashboard.view_all")}
                   </Button>
                 </Link>
               </div>
@@ -524,8 +547,10 @@ const AdminDashboard = () => {
                         {prof.first_name} {prof.last_name}
                       </p>
                       <p className="text-xs text-muted-foreground truncate">
-                        {prof.subject_count} asignaturas • {prof.group_count}{" "}
-                        grupos
+                        {t("admin.dashboard.subjects_teachers", {
+                          subjects: prof.subject_count,
+                          groups: prof.group_count,
+                        })}
                       </p>
                     </div>
                   </div>
@@ -543,23 +568,29 @@ const AdminDashboard = () => {
                 <DialogTrigger asChild>
                   <Button className="w-auto flex m-auto mt-2" variant="outline">
                     <Plus className="h-4 w-4 mr-2" />
-                    Añadir profesor
+                    {t("admin.dashboard.add_professor")}
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>Crear Nuevo Profesor</DialogTitle>
+                    <DialogTitle>
+                      {t("admin.dashboard.create_professor_title")}
+                    </DialogTitle>
                     <DialogDescription>
-                      Añade un nuevo profesor al sistema.
+                      {t("admin.dashboard.create_professor_desc")}
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4 py-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="firstName">Nombre</Label>
+                        <Label htmlFor="firstName">
+                          {t("admin.dashboard.first_name")}
+                        </Label>
                         <Input
                           id="firstName"
-                          placeholder="Nombre"
+                          placeholder={t(
+                            "admin.dashboard.first_name_placeholder"
+                          )}
                           value={newUser.firstName}
                           onChange={(e) =>
                             setNewUser({
@@ -570,10 +601,14 @@ const AdminDashboard = () => {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="lastName">Apellidos</Label>
+                        <Label htmlFor="lastName">
+                          {t("admin.dashboard.last_name")}
+                        </Label>
                         <Input
                           id="lastName"
-                          placeholder="Apellidos"
+                          placeholder={t(
+                            "admin.dashboard.last_name_placeholder"
+                          )}
                           value={newUser.lastName}
                           onChange={(e) =>
                             setNewUser({ ...newUser, lastName: e.target.value })
@@ -582,11 +617,13 @@ const AdminDashboard = () => {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
+                      <Label htmlFor="email">
+                        {t("admin.dashboard.email")}
+                      </Label>
                       <Input
                         id="email"
                         type="email"
-                        placeholder="profesor@universidad.edu"
+                        placeholder={t("admin.dashboard.email_placeholder")}
                         value={newUser.email}
                         onChange={(e) =>
                           setNewUser({ ...newUser, email: e.target.value })
@@ -594,10 +631,10 @@ const AdminDashboard = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="role">Rol</Label>
+                      <Label htmlFor="role">{t("admin.dashboard.role")}</Label>
                       <Input
                         id="role"
-                        value="Profesor"
+                        value={t("admin.dashboard.role_professor")}
                         disabled
                         className="bg-muted"
                       />
@@ -607,7 +644,7 @@ const AdminDashboard = () => {
                     <Button
                       variant="outline"
                       onClick={() => setCreateUserOpen(false)}>
-                      Cancelar
+                      {t("admin.dashboard.cancel")}
                     </Button>
                     <Button
                       onClick={handleCreateUser}
@@ -615,7 +652,7 @@ const AdminDashboard = () => {
                       {createUserMutation.isPending && (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       )}
-                      Crear profesor
+                      {t("admin.dashboard.create_professor_button")}
                     </Button>
                   </DialogFooter>
                 </DialogContent>
@@ -626,12 +663,14 @@ const AdminDashboard = () => {
           {/* Global Stats */}
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">Estadísticas Globales</CardTitle>
+              <CardTitle className="text-base">
+                {t("admin.dashboard.global_stats")}
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">
-                  Estudiantes activos
+                  {t("admin.dashboard.active_students")}
                 </span>
                 <span className="font-medium">
                   {stats?.activeStudents || 0}
@@ -639,7 +678,7 @@ const AdminDashboard = () => {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">
-                  Envíos hoy
+                  {t("admin.dashboard.submissions_today")}
                 </span>
                 <span className="font-medium">
                   {stats?.submissionsToday || 0}
@@ -647,7 +686,7 @@ const AdminDashboard = () => {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">
-                  Tasa de éxito global
+                  {t("admin.dashboard.success_rate_global")}
                 </span>
                 <Badge
                   variant="secondary"

@@ -41,6 +41,7 @@ import {
 } from "@/components/ui/feedback/alert";
 
 import { exerciseService } from "@/services/exercise.service";
+import { languageService } from "@/services/language.service";
 import { useToast } from "@/hooks/use-toast";
 import {
   SubmissionResponse,
@@ -80,12 +81,19 @@ export default function ExerciseView() {
     enabled: !!id,
   });
 
+  const { data: availableLanguages = [] } = useQuery({
+    queryKey: ["languages"],
+    queryFn: languageService.getActiveLanguages,
+    staleTime: 1000 * 60 * 60,
+  });
+
   useEffect(() => {
     if (!history || history.length === 0) {
       if (exercise && !currentCode) {
+        const fallbackLanguage = availableLanguages[0]?.code || "python";
         setCurrentCode(
           exercise.templateCode ||
-            `# Write your solution in ${exercise.language || "python"}`
+            `# Write your solution in ${exercise.language || fallbackLanguage}`
         );
       }
       return;
@@ -106,7 +114,14 @@ export default function ExerciseView() {
         setCurrentCode(targetSubmission.code);
       }
     }
-  }, [history, exercise, requestedSubmissionId, submissionResult, currentCode]);
+  }, [
+    history,
+    exercise,
+    requestedSubmissionId,
+    submissionResult,
+    currentCode,
+    availableLanguages,
+  ]);
 
   useEffect(() => {
     const tab = searchParams.get("tab");
@@ -174,11 +189,12 @@ export default function ExerciseView() {
   const handleSubmit = (code: string, language: string) => {
     if (!id || !courseId) return;
 
+    const fallbackLanguage = availableLanguages[0]?.code || "python";
     submitMutation.mutate({
       exerciseId: id,
       courseId: courseId,
       code,
-      language: language || "python",
+      language: language || fallbackLanguage,
     });
   };
 

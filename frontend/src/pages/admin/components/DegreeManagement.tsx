@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { academicService } from "@/services/academic.service";
 import { Degree } from "@/types/academic.types";
 import { useForm } from "react-hook-form";
@@ -51,6 +52,7 @@ const DegreeForm = ({
   isPending: boolean;
 }) => {
   const { register, handleSubmit } = useForm<Degree>({ defaultValues });
+  const { t } = useTranslation();
 
   return (
     <form
@@ -63,28 +65,32 @@ const DegreeForm = ({
       )}
       className="space-y-4">
       <div className="space-y-2">
-        <Label>Nombre de la Titulación</Label>
+        <Label>{t("admin.degrees.degree_name")}</Label>
         <Input
           {...register("name")}
-          placeholder="Ej: Ingeniería Informática"
+          placeholder={t("admin.degrees.degree_name_placeholder")}
           required
         />
       </div>
       <div className="space-y-2">
-        <Label>Descripción</Label>
+        <Label>{t("admin.degrees.description")}</Label>
         <textarea
           {...register("description")}
-          placeholder="Descripción de la titulación..."
+          placeholder={t("admin.degrees.description_placeholder")}
           className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
         />
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label>Código Oficial</Label>
-          <Input {...register("code")} placeholder="GII" required />
+          <Label>{t("admin.degrees.code")}</Label>
+          <Input
+            {...register("code")}
+            placeholder={t("admin.degrees.code_placeholder")}
+            required
+          />
         </div>
         <div className="space-y-2">
-          <Label>Años Duración</Label>
+          <Label>{t("admin.degrees.duration_years")}</Label>
           <Input
             type="number"
             {...register("durationYears")}
@@ -93,11 +99,11 @@ const DegreeForm = ({
         </div>
       </div>
       <div className="space-y-2">
-        <Label>Créditos Totales</Label>
+        <Label>{t("admin.degrees.total_credits")}</Label>
         <Input type="number" {...register("totalCredits")} defaultValue={240} />
       </div>
       <div className="space-y-2">
-        <Label>Estado</Label>
+        <Label>{t("admin.degrees.status")}</Label>
         <Select
           defaultValue={defaultValues?.status || "active"}
           onValueChange={(v: any) =>
@@ -109,14 +115,18 @@ const DegreeForm = ({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="active">Activa</SelectItem>
-            <SelectItem value="archived">Archivada</SelectItem>
+            <SelectItem value="active">{t("admin.degrees.active")}</SelectItem>
+            <SelectItem value="archived">
+              {t("admin.degrees.archived")}
+            </SelectItem>
           </SelectContent>
         </Select>
       </div>
       <Button type="submit" className="w-full" disabled={isPending}>
         {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-        {defaultValues ? "Guardar Cambios" : "Crear Titulación"}
+        {defaultValues
+          ? t("admin.degrees.save_changes")
+          : t("admin.degrees.create_degree")}
       </Button>
     </form>
   );
@@ -124,6 +134,7 @@ const DegreeForm = ({
 
 export default function DegreeManagement() {
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Degree | null>(null);
 
@@ -144,11 +155,15 @@ export default function DegreeManagement() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["degrees"] });
       toast.success(
-        `Titulación ${editingItem ? "actualizada" : "creada"} correctamente`
+        t("admin.degrees.degree_saved", {
+          action: editingItem
+            ? t("admin.degrees.updated")
+            : t("admin.degrees.created"),
+        })
       );
       closeDialog();
     },
-    onError: () => toast.error("Error al guardar titulación"),
+    onError: () => toast.error(t("admin.degrees.save_error")),
   });
 
   const closeDialog = () => {
@@ -184,7 +199,7 @@ export default function DegreeManagement() {
     <>
       <div className="flex justify-end mb-4">
         <Button onClick={openCreateDialog}>
-          <Plus className="mr-2 h-4 w-4" /> Nueva Titulación
+          <Plus className="mr-2 h-4 w-4" /> {t("admin.degrees.new_degree")}
         </Button>
       </div>
 
@@ -194,7 +209,10 @@ export default function DegreeManagement() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {editingItem ? "Editar" : "Crear"} Titulación
+              {editingItem
+                ? t("admin.degrees.edit")
+                : t("admin.degrees.create")}{" "}
+              {t("admin.degrees.create_degree")}
             </DialogTitle>
           </DialogHeader>
           <DegreeForm
@@ -207,13 +225,13 @@ export default function DegreeManagement() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Titulaciones Ofertadas</CardTitle>
-          <CardDescription>Grados y másteres disponibles.</CardDescription>
+          <CardTitle>{t("admin.degrees.title")}</CardTitle>
+          <CardDescription>{t("admin.degrees.subtitle")}</CardDescription>
           <div className="flex justify-between items-center gap-4 mt-4">
             <div className="relative w-64">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Buscar titulación..."
+                placeholder={t("admin.degrees.search_degree")}
                 className="pl-8"
                 value={search}
                 onChange={(e) => {
@@ -229,9 +247,9 @@ export default function DegreeManagement() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="5">5 filas</SelectItem>
-                <SelectItem value="10">10 filas</SelectItem>
-                <SelectItem value="20">20 filas</SelectItem>
+                <SelectItem value="5">5 {t("common.rows")}</SelectItem>
+                <SelectItem value="10">10 {t("common.rows")}</SelectItem>
+                <SelectItem value="20">20 {t("common.rows")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -246,12 +264,14 @@ export default function DegreeManagement() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Código</TableHead>
-                    <TableHead>Nombre</TableHead>
-                    <TableHead>Duración</TableHead>
-                    <TableHead>Créditos</TableHead>
-                    <TableHead>Estado</TableHead>
-                    <TableHead className="text-right">Acciones</TableHead>
+                    <TableHead>{t("admin.degrees.code")}</TableHead>
+                    <TableHead>{t("admin.subjects.name")}</TableHead>
+                    <TableHead>{t("admin.degrees.duration_years")}</TableHead>
+                    <TableHead>{t("admin.subjects.credits")}</TableHead>
+                    <TableHead>{t("admin.degrees.status")}</TableHead>
+                    <TableHead className="text-right">
+                      {t("admin.degrees.actions")}
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -260,7 +280,7 @@ export default function DegreeManagement() {
                       <TableCell
                         colSpan={6}
                         className="text-center text-muted-foreground">
-                        No se encontraron titulaciones
+                        {t("admin.degrees.no_degrees")}
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -272,7 +292,9 @@ export default function DegreeManagement() {
                         <TableCell className="font-medium">
                           {degree.name}
                         </TableCell>
-                        <TableCell>{degree.durationYears} años</TableCell>
+                        <TableCell>
+                          {degree.durationYears} {t("admin.degrees.years")}
+                        </TableCell>
                         <TableCell>{degree.totalCredits} ECTS</TableCell>
                         <TableCell>
                           <Badge
@@ -303,10 +325,10 @@ export default function DegreeManagement() {
                   size="sm"
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page === 1}>
-                  Anterior
+                  {t("common.previous")}
                 </Button>
                 <div className="flex items-center text-sm text-muted-foreground">
-                  Pág {page} de {totalPages || 1}
+                  {t("common.page")} {page} {t("common.of")} {totalPages || 1}
                 </div>
                 <Button
                   variant="outline"
@@ -315,7 +337,7 @@ export default function DegreeManagement() {
                     setPage((p) => Math.min(totalPages || 1, p + 1))
                   }
                   disabled={page >= (totalPages || 1)}>
-                  Siguiente
+                  {t("common.next")}
                 </Button>
               </div>
             </>

@@ -109,22 +109,22 @@ export function AppSidebar() {
       },
       { title: t("sidebar.menu.users"), url: "/dashboard/users", icon: Users },
       {
-        title: "Titulaciones",
+        title: t("sidebar.menu.degrees"),
         url: "/dashboard/degrees",
         icon: GraduationCap,
       },
       {
-        title: "Asignaturas",
+        title: t("sidebar.menu.subjects_admin"),
         url: "/dashboard/subjects",
         icon: Library,
       },
       {
-        title: "Ejercicios",
+        title: t("sidebar.menu.exercises_admin"),
         url: "/dashboard/exercises-admin",
         icon: FileCode,
       },
       {
-        title: "Seguridad",
+        title: t("sidebar.menu.security"),
         url: "/dashboard/audit",
         icon: Lock,
       },
@@ -140,7 +140,9 @@ export function AppSidebar() {
     ? `${user.firstName?.[0] || ""}${user.lastName?.[0] || ""}`.toUpperCase()
     : "U";
 
-  const displayName = user ? `${user.firstName} ${user.lastName}` : "Usuario";
+  const displayName = user
+    ? `${user.firstName} ${user.lastName}`
+    : t("sidebar.user_default");
 
   const showProfessorMenu =
     user?.role === UserRole.TEACHER || user?.role === UserRole.ADMIN;

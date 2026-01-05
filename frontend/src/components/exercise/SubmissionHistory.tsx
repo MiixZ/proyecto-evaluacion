@@ -74,15 +74,15 @@ export const SubmissionHistory = ({
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between p-2 border-b mb-2">
-        <h3 className="font-semibold text-sm">Historial</h3>
+        <h3 className="font-semibold text-sm">{t("exercise.history.title")}</h3>
         <Button
           size="sm"
           variant="outline"
           disabled={selectedIds.length !== 2}
           onClick={handleCompare}
-          title="Selecciona 2 envíos para comparar">
+          title={t("exercise.history.compare_tooltip")}>
           <GitCompare className="h-4 w-4 mr-2" />
-          Comparar
+          {t("exercise.history.compare")}
         </Button>
       </div>
 

@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 import { Button } from "@/components/ui/forms/button";
 import {
@@ -24,6 +25,7 @@ export default function PlagiarismComparison() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
   const [reviewNotes, setReviewNotes] = useState("");
 
   const { data: plagiarismData, isLoading: isLoadingCheck } = useQuery({
@@ -49,23 +51,27 @@ export default function PlagiarismComparison() {
     mutationFn: ({ isFlagged }: { isFlagged: boolean }) =>
       plagiarismService.review(id!, reviewNotes, isFlagged),
     onSuccess: () => {
-      toast.success("Revisión guardada correctamente");
+      toast.success(t("plagiarism.comparison.success"));
       queryClient.invalidateQueries({ queryKey: ["groupPlagiarism"] });
       navigate(-1);
     },
-    onError: () => toast.error("Error al guardar la revisión"),
+    onError: () => toast.error(t("plagiarism.comparison.error")),
   });
 
   const isLoading = isLoadingCheck || isLoadingSource || isLoadingTarget;
 
   if (isLoading) {
-    return <div className="p-8 text-center">Cargando comparación...</div>;
+    return (
+      <div className="p-8 text-center">
+        {t("plagiarism.comparison.loading")}
+      </div>
+    );
   }
 
   if (!plagiarismData || !sourceSubmission || !targetSubmission) {
     return (
       <div className="p-8 text-center text-red-500">
-        No se encontraron los datos necesarios.
+        {t("plagiarism.comparison.not_found")}
       </div>
     );
   }
@@ -77,23 +83,25 @@ export default function PlagiarismComparison() {
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Volver
+            {t("plagiarism.comparison.back")}
           </Button>
           <div>
             <h1 className="text-xl font-bold flex items-center gap-2">
-              Comparación de Código
+              {t("plagiarism.comparison.title")}
               <Badge
                 variant={
                   plagiarismData.similarityPercent > 80
                     ? "destructive"
                     : "secondary"
                 }>
-                {plagiarismData.similarityPercent}% Similitud
+                {plagiarismData.similarityPercent}%{" "}
+                {t("plagiarism.comparison.similarity")}
               </Badge>
             </h1>
             <p className="text-sm text-muted-foreground">
-              Revisando caso generado el{" "}
-              {format(new Date(plagiarismData.createdAt), "PPP p")}
+              {t("plagiarism.comparison.subtitle", {
+                date: format(new Date(plagiarismData.createdAt), "PPP p"),
+              })}
             </p>
           </div>
         </div>
@@ -105,14 +113,14 @@ export default function PlagiarismComparison() {
             onClick={() => reviewMutation.mutate({ isFlagged: false })}
             disabled={reviewMutation.isPending}>
             <CheckCircle className="mr-2 h-4 w-4" />
-            Descartar (Falso Positivo)
+            {t("plagiarism.comparison.dismiss")}
           </Button>
           <Button
             variant="destructive"
             onClick={() => reviewMutation.mutate({ isFlagged: true })}
             disabled={reviewMutation.isPending}>
             <AlertTriangle className="mr-2 h-4 w-4" />
-            Confirmar Plagio
+            {t("plagiarism.comparison.confirm")}
           </Button>
         </div>
       </div>
@@ -124,7 +132,7 @@ export default function PlagiarismComparison() {
           <Card className="flex flex-col h-full border-l-4 border-l-orange-500">
             <CardHeader className="py-3 px-4 bg-muted/20">
               <CardTitle className="text-sm font-medium">
-                Estudiante (Sospechoso)
+                {t("plagiarism.comparison.student_suspected")}
               </CardTitle>
               <CardDescription className="text-xs">
                 {sourceSubmission.student?.name ||
@@ -147,12 +155,14 @@ export default function PlagiarismComparison() {
           <Card className="flex flex-col h-full border-l-4 border-l-blue-500">
             <CardHeader className="py-3 px-4 bg-muted/20">
               <CardTitle className="text-sm font-medium">
-                Comparado con (Fuente/Otro alumno)
+                {t("plagiarism.comparison.compared_with")}
               </CardTitle>
               <CardDescription className="text-xs">
                 {plagiarismData.plagiarismType === PlagiarismType.INTERNAL
-                  ? `Otro Estudiante (ID: ${targetSubmission.userId})`
-                  : "Fuente Externa / IA"}
+                  ? t("plagiarism.comparison.other_student", {
+                      id: targetSubmission.userId,
+                    })
+                  : t("plagiarism.comparison.external_source")}
               </CardDescription>
             </CardHeader>
             <div className="flex-1 overflow-hidden relative">
@@ -171,10 +181,10 @@ export default function PlagiarismComparison() {
       <Card className="shrink-0">
         <CardContent className="pt-4">
           <label className="text-sm font-medium mb-2 block">
-            Notas de la revisión (Opcional):
+            {t("plagiarism.comparison.review_notes")}
           </label>
           <Textarea
-            placeholder="Escribe aquí tus observaciones sobre por qué confirmas o descartas este caso..."
+            placeholder={t("plagiarism.comparison.notes_placeholder")}
             value={reviewNotes}
             onChange={(e) => setReviewNotes(e.target.value)}
             className="h-20 resize-none"

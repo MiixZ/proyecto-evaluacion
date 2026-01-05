@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { userService } from "@/services/user.service";
 import { dashboardService } from "@/services/dashboard.service";
 import { degreeService } from "@/services/degree.service";
@@ -100,6 +101,7 @@ const AssignGroupDialog = ({
   userName: string;
 }) => {
   const { toast } = useToast();
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [selectedYear, setSelectedYear] = useState<string>("");
   const [selectedDegree, setSelectedDegree] = useState<string>("");
@@ -140,7 +142,7 @@ const AssignGroupDialog = ({
   const assignMutation = useMutation({
     mutationFn: () => userService.assignGroup(userId, selectedGroup, "teacher"),
     onSuccess: () => {
-      toast({ title: "Profesor asignado correctamente" });
+      toast({ title: t("admin.users.assigned_success") });
       queryClient.invalidateQueries({ queryKey: ["users"] });
       onClose();
       setSelectedYear("");
@@ -148,24 +150,25 @@ const AssignGroupDialog = ({
       setSelectedSubject("");
       setSelectedGroup("");
     },
-    onError: () => toast({ title: "Error al asignar", variant: "destructive" }),
+    onError: () =>
+      toast({ title: t("admin.users.assign_error"), variant: "destructive" }),
   });
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Asignar Grupo</DialogTitle>
+          <DialogTitle>{t("admin.users.assign_group_title")}</DialogTitle>
           <DialogDescription>
-            Asignando grupos académicos a <b>{userName}</b>.
+            {t("admin.users.assign_group_desc", { userName })}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label>Curso Académico</Label>
+            <Label>{t("admin.users.academic_year")}</Label>
             <Select value={selectedYear} onValueChange={setSelectedYear}>
               <SelectTrigger>
-                <SelectValue placeholder="Selecciona año" />
+                <SelectValue placeholder={t("admin.users.select_year")} />
               </SelectTrigger>
               <SelectContent>
                 {years.map((y) => (
@@ -177,7 +180,7 @@ const AssignGroupDialog = ({
             </Select>
           </div>
           <div className="space-y-2">
-            <Label>Titulación</Label>
+            <Label>{t("admin.users.degree")}</Label>
             <Select
               value={selectedDegree}
               onValueChange={(v) => {
@@ -186,7 +189,7 @@ const AssignGroupDialog = ({
                 setSelectedGroup("");
               }}>
               <SelectTrigger>
-                <SelectValue placeholder="Selecciona titulación" />
+                <SelectValue placeholder={t("admin.users.select_degree")} />
               </SelectTrigger>
               <SelectContent>
                 {degrees.map((d: any) => (
@@ -198,7 +201,7 @@ const AssignGroupDialog = ({
             </Select>
           </div>
           <div className="space-y-2">
-            <Label>Asignatura</Label>
+            <Label>{t("admin.users.subject")}</Label>
             <Select
               value={selectedSubject}
               onValueChange={(v) => {
@@ -207,7 +210,7 @@ const AssignGroupDialog = ({
               }}
               disabled={!selectedDegree}>
               <SelectTrigger>
-                <SelectValue placeholder="Selecciona asignatura" />
+                <SelectValue placeholder={t("admin.users.select_subject")} />
               </SelectTrigger>
               <SelectContent>
                 {subjects.map((s: any) => (
@@ -219,13 +222,13 @@ const AssignGroupDialog = ({
             </Select>
           </div>
           <div className="space-y-2">
-            <Label>Grupo</Label>
+            <Label>{t("admin.users.group")}</Label>
             <Select
               value={selectedGroup}
               onValueChange={setSelectedGroup}
               disabled={!selectedSubject || !selectedYear}>
               <SelectTrigger>
-                <SelectValue placeholder="Selecciona grupo" />
+                <SelectValue placeholder={t("admin.users.select_group")} />
               </SelectTrigger>
               <SelectContent>
                 {groups.map((g: any) => (
@@ -239,7 +242,7 @@ const AssignGroupDialog = ({
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
-            Cancelar
+            {t("common.cancel")}
           </Button>
           <Button
             onClick={() => assignMutation.mutate()}
@@ -247,7 +250,7 @@ const AssignGroupDialog = ({
             {assignMutation.isPending && (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             )}
-            Asignar
+            {t("admin.users.assign_button")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -265,6 +268,7 @@ const UserTable = ({
   filtersRequired?: boolean;
 }) => {
   const { toast } = useToast();
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
@@ -297,7 +301,7 @@ const UserTable = ({
     mutationFn: ({ id, status }: { id: string; status: UserStatus }) =>
       userService.changeStatus(id, status),
     onSuccess: () => {
-      toast({ title: "Estado actualizado" });
+      toast({ title: t("admin.users.status_updated") });
       queryClient.invalidateQueries({ queryKey: ["users"] });
     },
   });
@@ -306,7 +310,7 @@ const UserTable = ({
     mutationFn: ({ id, role }: { id: string; role: UserRole }) =>
       userService.changeRole(id, role),
     onSuccess: () => {
-      toast({ title: "Rol actualizado" });
+      toast({ title: t("admin.users.role_updated") });
       queryClient.invalidateQueries({ queryKey: ["users"] });
     },
   });
@@ -314,7 +318,7 @@ const UserTable = ({
   const deleteMutation = useMutation({
     mutationFn: userService.delete,
     onSuccess: () => {
-      toast({ title: "Usuario eliminado" });
+      toast({ title: t("admin.users.user_deleted") });
       queryClient.invalidateQueries({ queryKey: ["users"] });
     },
   });
@@ -323,7 +327,7 @@ const UserTable = ({
     return (
       <div className="flex flex-col items-center justify-center h-64 border-2 border-dashed rounded-lg text-muted-foreground bg-muted/10">
         <Users className="h-10 w-10 mb-2 opacity-50" />
-        <p>Selecciona una titulación y un grupo para ver a los estudiantes.</p>
+        <p>{t("admin.users.select_filters")}</p>
       </div>
     );
   }
@@ -344,9 +348,7 @@ const UserTable = ({
           <div className="relative w-64">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder={`Buscar ${
-                role === "student" ? "estudiante" : "usuario"
-              }...`}
+              placeholder={t("admin.users.search_placeholder")}
               className="pl-8"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -359,9 +361,9 @@ const UserTable = ({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="5">5 filas</SelectItem>
-              <SelectItem value="10">10 filas</SelectItem>
-              <SelectItem value="20">20 filas</SelectItem>
+              <SelectItem value="5">5 {t("common.rows")}</SelectItem>
+              <SelectItem value="10">10 {t("common.rows")}</SelectItem>
+              <SelectItem value="20">20 {t("common.rows")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -370,11 +372,11 @@ const UserTable = ({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Usuario</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Rol</TableHead>
-                <TableHead>Grupos Asignados</TableHead>
-                <TableHead>Estado</TableHead>
+                <TableHead>{t("admin.users.table.user")}</TableHead>
+                <TableHead>{t("admin.users.table.email")}</TableHead>
+                <TableHead>{t("admin.users.table.role")}</TableHead>
+                <TableHead>{t("admin.users.table.assigned_groups")}</TableHead>
+                <TableHead>{t("admin.users.table.status")}</TableHead>
                 <TableHead className="w-[50px]"></TableHead>
               </TableRow>
             </TableHeader>
@@ -390,7 +392,7 @@ const UserTable = ({
                   <TableCell
                     colSpan={6}
                     className="h-24 text-center text-muted-foreground">
-                    No se encontraron resultados.
+                    {t("common.no_results")}
                   </TableCell>
                 </TableRow>
               ) : (
@@ -437,7 +439,7 @@ const UserTable = ({
                         </Select>
                       ) : (
                         <span className="text-muted-foreground text-xs italic">
-                          Sin asignaciones
+                          {t("admin.users.no_groups")}
                         </span>
                       )}
                     </TableCell>
@@ -457,12 +459,15 @@ const UserTable = ({
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                          <DropdownMenuLabel>
+                            {t("common.actions")}
+                          </DropdownMenuLabel>
                           <DropdownMenuSeparator />
 
                           <DropdownMenuSub>
                             <DropdownMenuSubTrigger>
-                              <Shield className="mr-2 h-4 w-4" /> Estado
+                              <Shield className="mr-2 h-4 w-4" />{" "}
+                              {t("admin.users.table.status")}
                             </DropdownMenuSubTrigger>
                             <DropdownMenuSubContent>
                               <DropdownMenuRadioGroup
@@ -474,10 +479,10 @@ const UserTable = ({
                                   })
                                 }>
                                 <DropdownMenuRadioItem value="active">
-                                  Activo
+                                  {t("admin.users.status_active")}
                                 </DropdownMenuRadioItem>
                                 <DropdownMenuRadioItem value="inactive">
-                                  Inactivo
+                                  {t("admin.users.status_inactive")}
                                 </DropdownMenuRadioItem>
                               </DropdownMenuRadioGroup>
                             </DropdownMenuSubContent>
@@ -485,7 +490,8 @@ const UserTable = ({
 
                           <DropdownMenuSub>
                             <DropdownMenuSubTrigger>
-                              <UserCog className="mr-2 h-4 w-4" /> Rol
+                              <UserCog className="mr-2 h-4 w-4" />{" "}
+                              {t("admin.users.table.role")}
                             </DropdownMenuSubTrigger>
                             <DropdownMenuSubContent>
                               <DropdownMenuRadioGroup
@@ -497,13 +503,13 @@ const UserTable = ({
                                   })
                                 }>
                                 <DropdownMenuRadioItem value="student">
-                                  Estudiante
+                                  {t("admin.users.role_student")}
                                 </DropdownMenuRadioItem>
                                 <DropdownMenuRadioItem value="teacher">
-                                  Profesor
+                                  {t("admin.users.role_professor")}
                                 </DropdownMenuRadioItem>
                                 <DropdownMenuRadioItem value="admin">
-                                  Admin
+                                  {t("admin.users.role_admin")}
                                 </DropdownMenuRadioItem>
                               </DropdownMenuRadioGroup>
                             </DropdownMenuSubContent>
@@ -517,8 +523,8 @@ const UserTable = ({
                                   name: `${user.firstName} ${user.lastName}`,
                                 })
                               }>
-                              <GraduationCap className="mr-2 h-4 w-4" /> Asignar
-                              a Grupo
+                              <GraduationCap className="mr-2 h-4 w-4" />{" "}
+                              {t("admin.users.assign_to_group")}
                             </DropdownMenuItem>
                           )}
 
@@ -526,10 +532,11 @@ const UserTable = ({
                           <DropdownMenuItem
                             className="text-destructive"
                             onClick={() => {
-                              if (confirm("¿Eliminar usuario?"))
+                              if (confirm(t("admin.users.delete_confirm")))
                                 deleteMutation.mutate(user.id);
                             }}>
-                            <Trash2 className="mr-2 h-4 w-4" /> Eliminar
+                            <Trash2 className="mr-2 h-4 w-4" />{" "}
+                            {t("common.delete")}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -547,10 +554,10 @@ const UserTable = ({
             size="sm"
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page === 1}>
-            Anterior
+            {t("common.previous")}
           </Button>
           <div className="flex items-center text-sm text-muted-foreground">
-            Pág {page} de {data?.totalPages || 1}
+            {t("common.page")} {page} {t("common.of")} {data?.totalPages || 1}
           </div>
           <Button
             variant="outline"
@@ -559,7 +566,7 @@ const UserTable = ({
               setPage((p) => Math.min(data?.totalPages || 1, p + 1))
             }
             disabled={page >= (data?.totalPages || 1)}>
-            Siguiente
+            {t("common.next")}
           </Button>
         </div>
       </div>
@@ -570,6 +577,7 @@ const UserTable = ({
 // --- PÁGINA PRINCIPAL ---
 const UsersPage = () => {
   const { toast } = useToast();
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [newUser, setNewUser] = useState({
@@ -619,7 +627,7 @@ const UsersPage = () => {
   const createMutation = useMutation({
     mutationFn: userService.create,
     onSuccess: () => {
-      toast({ title: "Usuario creado" });
+      toast({ title: t("admin.users.user_created") });
       setIsCreateOpen(false);
       setNewUser({
         firstName: "",
@@ -631,7 +639,7 @@ const UsersPage = () => {
     },
     onError: (err: any) => {
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: err.response?.data?.message,
         variant: "destructive",
       });
@@ -644,30 +652,28 @@ const UsersPage = () => {
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
             <Users className="h-6 w-6 text-primary" />
-            Gestión de Usuarios
+            {t("admin.users.title")}
           </h1>
-          <p className="text-muted-foreground">
-            Administración centralizada de roles y accesos
-          </p>
+          <p className="text-muted-foreground">{t("admin.users.subtitle")}</p>
         </div>
 
         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
           <DialogTrigger asChild>
             <Button>
-              <Plus className="mr-2 h-4 w-4" /> Nuevo Usuario
+              <Plus className="mr-2 h-4 w-4" /> {t("admin.users.create_button")}
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Alta de Usuario</DialogTitle>
+              <DialogTitle>{t("admin.users.create_user_title")}</DialogTitle>
               <DialogDescription>
-                Crea un nuevo usuario globalmente.
+                {t("admin.users.create_user_desc")}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Nombre</Label>
+                  <Label>{t("profile_page.fields.first_name")}</Label>
                   <Input
                     value={newUser.firstName}
                     onChange={(e) =>
@@ -676,7 +682,7 @@ const UsersPage = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Apellidos</Label>
+                  <Label>{t("profile_page.fields.last_name")}</Label>
                   <Input
                     value={newUser.lastName}
                     onChange={(e) =>
@@ -686,7 +692,7 @@ const UsersPage = () => {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label>Email</Label>
+                <Label>{t("admin.users.email")}</Label>
                 <Input
                   type="email"
                   value={newUser.email}
@@ -696,7 +702,7 @@ const UsersPage = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Rol Inicial</Label>
+                <Label>{t("admin.users.initial_role")}</Label>
                 <Select
                   value={newUser.role}
                   onValueChange={(v) =>
@@ -706,9 +712,15 @@ const UsersPage = () => {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="student">Estudiante</SelectItem>
-                    <SelectItem value="teacher">Profesor</SelectItem>
-                    <SelectItem value="admin">Administrador</SelectItem>
+                    <SelectItem value="student">
+                      {t("admin.users.role_student")}
+                    </SelectItem>
+                    <SelectItem value="teacher">
+                      {t("admin.users.role_professor")}
+                    </SelectItem>
+                    <SelectItem value="admin">
+                      {t("admin.users.role_admin")}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -720,7 +732,7 @@ const UsersPage = () => {
                 {createMutation.isPending && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}
-                Crear
+                {t("common.create")}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -729,27 +741,32 @@ const UsersPage = () => {
 
       <Tabs defaultValue="students" className="w-full">
         <TabsList className="grid w-full grid-cols-3 lg:w-[400px]">
-          <TabsTrigger value="students">Estudiantes</TabsTrigger>
-          <TabsTrigger value="teachers">Profesores</TabsTrigger>
-          <TabsTrigger value="admins">Admins</TabsTrigger>
+          <TabsTrigger value="students">
+            {t("admin.users.tab_students")}
+          </TabsTrigger>
+          <TabsTrigger value="teachers">
+            {t("admin.users.tab_professors")}
+          </TabsTrigger>
+          <TabsTrigger value="admins">
+            {t("admin.users.tab_admins")}
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="students" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Estudiantes</CardTitle>
+              <CardTitle>{t("admin.users.students_title")}</CardTitle>
               <CardDescription>
-                Filtrar por estructura académica para encontrar grupos
-                específicos.
+                {t("admin.users.students_desc")}
               </CardDescription>
               <div className="flex flex-wrap gap-4 mt-4">
                 <div className="w-[140px]">
                   <Label className="text-xs mb-1 block text-muted-foreground">
-                    Curso Académico
+                    {t("admin.users.academic_year")}
                   </Label>
                   <Select value={selectedYear} onValueChange={setSelectedYear}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Año" />
+                      <SelectValue placeholder={t("admin.users.select_year")} />
                     </SelectTrigger>
                     <SelectContent>
                       {years.map((y) => (
@@ -763,7 +780,7 @@ const UsersPage = () => {
 
                 <div className="w-[200px]">
                   <Label className="text-xs mb-1 block text-muted-foreground">
-                    Titulación
+                    {t("admin.users.degree")}
                   </Label>
                   <Select
                     value={selectedDegree}
@@ -773,7 +790,9 @@ const UsersPage = () => {
                       setSelectedGroup("");
                     }}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecciona titulación" />
+                      <SelectValue
+                        placeholder={t("admin.users.select_degree")}
+                      />
                     </SelectTrigger>
                     <SelectContent>
                       {degrees.map((d: any) => (
@@ -787,7 +806,7 @@ const UsersPage = () => {
 
                 <div className="w-[200px]">
                   <Label className="text-xs mb-1 block text-muted-foreground">
-                    Asignatura
+                    {t("admin.users.subject")}
                   </Label>
                   <Select
                     value={selectedSubject}
@@ -797,7 +816,9 @@ const UsersPage = () => {
                     }}
                     disabled={!selectedDegree}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecciona asignatura" />
+                      <SelectValue
+                        placeholder={t("admin.users.select_subject")}
+                      />
                     </SelectTrigger>
                     <SelectContent>
                       {subjects.map((s: any) => (
@@ -811,14 +832,16 @@ const UsersPage = () => {
 
                 <div className="w-[200px]">
                   <Label className="text-xs mb-1 block text-muted-foreground">
-                    Grupo
+                    {t("admin.users.group")}
                   </Label>
                   <Select
                     value={selectedGroup}
                     onValueChange={setSelectedGroup}
                     disabled={!selectedSubject || !selectedYear}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecciona grupo" />
+                      <SelectValue
+                        placeholder={t("admin.users.select_group")}
+                      />
                     </SelectTrigger>
                     <SelectContent>
                       {groups.map((g: any) => (
@@ -844,9 +867,9 @@ const UsersPage = () => {
         <TabsContent value="teachers" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Cuerpo Docente</CardTitle>
+              <CardTitle>{t("admin.users.professors_title")}</CardTitle>
               <CardDescription>
-                Listado completo de profesores registrados.
+                {t("admin.users.professors_desc")}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -858,10 +881,8 @@ const UsersPage = () => {
         <TabsContent value="admins" className="mt-6">
           <Card>
             <CardHeader>
-              <CardTitle>Administradores</CardTitle>
-              <CardDescription>
-                Usuarios con privilegios totales sobre el sistema.
-              </CardDescription>
+              <CardTitle>{t("admin.users.admins_title")}</CardTitle>
+              <CardDescription>{t("admin.users.admins_desc")}</CardDescription>
             </CardHeader>
             <CardContent>
               <UserTable role="admin" />
