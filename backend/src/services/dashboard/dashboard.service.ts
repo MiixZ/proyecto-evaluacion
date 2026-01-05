@@ -75,6 +75,10 @@ export class DashboardService {
     };
   }
 
+  async getAcademicYears() {
+    return await dashboardModel.getAvailableAcademicYears();
+  }
+
   async getCurrentAcademicYear(): Promise<string> {
     const latest = await dashboardModel.getLatestAcademicYear();
     if (latest) return latest;

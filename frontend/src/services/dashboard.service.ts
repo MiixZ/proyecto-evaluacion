@@ -43,6 +43,14 @@ export const dashboardService = {
     return data.data;
   },
 
+  getAcademicYears: async (): Promise<string[]> => {
+    const { data } = await api.get<ApiResponse<string[]>>(
+      "/v1/dashboard/academic-years"
+    );
+
+    return data.data;
+  },
+
   getRecentSubmissions: async (
     limit: number = 5
   ): Promise<DashboardSubmission[]> => {

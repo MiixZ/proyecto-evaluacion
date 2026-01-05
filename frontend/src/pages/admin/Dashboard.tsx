@@ -25,6 +25,7 @@ import {
   ChevronRight,
   Building,
   Loader2,
+  Calendar,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -66,6 +67,8 @@ const AdminDashboard = () => {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
+  const [selectedYear, setSelectedYear] = useState<string>("");
+
   const [createDegreeOpen, setCreateDegreeOpen] = useState(false);
   const [createSubjectOpen, setCreateSubjectOpen] = useState(false);
   const [selectedDegreeId, setSelectedDegreeId] = useState<string | null>(null);
@@ -82,12 +85,24 @@ const AdminDashboard = () => {
     return () => clearTimeout(timer);
   }, [search]);
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["adminDashboard", debouncedSearch],
-    queryFn: () => dashboardService.getAdminStats(undefined, debouncedSearch),
+  const { data: academicYears = [] } = useQuery({
+    queryKey: ["academicYears"],
+    queryFn: dashboardService.getAcademicYears,
   });
 
-  // Mutations
+  useEffect(() => {
+    if (!selectedYear && academicYears.length > 0) {
+      setSelectedYear(academicYears[0]);
+    }
+  }, [academicYears, selectedYear]);
+
+  const { data, isLoading } = useQuery({
+    queryKey: ["adminDashboard", debouncedSearch, selectedYear],
+    queryFn: () =>
+      dashboardService.getAdminStats(selectedYear, debouncedSearch),
+    enabled: !!selectedYear || academicYears.length === 0,
+  });
+
   const createDegreeMutation = useMutation({
     mutationFn: degreeService.create,
     onSuccess: () => {
@@ -168,7 +183,29 @@ const AdminDashboard = () => {
             Visión global del sistema académico
           </p>
         </div>
-        <div className="flex items-center gap-3">
+
+        <div className="flex flex-wrap items-center gap-3">
+          {/* SELECTOR DE AÑO ACADÉMICO */}
+          <div className="w-[180px]">
+            <Select value={selectedYear} onValueChange={setSelectedYear}>
+              <SelectTrigger>
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <SelectValue placeholder="Curso académico" />
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                {academicYears.map((year) => (
+                  <SelectItem key={year} value={year}>
+                    Curso {year}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="h-8 w-[1px] bg-border hidden md:block" />
+
           <Dialog open={createDegreeOpen} onOpenChange={setCreateDegreeOpen}>
             <DialogTrigger asChild>
               <Button variant="outline">

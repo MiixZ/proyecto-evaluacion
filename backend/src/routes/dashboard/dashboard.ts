@@ -20,6 +20,7 @@ router.get(
 );
 
 router.get('/admin', dashboardController.getAdminOverview);
+router.get('/academic-years', dashboardController.getAcademicYears);
 
 // Analíticas
 router.get('/analytics/exercises', dashboardController.getExerciseAnalytics);

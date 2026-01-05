@@ -24,6 +24,12 @@ export class DashboardController {
     );
   });
 
+  getAcademicYears = catchAsync(async (_req: AuthRequest, res: Response) => {
+    const years = await dashboardService.getAcademicYears();
+
+    return ApiResponse.success(res, years);
+  });
+
   getTeacherOverview = catchAsync(async (req: AuthRequest, res: Response) => {
     if (
       req.user?.role !== UserRole.TEACHER &&

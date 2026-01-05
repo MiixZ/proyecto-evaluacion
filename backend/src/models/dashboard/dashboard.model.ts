@@ -87,6 +87,14 @@ export class DashboardModel {
     return rows;
   }
 
+  async getAvailableAcademicYears(): Promise<string[]> {
+    const query =
+      'SELECT DISTINCT academic_year FROM courses ORDER BY academic_year DESC';
+    const [rows] = await getPool().execute<any[]>(query);
+
+    return rows.map((r) => r.academic_year);
+  }
+
   async getTeacherWorkload(
     teacherId: UUID
   ): Promise<Rows.TeacherWorkloadRow | null> {
