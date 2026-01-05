@@ -105,6 +105,7 @@
     "title": "My Progress",
     "subtitle": "Detailed history of performance and grades.",
     "search_placeholder": "Search by exercise or subject...",
+    "filter_difficulty": "Filter by difficulty",
     "table": {
       "exercise": "Exercise",
       "subject": "Subject",
@@ -1130,7 +1131,11 @@
     "previous": "Previous",
     "next": "Next",
     "page": "Page",
-    "of": "of"
+    "of": "of",
+    "all": "All",
+    "showing": "Showing",
+    "results": "results",
+    "clear_filters": "Clear filters"
   },
   "security": {
     "title": "Security & Audit",

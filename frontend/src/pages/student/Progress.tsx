@@ -1,25 +1,8 @@
-import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import {
-  Search,
-  Loader2,
-  CheckCircle2,
-  XCircle,
-  Clock,
-  Eye,
-} from "lucide-react";
+import { Loader2, CheckCircle2, XCircle, Clock, Eye } from "lucide-react";
 import { studentService } from "@/services/student.service";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/data/table";
-import { Input } from "@/components/ui/forms/input";
 import { Badge } from "@/components/ui/data/badge";
 import { Button } from "@/components/ui/forms/button";
 import {
@@ -27,13 +10,25 @@ import {
   AlertDescription,
   AlertTitle,
 } from "@/components/ui/feedback/alert";
+import { DataTable, ColumnDef } from "@/components/ui/data/data-table";
+
+interface ProgressItem {
+  exerciseId: number;
+  exerciseTitle: string;
+  subjectName: string;
+  difficulty: string;
+  isCompleted: boolean;
+  attempts: number;
+  bestScore: number;
+  lastAttempt: string | null;
+  courseId: number;
+}
 
 export default function StudentProgressPage() {
   const { t } = useTranslation();
-  const [searchTerm, setSearchTerm] = useState("");
 
   const {
-    data: progressData,
+    data: progressData = [],
     isLoading,
     error,
   } = useQuery({
@@ -41,15 +36,7 @@ export default function StudentProgressPage() {
     queryFn: studentService.getProgress,
   });
 
-  const filteredData =
-    progressData?.filter(
-      (item) =>
-        item.exerciseTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.subjectName.toLowerCase().includes(searchTerm.toLowerCase())
-    ) || [];
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const getStatusBadge = (item: any) => {
+  const getStatusBadge = (item: ProgressItem) => {
     if (item.isCompleted) {
       return (
         <Badge className="bg-green-500/15 text-green-600 hover:bg-green-500/25 border-green-200">
@@ -90,9 +77,86 @@ export default function StudentProgressPage() {
   };
 
   const getDifficultyLabel = (diff: string) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return t(`exercise.difficulty.${diff}` as any) || diff;
+    return t(`exercise.difficulty.${diff}`) || diff;
   };
+
+  const columns: ColumnDef<ProgressItem>[] = [
+    {
+      key: "exerciseTitle",
+      label: t("progress_page.table.exercise"),
+      sortable: true,
+      className: "font-medium",
+    },
+    {
+      key: "subjectName",
+      label: t("progress_page.table.subject"),
+      sortable: true,
+      className: "text-muted-foreground",
+    },
+    {
+      key: "difficulty",
+      label: t("progress_page.table.difficulty"),
+      sortable: true,
+      render: (item) => (
+        <span className={getDifficultyColor(item.difficulty)}>
+          {getDifficultyLabel(item.difficulty)}
+        </span>
+      ),
+    },
+    {
+      key: "status",
+      label: t("progress_page.table.status"),
+      sortable: true,
+      render: (item) => getStatusBadge(item),
+    },
+    {
+      key: "attempts",
+      label: t("progress_page.table.attempts"),
+      sortable: true,
+      headerClassName: "text-center",
+      className: "text-center",
+    },
+    {
+      key: "bestScore",
+      label: t("progress_page.table.score"),
+      sortable: true,
+      render: (item) => (
+        <span className="font-mono font-medium">
+          {item.attempts > 0 ? item.bestScore : "-"}
+        </span>
+      ),
+      headerClassName: "text-right",
+      className: "text-right",
+    },
+    {
+      key: "lastAttempt",
+      label: t("progress_page.table.last_attempt"),
+      sortable: true,
+      render: (item) => (
+        <span className="text-muted-foreground text-sm">
+          {item.lastAttempt
+            ? new Date(item.lastAttempt).toLocaleDateString()
+            : "-"}
+        </span>
+      ),
+      headerClassName: "text-right",
+      className: "text-right",
+    },
+    {
+      key: "actions",
+      label: t("progress_page.table.actions"),
+      render: (item) => (
+        <Button variant="ghost" size="icon" asChild>
+          <Link
+            to={`/dashboard/exercise/${item.exerciseId}?courseId=${item.courseId}`}>
+            <Eye className="h-4 w-4" />
+          </Link>
+        </Button>
+      ),
+      headerClassName: "text-right",
+      className: "text-right",
+    },
+  ];
 
   if (isLoading) {
     return (
@@ -122,83 +186,30 @@ export default function StudentProgressPage() {
         <p className="text-muted-foreground">{t("progress_page.subtitle")}</p>
       </div>
 
-      <div className="flex items-center py-4">
-        <div className="relative w-full md:w-96">
-          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder={t("progress_page.search_placeholder")}
-            className="pl-8"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-      </div>
-
-      <div className="rounded-md border bg-card">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>{t("progress_page.table.exercise")}</TableHead>
-              <TableHead>{t("progress_page.table.subject")}</TableHead>
-              <TableHead>{t("progress_page.table.difficulty")}</TableHead>
-              <TableHead>{t("progress_page.table.status")}</TableHead>
-              <TableHead className="text-center">
-                {t("progress_page.table.attempts")}
-              </TableHead>
-              <TableHead className="text-right">
-                {t("progress_page.table.score")}
-              </TableHead>
-              <TableHead className="text-right">
-                {t("progress_page.table.last_attempt")}
-              </TableHead>
-              <TableHead className="text-right">
-                {t("progress_page.table.actions")}
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredData.length > 0 ? (
-              filteredData.map((item) => (
-                <TableRow key={item.exerciseId}>
-                  <TableCell className="font-medium">
-                    {item.exerciseTitle}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {item.subjectName}
-                  </TableCell>
-                  <TableCell className={getDifficultyColor(item.difficulty)}>
-                    {getDifficultyLabel(item.difficulty)}
-                  </TableCell>
-                  <TableCell>{getStatusBadge(item)}</TableCell>
-                  <TableCell className="text-center">{item.attempts}</TableCell>
-                  <TableCell className="text-right font-mono font-medium">
-                    {item.attempts > 0 ? item.bestScore : "-"}
-                  </TableCell>
-                  <TableCell className="text-right text-muted-foreground text-sm">
-                    {item.lastAttempt
-                      ? new Date(item.lastAttempt).toLocaleDateString()
-                      : "-"}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" asChild>
-                      <Link
-                        to={`/dashboard/exercise/${item.exerciseId}?courseId=${item.courseId}`}>
-                        <Eye className="h-4 w-4" />
-                      </Link>
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={8} className="h-24 text-center">
-                  {t("progress_page.empty")}
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+      <DataTable<ProgressItem>
+        data={progressData}
+        columns={columns}
+        searchKeys={["exerciseTitle", "subjectName"]}
+        filterOptions={[
+          {
+            key: "difficulty",
+            label: t("progress_page.filter_difficulty"),
+            options: [
+              { value: "beginner", label: t("exercise.difficulty.beginner") },
+              {
+                value: "intermediate",
+                label: t("exercise.difficulty.intermediate"),
+              },
+              { value: "advanced", label: t("exercise.difficulty.advanced") },
+            ],
+          },
+        ]}
+        getRowKey={(item) => item.exerciseId}
+        searchPlaceholder={t("progress_page.search_placeholder")}
+        emptyMessage={t("progress_page.empty")}
+        isLoading={isLoading}
+        pageSize={10}
+      />
     </div>
   );
 }

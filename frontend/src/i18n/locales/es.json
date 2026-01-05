@@ -105,6 +105,7 @@
     "title": "Mi Progreso",
     "subtitle": "Historial detallado de rendimiento y calificaciones.",
     "search_placeholder": "Buscar por ejercicio o asignatura...",
+    "filter_difficulty": "Filtrar por dificultad",
     "table": {
       "exercise": "Ejercicio",
       "subject": "Asignatura",
@@ -1156,7 +1157,11 @@
     "previous": "Anterior",
     "next": "Siguiente",
     "page": "Pág",
-    "of": "de"
+    "of": "de",
+    "all": "Todos",
+    "showing": "Mostrando",
+    "results": "resultados",
+    "clear_filters": "Limpiar filtros"
   },
   "security": {
     "title": "Seguridad y Auditoría",
