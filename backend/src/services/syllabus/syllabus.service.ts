@@ -1,5 +1,8 @@
 import { syllabusModel } from '@models/syllabus/syllabus.model';
-import { CreateSyllabusInput } from '@validators/syllabus.validator';
+import {
+  CreateSyllabusInput,
+  UpdateSyllabusInput,
+} from '@validators/syllabus.validator';
 import { UserRole, UUID } from '@CustomTypes/common.types';
 import { courseModel } from '@models/course/course.model';
 import { ForbiddenError, NotFoundError } from '@utils/errors';
@@ -16,6 +19,18 @@ export class SyllabusService {
     }
 
     return await syllabusModel.create(input);
+  }
+
+  async updateSyllabus(id: string, input: UpdateSyllabusInput) {
+    return await syllabusModel.update(id as UUID, input);
+  }
+
+  async listSyllabi(
+    page: number,
+    limit: number,
+    filters: { courseId?: string }
+  ) {
+    return await syllabusModel.list(page, limit, filters);
   }
 
   async getByCourse(courseId: string, userId: string, userRole: UserRole) {
