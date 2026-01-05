@@ -438,26 +438,25 @@ export default function CreateExercise() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="w-48">
-                <Select value={language} onValueChange={setLanguage}>
+                <Select
+                  value={language}
+                  onValueChange={setLanguage}
+                  disabled={isLoadingLanguages}>
                   <SelectTrigger>
                     <SelectValue
-                      placeholder={t(
-                        "professor.create_exercise.language_label"
-                      )}
+                      placeholder={
+                        isLoadingLanguages
+                          ? t("professor.create_exercise.loading")
+                          : t("professor.create_exercise.language_label")
+                      }
                     />
                   </SelectTrigger>
                   <SelectContent>
-                    {isLoadingLanguages ? (
-                      <SelectItem value="" disabled>
-                        {t("professor.create_exercise.loading")}
+                    {availableLanguages.map((lang) => (
+                      <SelectItem key={lang.code} value={lang.code}>
+                        {lang.name}
                       </SelectItem>
-                    ) : (
-                      availableLanguages.map((lang) => (
-                        <SelectItem key={lang.code} value={lang.code}>
-                          {lang.name}
-                        </SelectItem>
-                      ))
-                    )}
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
