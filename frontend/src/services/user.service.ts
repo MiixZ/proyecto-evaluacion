@@ -16,7 +16,7 @@ interface ApiResponse<T> {
 export const userService = {
   list: async (
     page = 1,
-    limit = 10,
+    limit = 1000,
     search = "",
     role?: UserRole | "all",
     status?: UserStatus | "all"
@@ -56,7 +56,9 @@ export const userService = {
   changeStatus: async (id: string, status: UserStatus): Promise<User> => {
     const { data } = await api.patch<ApiResponse<User>>(
       `/v1/users/${id}/status`,
-      { status }
+      {
+        status,
+      }
     );
 
     return data.data;
