@@ -1,7 +1,6 @@
-// frontend/src/pages/admin/AcademicManagement.tsx
-import { useState } from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useTranslation } from "react-i18next";
 import { academicService } from "@/services/academic.service";
 import { Degree, Subject, Course } from "@/types/academic.types";
 import { useForm } from "react-hook-form";
@@ -27,14 +26,14 @@ import {
   BookOpen,
   GraduationCap,
   Calendar,
-  Search,
+  Pencil,
+  Filter,
 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/overlay/dialog";
 import { Input } from "@/components/ui/forms/input";
 import { Label } from "@/components/ui/forms/label";
@@ -57,23 +56,18 @@ import { Badge } from "@/components/ui/data/badge";
 import { toast } from "sonner";
 
 export default function AcademicManagement() {
-  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("degrees");
+
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<
+    Degree | Subject | Course | null
+  >(null);
+  const [dialogType, setDialogType] = useState<"degree" | "subject" | "course">(
+    "degree"
+  );
 
-  // Filtros y paginación
-  const [degreeSearch, setDegreeSearch] = useState("");
-  const [degreePage, setDegreePage] = useState(1);
-  const [degreeLimit, setDegreeLimit] = useState(10);
-
-  const [subjectSearch, setSubjectSearch] = useState("");
-  const [subjectPage, setSubjectPage] = useState(1);
-  const [subjectLimit, setSubjectLimit] = useState(10);
-
-  const [courseSearch, setCourseSearch] = useState("");
-  const [coursePage, setCoursePage] = useState(1);
-  const [courseLimit, setCourseLimit] = useState(10);
+  const [selectedYearFilter, setSelectedYearFilter] = useState<string>("all");
 
   // --- Queries ---
   const { data: degrees = [], isLoading: loadingDegrees } = useQuery({
@@ -91,43 +85,94 @@ export default function AcademicManagement() {
     queryFn: academicService.getCourses,
   });
 
-  // --- Mutations ---
-  const createDegreeMutation = useMutation({
-    mutationFn: academicService.createDegree,
+  // --- Derived State (Filtros) ---
+  const uniqueYears = useMemo(() => {
+    const years = Array.from(new Set(courses.map((c) => c.academicYear)));
+    return years.sort().reverse();
+  }, [courses]);
+
+  const filteredCourses = useMemo(() => {
+    if (selectedYearFilter === "all") return courses;
+    return courses.filter((c) => c.academicYear === selectedYearFilter);
+  }, [courses, selectedYearFilter]);
+
+  // --- Mutations (Create & Update) ---
+  const saveDegreeMutation = useMutation({
+    mutationFn: (data: any) =>
+      editingItem
+        ? academicService.updateDegree(editingItem.id, data)
+        : academicService.createDegree(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["degrees"] });
-      toast.success("Titulación creada correctamente");
-      setIsDialogOpen(false);
+      toast.success(
+        `Titulación ${editingItem ? "actualizada" : "creada"} correctamente`
+      );
+      closeDialog();
     },
-    onError: () => toast.error("Error al crear titulación"),
+    onError: () => toast.error("Error al guardar titulación"),
   });
 
-  const createSubjectMutation = useMutation({
-    mutationFn: academicService.createSubject,
+  const saveSubjectMutation = useMutation({
+    mutationFn: (data: any) =>
+      editingItem
+        ? academicService.updateSubject(editingItem.id, data)
+        : academicService.createSubject(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["subjects"] });
-      toast.success("Asignatura creada correctamente");
-      setIsDialogOpen(false);
+      toast.success(
+        `Asignatura ${editingItem ? "actualizada" : "creada"} correctamente`
+      );
+      closeDialog();
     },
-    onError: () => toast.error("Error al crear asignatura"),
+    onError: () => toast.error("Error al guardar asignatura"),
   });
 
-  const createCourseMutation = useMutation({
-    mutationFn: academicService.createCourse,
+  const saveCourseMutation = useMutation({
+    mutationFn: (data: any) =>
+      editingItem
+        ? academicService.updateCourse(editingItem.id, data)
+        : academicService.createCourse(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["courses"] });
-      toast.success("Curso creado correctamente");
-      setIsDialogOpen(false);
+      toast.success(
+        `Curso ${editingItem ? "actualizado" : "creado"} correctamente`
+      );
+      closeDialog();
     },
-    onError: () => toast.error("Error al crear curso"),
+    onError: () => toast.error("Error al guardar curso"),
   });
 
-  const DegreeForm = () => {
-    const { register, handleSubmit } = useForm<Degree>();
+  // --- Helpers ---
+  const openCreateDialog = (type: "degree" | "subject" | "course") => {
+    setDialogType(type);
+    setEditingItem(null);
+    setIsDialogOpen(true);
+  };
+
+  const openEditDialog = (item: any, type: "degree" | "subject" | "course") => {
+    setDialogType(type);
+    setEditingItem(item);
+    setIsDialogOpen(true);
+  };
+
+  const closeDialog = () => {
+    setIsDialogOpen(false);
+    setEditingItem(null);
+  };
+
+  const getSubjectName = (id: string) =>
+    subjects.find((s) => s.id === id)?.name || "Desconocida";
+  const getDegreeName = (id: string) =>
+    degrees.find((d) => d.id === id)?.name || "Desconocida";
+
+  // --- Forms ---
+
+  const DegreeForm = ({ defaultValues }: { defaultValues?: Degree }) => {
+    const { register, handleSubmit } = useForm<Degree>({ defaultValues });
     return (
       <form
         onSubmit={handleSubmit((data) =>
-          createDegreeMutation.mutate({
+          saveDegreeMutation.mutate({
             ...data,
             durationYears: Number(data.durationYears),
             totalCredits: Number(data.totalCredits),
@@ -140,6 +185,14 @@ export default function AcademicManagement() {
             {...register("name")}
             placeholder="Ej: Ingeniería Informática"
             required
+          />
+        </div>
+        <div className="space-y-2">
+          <Label>Descripción</Label>
+          <textarea
+            {...register("description")}
+            placeholder="Descripción de la titulación..."
+            className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           />
         </div>
         <div className="grid grid-cols-2 gap-4">
@@ -164,25 +217,39 @@ export default function AcademicManagement() {
             defaultValue={240}
           />
         </div>
+        <div className="space-y-2">
+          <Label>Estado</Label>
+          <select
+            {...register("status")}
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
+            <option value="active">Activa</option>
+            <option value="archived">Archivada</option>
+          </select>
+        </div>
         <Button
           type="submit"
           className="w-full"
-          disabled={createDegreeMutation.isPending}>
-          {createDegreeMutation.isPending && (
+          disabled={saveDegreeMutation.isPending}>
+          {saveDegreeMutation.isPending && (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           )}
-          Crear Titulación
+          {defaultValues ? "Guardar Cambios" : "Crear Titulación"}
         </Button>
       </form>
     );
   };
 
-  const SubjectForm = () => {
-    const { register, handleSubmit, setValue } = useForm<Subject>();
+  const SubjectForm = ({ defaultValues }: { defaultValues?: Subject }) => {
+    const { register, handleSubmit, setValue, watch } = useForm<Subject>({
+      defaultValues,
+    });
+    // Watch degreeId si necesitamos filtrar algo dinámicamente, por ahora select simple
+    const currentDegreeId = watch("degreeId");
+
     return (
       <form
         onSubmit={handleSubmit((data) =>
-          createSubjectMutation.mutate({
+          saveSubjectMutation.mutate({
             ...data,
             credits: Number(data.credits),
             semester: Number(data.semester),
@@ -191,7 +258,10 @@ export default function AcademicManagement() {
         className="space-y-4">
         <div className="space-y-2">
           <Label>Titulación a la que pertenece</Label>
-          <Select onValueChange={(val) => setValue("degreeId", val)} required>
+          <Select
+            onValueChange={(val) => setValue("degreeId", val)}
+            defaultValue={defaultValues?.degreeId}
+            required>
             <SelectTrigger>
               <SelectValue placeholder="Selecciona una titulación" />
             </SelectTrigger>
@@ -212,6 +282,14 @@ export default function AcademicManagement() {
             required
           />
         </div>
+        <div className="space-y-2">
+          <Label>Descripción</Label>
+          <textarea
+            {...register("description")}
+            placeholder="Descripción de la asignatura..."
+            className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          />
+        </div>
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label>Código</Label>
@@ -223,28 +301,30 @@ export default function AcademicManagement() {
           </div>
         </div>
         <div className="space-y-2">
-          <Label>Semestre (Global)</Label>
+          <Label>Semestre (Global en plan de estudios)</Label>
           <Input type="number" {...register("semester")} placeholder="1-8" />
         </div>
         <Button
           type="submit"
           className="w-full"
-          disabled={createSubjectMutation.isPending}>
-          {createSubjectMutation.isPending && (
+          disabled={saveSubjectMutation.isPending}>
+          {saveSubjectMutation.isPending && (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           )}
-          Crear Asignatura
+          {defaultValues ? "Guardar Cambios" : "Crear Asignatura"}
         </Button>
       </form>
     );
   };
 
-  const CourseForm = () => {
-    const { register, handleSubmit, setValue } = useForm<Course>();
+  const CourseForm = ({ defaultValues }: { defaultValues?: Course }) => {
+    const { register, handleSubmit, setValue } = useForm<Course>({
+      defaultValues,
+    });
     return (
       <form
         onSubmit={handleSubmit((data) =>
-          createCourseMutation.mutate({
+          saveCourseMutation.mutate({
             ...data,
             semester: Number(data.semester),
           })
@@ -252,7 +332,10 @@ export default function AcademicManagement() {
         className="space-y-4">
         <div className="space-y-2">
           <Label>Asignatura</Label>
-          <Select onValueChange={(val) => setValue("subjectId", val)} required>
+          <Select
+            onValueChange={(val) => setValue("subjectId", val)}
+            defaultValue={defaultValues?.subjectId}
+            required>
             <SelectTrigger>
               <SelectValue placeholder="Selecciona una asignatura" />
             </SelectTrigger>
@@ -278,9 +361,9 @@ export default function AcademicManagement() {
             <Label>Semestre</Label>
             <Select
               onValueChange={(val) => setValue("semester", Number(val))}
-              defaultValue="1">
+              defaultValue={defaultValues?.semester?.toString() || "1"}>
               <SelectTrigger>
-                <SelectValue placeholder="1" />
+                <SelectValue placeholder="Semestre" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="1">1er Semestre</SelectItem>
@@ -289,68 +372,34 @@ export default function AcademicManagement() {
             </Select>
           </div>
         </div>
+        <div className="space-y-2">
+          <Label>Estado del Curso</Label>
+          <Select
+            onValueChange={(val: any) => setValue("status", val)}
+            defaultValue={defaultValues?.status || "planning"}>
+            <SelectTrigger>
+              <SelectValue placeholder="Estado" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="planning">Planificación</SelectItem>
+              <SelectItem value="active">Activo</SelectItem>
+              <SelectItem value="closed">Cerrado</SelectItem>
+              <SelectItem value="archived">Archivado</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
         <Button
           type="submit"
           className="w-full"
-          disabled={createCourseMutation.isPending}>
-          {createCourseMutation.isPending && (
+          disabled={saveCourseMutation.isPending}>
+          {saveCourseMutation.isPending && (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           )}
-          Crear Curso
+          {defaultValues ? "Guardar Cambios" : "Crear Curso"}
         </Button>
       </form>
     );
   };
-
-  // Funciones de filtrado y paginación
-  const filterAndPaginate = <
-    T extends { name?: string; code?: string; academicYear?: string }
-  >(
-    items: T[],
-    search: string,
-    page: number,
-    limit: number
-  ) => {
-    const filtered = items.filter((item) => {
-      const searchLower = search.toLowerCase();
-      return (
-        item.name?.toLowerCase().includes(searchLower) ||
-        item.code?.toLowerCase().includes(searchLower) ||
-        item.academicYear?.toLowerCase().includes(searchLower)
-      );
-    });
-
-    const total = filtered.length;
-    const totalPages = Math.ceil(total / limit);
-    const start = (page - 1) * limit;
-    const paginated = filtered.slice(start, start + limit);
-
-    return { items: paginated, total, totalPages };
-  };
-
-  const filteredDegrees = filterAndPaginate(
-    degrees,
-    degreeSearch,
-    degreePage,
-    degreeLimit
-  );
-  const filteredSubjects = filterAndPaginate(
-    subjects,
-    subjectSearch,
-    subjectPage,
-    subjectLimit
-  );
-  const filteredCourses = filterAndPaginate(
-    courses,
-    courseSearch,
-    coursePage,
-    courseLimit
-  );
-
-  const getSubjectName = (id: string) =>
-    subjects.find((s) => s.id === id)?.name || "Desconocida";
-  const getDegreeName = (id: string) =>
-    degrees.find((d) => d.id === id)?.name || "Desconocida";
 
   return (
     <div className="space-y-6 p-6">
@@ -363,29 +412,33 @@ export default function AcademicManagement() {
             Administra titulaciones, asignaturas y cursos académicos.
           </p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              {activeTab === "degrees" && "Nueva Titulación"}
-              {activeTab === "subjects" && "Nueva Asignatura"}
-              {activeTab === "courses" && "Nuevo Curso"}
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>
-                {activeTab === "degrees" && "Crear Nueva Titulación"}
-                {activeTab === "subjects" && "Crear Nueva Asignatura"}
-                {activeTab === "courses" && "Abrir Nuevo Curso"}
-              </DialogTitle>
-            </DialogHeader>
-            {activeTab === "degrees" && <DegreeForm />}
-            {activeTab === "subjects" && <SubjectForm />}
-            {activeTab === "courses" && <CourseForm />}
-          </DialogContent>
-        </Dialog>
       </div>
+
+      <Dialog
+        open={isDialogOpen}
+        onOpenChange={(open) => !open && closeDialog()}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {editingItem ? "Editar" : "Crear"}{" "}
+              {dialogType === "degree"
+                ? "Titulación"
+                : dialogType === "subject"
+                ? "Asignatura"
+                : "Curso"}
+            </DialogTitle>
+          </DialogHeader>
+          {dialogType === "degree" && (
+            <DegreeForm defaultValues={editingItem as Degree} />
+          )}
+          {dialogType === "subject" && (
+            <SubjectForm defaultValues={editingItem as Subject} />
+          )}
+          {dialogType === "course" && (
+            <CourseForm defaultValues={editingItem as Course} />
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Tabs
         value={activeTab}
@@ -399,44 +452,21 @@ export default function AcademicManagement() {
             <BookOpen className="h-4 w-4" /> Asignaturas
           </TabsTrigger>
           <TabsTrigger value="courses" className="flex gap-2">
-            <Calendar className="h-4 w-4" /> Cursos Activos
+            <Calendar className="h-4 w-4" /> Cursos
           </TabsTrigger>
         </TabsList>
 
         {/* --- DEGREES TAB --- */}
         <TabsContent value="degrees">
+          <div className="flex justify-end mb-4">
+            <Button onClick={() => openCreateDialog("degree")}>
+              <Plus className="mr-2 h-4 w-4" /> Nueva Titulación
+            </Button>
+          </div>
           <Card>
             <CardHeader>
               <CardTitle>Titulaciones Ofertadas</CardTitle>
-              <CardDescription>
-                Listado de grados y másteres disponibles en la plataforma.
-              </CardDescription>
-              <div className="flex justify-between items-center gap-4 mt-4">
-                <div className="relative w-64">
-                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Buscar titulación..."
-                    className="pl-8"
-                    value={degreeSearch}
-                    onChange={(e) => {
-                      setDegreeSearch(e.target.value);
-                      setDegreePage(1);
-                    }}
-                  />
-                </div>
-                <Select
-                  value={degreeLimit.toString()}
-                  onValueChange={(v) => setDegreeLimit(Number(v))}>
-                  <SelectTrigger className="w-[100px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="5">5 filas</SelectItem>
-                    <SelectItem value="10">10 filas</SelectItem>
-                    <SelectItem value="20">20 filas</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              <CardDescription>Grados y másteres disponibles.</CardDescription>
             </CardHeader>
             <CardContent>
               {loadingDegrees ? (
@@ -444,78 +474,57 @@ export default function AcademicManagement() {
                   <Loader2 className="animate-spin" />
                 </div>
               ) : (
-                <>
-                  <Table>
-                    <TableHeader>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Código</TableHead>
+                      <TableHead>Nombre</TableHead>
+                      <TableHead>Duración</TableHead>
+                      <TableHead>Créditos</TableHead>
+                      <TableHead>Estado</TableHead>
+                      <TableHead className="text-right">Acciones</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {degrees.length === 0 && (
                       <TableRow>
-                        <TableHead>Código</TableHead>
-                        <TableHead>Nombre</TableHead>
-                        <TableHead>Duración</TableHead>
-                        <TableHead>Créditos</TableHead>
-                        <TableHead>Estado</TableHead>
+                        <TableCell colSpan={6} className="text-center">
+                          No hay titulaciones
+                        </TableCell>
                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredDegrees.items.length === 0 ? (
-                        <TableRow>
-                          <TableCell
-                            colSpan={5}
-                            className="text-center text-muted-foreground">
-                            No se encontraron titulaciones
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        filteredDegrees.items.map((degree) => (
-                          <TableRow key={degree.id}>
-                            <TableCell className="font-mono">
-                              {degree.code}
-                            </TableCell>
-                            <TableCell className="font-medium">
-                              {degree.name}
-                            </TableCell>
-                            <TableCell>{degree.durationYears} años</TableCell>
-                            <TableCell>{degree.totalCredits} ECTS</TableCell>
-                            <TableCell>
-                              <Badge
-                                variant={
-                                  degree.status === "active"
-                                    ? "default"
-                                    : "secondary"
-                                }>
-                                {degree.status}
-                              </Badge>
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
-                  <div className="flex justify-center gap-2 mt-4">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setDegreePage((p) => Math.max(1, p - 1))}
-                      disabled={degreePage === 1}>
-                      Anterior
-                    </Button>
-                    <div className="flex items-center text-sm text-muted-foreground">
-                      Pág {degreePage} de {filteredDegrees.totalPages || 1}
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        setDegreePage((p) =>
-                          Math.min(filteredDegrees.totalPages || 1, p + 1)
-                        )
-                      }
-                      disabled={
-                        degreePage >= (filteredDegrees.totalPages || 1)
-                      }>
-                      Siguiente
-                    </Button>
-                  </div>
-                </>
+                    )}
+                    {degrees.map((degree) => (
+                      <TableRow key={degree.id}>
+                        <TableCell className="font-mono">
+                          {degree.code}
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          {degree.name}
+                        </TableCell>
+                        <TableCell>{degree.durationYears} años</TableCell>
+                        <TableCell>{degree.totalCredits} ECTS</TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={
+                              degree.status === "active"
+                                ? "default"
+                                : "secondary"
+                            }>
+                            {degree.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => openEditDialog(degree, "degree")}>
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               )}
             </CardContent>
           </Card>
@@ -523,38 +532,15 @@ export default function AcademicManagement() {
 
         {/* --- SUBJECTS TAB --- */}
         <TabsContent value="subjects">
+          <div className="flex justify-end mb-4">
+            <Button onClick={() => openCreateDialog("subject")}>
+              <Plus className="mr-2 h-4 w-4" /> Nueva Asignatura
+            </Button>
+          </div>
           <Card>
             <CardHeader>
               <CardTitle>Asignaturas</CardTitle>
-              <CardDescription>
-                Catálogo de asignaturas asociadas a titulaciones.
-              </CardDescription>
-              <div className="flex justify-between items-center gap-4 mt-4">
-                <div className="relative w-64">
-                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Buscar asignatura..."
-                    className="pl-8"
-                    value={subjectSearch}
-                    onChange={(e) => {
-                      setSubjectSearch(e.target.value);
-                      setSubjectPage(1);
-                    }}
-                  />
-                </div>
-                <Select
-                  value={subjectLimit.toString()}
-                  onValueChange={(v) => setSubjectLimit(Number(v))}>
-                  <SelectTrigger className="w-[100px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="5">5 filas</SelectItem>
-                    <SelectItem value="10">10 filas</SelectItem>
-                    <SelectItem value="20">20 filas</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              <CardDescription>Catálogo de asignaturas base.</CardDescription>
             </CardHeader>
             <CardContent>
               {loadingSubjects ? (
@@ -562,109 +548,92 @@ export default function AcademicManagement() {
                   <Loader2 className="animate-spin" />
                 </div>
               ) : (
-                <>
-                  <Table>
-                    <TableHeader>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Código</TableHead>
+                      <TableHead>Nombre</TableHead>
+                      <TableHead>Titulación</TableHead>
+                      <TableHead>Créditos</TableHead>
+                      <TableHead>Semestre</TableHead>
+                      <TableHead className="text-right">Acciones</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {subjects.length === 0 && (
                       <TableRow>
-                        <TableHead>Código</TableHead>
-                        <TableHead>Nombre</TableHead>
-                        <TableHead>Titulación</TableHead>
-                        <TableHead>Créditos</TableHead>
-                        <TableHead>Semestre (Plan)</TableHead>
+                        <TableCell colSpan={6} className="text-center">
+                          No hay asignaturas
+                        </TableCell>
                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredSubjects.items.length === 0 ? (
-                        <TableRow>
-                          <TableCell
-                            colSpan={5}
-                            className="text-center text-muted-foreground">
-                            No se encontraron asignaturas
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        filteredSubjects.items.map((subject) => (
-                          <TableRow key={subject.id}>
-                            <TableCell className="font-mono">
-                              {subject.code}
-                            </TableCell>
-                            <TableCell className="font-medium">
-                              {subject.name}
-                            </TableCell>
-                            <TableCell>
-                              {getDegreeName(subject.degreeId)}
-                            </TableCell>
-                            <TableCell>{subject.credits} ECTS</TableCell>
-                            <TableCell>{subject.semester}º</TableCell>
-                          </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
-                  <div className="flex justify-center gap-2 mt-4">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setSubjectPage((p) => Math.max(1, p - 1))}
-                      disabled={subjectPage === 1}>
-                      Anterior
-                    </Button>
-                    <div className="flex items-center text-sm text-muted-foreground">
-                      Pág {subjectPage} de {filteredSubjects.totalPages || 1}
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        setSubjectPage((p) =>
-                          Math.min(filteredSubjects.totalPages || 1, p + 1)
-                        )
-                      }
-                      disabled={
-                        subjectPage >= (filteredSubjects.totalPages || 1)
-                      }>
-                      Siguiente
-                    </Button>
-                  </div>
-                </>
+                    )}
+                    {subjects.map((subject) => (
+                      <TableRow key={subject.id}>
+                        <TableCell className="font-mono">
+                          {subject.code}
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          {subject.name}
+                        </TableCell>
+                        <TableCell>{getDegreeName(subject.degreeId)}</TableCell>
+                        <TableCell>{subject.credits} ECTS</TableCell>
+                        <TableCell>{subject.semester}º</TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => openEditDialog(subject, "subject")}>
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               )}
             </CardContent>
           </Card>
         </TabsContent>
 
+        {/* --- COURSES TAB (FILTRADO) --- */}
         <TabsContent value="courses">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+            {/* Filtro de Años */}
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium">Filtrar por año:</span>
+              <Select
+                value={selectedYearFilter}
+                onValueChange={setSelectedYearFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Año Académico" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos los años</SelectItem>
+                  {uniqueYears.map((year) => (
+                    <SelectItem key={year} value={year}>
+                      {year}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Button onClick={() => openCreateDialog("course")}>
+              <Plus className="mr-2 h-4 w-4" /> Nuevo Curso
+            </Button>
+          </div>
+
           <Card>
             <CardHeader>
               <CardTitle>Cursos Académicos</CardTitle>
               <CardDescription>
-                Instancias de asignaturas impartidas en un año específico.
+                Mostrando {filteredCourses.length} cursos
+                {selectedYearFilter !== "all"
+                  ? ` del año ${selectedYearFilter}`
+                  : " totales"}
+                .
               </CardDescription>
-              <div className="flex justify-between items-center gap-4 mt-4">
-                <div className="relative w-64">
-                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Buscar curso..."
-                    className="pl-8"
-                    value={courseSearch}
-                    onChange={(e) => {
-                      setCourseSearch(e.target.value);
-                      setCoursePage(1);
-                    }}
-                  />
-                </div>
-                <Select
-                  value={courseLimit.toString()}
-                  onValueChange={(v) => setCourseLimit(Number(v))}>
-                  <SelectTrigger className="w-[100px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="5">5 filas</SelectItem>
-                    <SelectItem value="10">10 filas</SelectItem>
-                    <SelectItem value="20">20 filas</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
             </CardHeader>
             <CardContent>
               {loadingCourses ? (
@@ -672,78 +641,72 @@ export default function AcademicManagement() {
                   <Loader2 className="animate-spin" />
                 </div>
               ) : (
-                <>
-                  <Table>
-                    <TableHeader>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Año</TableHead>
+                      <TableHead>Asignatura</TableHead>
+                      <TableHead>Titulación</TableHead>
+                      <TableHead>Semestre</TableHead>
+                      <TableHead>Estado</TableHead>
+                      <TableHead className="text-right">Acciones</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredCourses.length === 0 && (
                       <TableRow>
-                        <TableHead>Año Académico</TableHead>
-                        <TableHead>Asignatura</TableHead>
-                        <TableHead>Semestre</TableHead>
-                        <TableHead>Estado</TableHead>
+                        <TableCell colSpan={6} className="text-center">
+                          No hay cursos para el filtro seleccionado
+                        </TableCell>
                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredCourses.items.length === 0 ? (
-                        <TableRow>
-                          <TableCell
-                            colSpan={4}
-                            className="text-center text-muted-foreground">
-                            No se encontraron cursos
+                    )}
+                    {filteredCourses.map((course) => {
+                      const subject = subjects.find(
+                        (s) => s.id === course.subjectId
+                      );
+                      const degreeName = subject
+                        ? getDegreeName(subject.degreeId)
+                        : "-";
+
+                      return (
+                        <TableRow key={course.id}>
+                          <TableCell className="font-mono">
+                            {course.academicYear}
+                          </TableCell>
+                          <TableCell className="font-medium">
+                            {subject
+                              ? `${subject.name} (${subject.code})`
+                              : "Desconocida"}
+                          </TableCell>
+                          <TableCell className="text-muted-foreground text-sm">
+                            {degreeName}
+                          </TableCell>
+                          <TableCell>
+                            {course.semester === 1 ? "1º" : "2º"}
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={
+                                course.status === "active"
+                                  ? "default"
+                                  : "outline"
+                              }>
+                              {course.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => openEditDialog(course, "course")}>
+                              <Pencil className="h-4 w-4" />
+                            </Button>
                           </TableCell>
                         </TableRow>
-                      ) : (
-                        filteredCourses.items.map((course) => (
-                          <TableRow key={course.id}>
-                            <TableCell>{course.academicYear}</TableCell>
-                            <TableCell className="font-medium">
-                              {getSubjectName(course.subjectId)}
-                            </TableCell>
-                            <TableCell>
-                              {course.semester === 1
-                                ? "1º Semestre"
-                                : "2º Semestre"}
-                            </TableCell>
-                            <TableCell>
-                              <Badge
-                                variant={
-                                  course.status === "active"
-                                    ? "default"
-                                    : "outline"
-                                }>
-                                {course.status}
-                              </Badge>
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
-                  <div className="flex justify-center gap-2 mt-4">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setCoursePage((p) => Math.max(1, p - 1))}
-                      disabled={coursePage === 1}>
-                      Anterior
-                    </Button>
-                    <div className="flex items-center text-sm text-muted-foreground">
-                      Pág {coursePage} de {filteredCourses.totalPages || 1}
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        setCoursePage((p) =>
-                          Math.min(filteredCourses.totalPages || 1, p + 1)
-                        )
-                      }
-                      disabled={
-                        coursePage >= (filteredCourses.totalPages || 1)
-                      }>
-                      Siguiente
-                    </Button>
-                  </div>
-                </>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
               )}
             </CardContent>
           </Card>
