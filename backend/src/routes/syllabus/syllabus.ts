@@ -33,6 +33,23 @@ router.patch(
   syllabusController.toggleVisibility
 );
 
+router.patch(
+  '/:id/order',
+  validateRequest(
+    z.object({
+      params: z.object({ id: uuidSchema }),
+      body: z.object({ orderIndex: z.number().int().min(0) }),
+    })
+  ),
+  syllabusController.updateOrder
+);
+
+router.delete(
+  '/:id',
+  validateRequest(z.object({ params: z.object({ id: uuidSchema }) })),
+  syllabusController.delete
+);
+
 router.get(
   '/course/:courseId',
   validateRequest(z.object({ params: z.object({ courseId: uuidSchema }) })),

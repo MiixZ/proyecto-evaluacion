@@ -128,7 +128,7 @@ export const dashboardMapper = {
     return {
       id: row.submission_id as UUID,
       studentName: row.student_name,
-      action: `Entregó ${row.exercise_title}`,
+      action: row.exercise_title,
       time: new Date(row.created_at).toISOString(),
       status,
     };

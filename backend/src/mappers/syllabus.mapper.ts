@@ -19,6 +19,7 @@ class SyllabusMapper extends BaseMapper<
       isPublic: Boolean(row.is_public),
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at),
+      exercisesCount: row.exercises_count,
     };
   }
 
@@ -31,6 +32,7 @@ class SyllabusMapper extends BaseMapper<
       contentType: entity.contentType,
       orderIndex: entity.orderIndex,
       isPublic: entity.isPublic,
+      exercisesCount: entity.exercisesCount,
     };
   }
 }

@@ -126,7 +126,11 @@ export class SyllabusModel {
 
   async listByCourse(courseId: UUID): Promise<SyllabusEntity[]> {
     const [rows] = await getPool().execute<SyllabusRow[]>(
-      'SELECT * FROM syllabi WHERE course_id = ? ORDER BY order_index ASC',
+      `SELECT s.*, 
+        (SELECT COUNT(*) FROM exercises WHERE syllabus_id = s.id) as exercises_count
+       FROM syllabi s 
+       WHERE s.course_id = ? 
+       ORDER BY s.order_index ASC`,
       [courseId]
     );
     return rows.map((row) => syllabusMapper.toEntity(row));
@@ -138,6 +142,25 @@ export class SyllabusModel {
       [id]
     );
     return rows.length > 0;
+  }
+
+  async getExerciseCount(id: UUID): Promise<number> {
+    const [rows] = await getPool().execute<CountResult[]>(
+      'SELECT COUNT(*) as count FROM exercises WHERE syllabus_id = ?',
+      [id]
+    );
+    return rows[0].count;
+  }
+
+  async delete(id: UUID): Promise<void> {
+    const [result] = await getPool().execute(
+      'DELETE FROM syllabi WHERE id = ?',
+      [id]
+    );
+    // @ts-ignore
+    if (result.affectedRows === 0) {
+      throw new NotFoundError('Temario con id: ' + id);
+    }
   }
 }
 

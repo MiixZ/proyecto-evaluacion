@@ -8,6 +8,7 @@ export interface SyllabusDTO {
   contentType: "module" | "topic" | "lesson";
   orderIndex: number;
   isPublic: boolean;
+  exercisesCount?: number;
 }
 
 interface ApiResponse<T> {
@@ -27,6 +28,36 @@ export const syllabusService = {
   toggleVisibility: async (syllabusId: string): Promise<SyllabusDTO> => {
     const { data } = await api.patch<ApiResponse<SyllabusDTO>>(
       `/v1/syllabi/${syllabusId}/visibility`
+    );
+    return data.data;
+  },
+
+  create: async (input: {
+    courseId: string;
+    title: string;
+    description?: string;
+    contentType?: "module" | "topic" | "lesson";
+    orderIndex?: number;
+    isPublic?: boolean;
+  }): Promise<SyllabusDTO> => {
+    const { data } = await api.post<ApiResponse<SyllabusDTO>>(
+      "/v1/syllabi",
+      input
+    );
+    return data.data;
+  },
+
+  delete: async (syllabusId: string): Promise<void> => {
+    await api.delete(`/v1/syllabi/${syllabusId}`);
+  },
+
+  updateOrder: async (
+    syllabusId: string,
+    orderIndex: number
+  ): Promise<SyllabusDTO> => {
+    const { data } = await api.patch<ApiResponse<SyllabusDTO>>(
+      `/v1/syllabi/${syllabusId}/order`,
+      { orderIndex }
     );
     return data.data;
   },

@@ -54,6 +54,35 @@ export class SyllabusService {
 
     return await syllabusModel.listByCourse(courseId as UUID);
   }
+
+  async deleteSyllabus(id: string) {
+    const syllabus = await syllabusModel.getById(id as UUID);
+
+    if (!syllabus) {
+      throw new NotFoundError('Temario no encontrado');
+    }
+
+    // Check if syllabus has exercises and get count
+    const exerciseCount = await syllabusModel.getExerciseCount(id as UUID);
+
+    if (exerciseCount > 0) {
+      throw new ForbiddenError(
+        `No se puede eliminar este temario porque contiene ${exerciseCount} ejercicio${exerciseCount > 1 ? 's' : ''}`
+      );
+    }
+
+    return await syllabusModel.delete(id as UUID);
+  }
+
+  async updateOrder(id: string, orderIndex: number) {
+    const syllabus = await syllabusModel.getById(id as UUID);
+
+    if (!syllabus) {
+      throw new NotFoundError('Temario no encontrado');
+    }
+
+    return await syllabusModel.update(id as UUID, { orderIndex });
+  }
 }
 
 export const syllabusService = new SyllabusService();

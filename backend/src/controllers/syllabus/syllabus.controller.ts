@@ -89,6 +89,41 @@ export class SyllabusController {
     );
     return ApiResponse.success(res, syllabusMapper.toDTOList(result));
   });
+
+  delete = catchAsync(async (req: AuthRequest, res: Response) => {
+    if (
+      req.user?.role !== UserRole.TEACHER &&
+      req.user?.role !== UserRole.ADMIN
+    ) {
+      throw new AppError('FORBIDDEN', 403, 'No autorizado');
+    }
+
+    const { id } = req.params;
+    await syllabusService.deleteSyllabus(id);
+
+    return ApiResponse.success(res, null, 200, 'Temario eliminado');
+  });
+
+  updateOrder = catchAsync(async (req: AuthRequest, res: Response) => {
+    if (
+      req.user?.role !== UserRole.TEACHER &&
+      req.user?.role !== UserRole.ADMIN
+    ) {
+      throw new AppError('FORBIDDEN', 403, 'No autorizado');
+    }
+
+    const { id } = req.params;
+    const { orderIndex } = req.body;
+
+    const result = await syllabusService.updateOrder(id, orderIndex);
+
+    return ApiResponse.success(
+      res,
+      syllabusMapper.toDTO(result),
+      200,
+      'Orden actualizado'
+    );
+  });
 }
 
 export const syllabusController = new SyllabusController();

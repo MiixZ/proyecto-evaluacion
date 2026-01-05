@@ -57,6 +57,7 @@ interface Student {
   progress: number;
   averageScore: number;
   avatarUrl: string | null;
+  [key: string]: unknown;
 }
 
 export default function ProfessorDashboard() {
@@ -218,7 +219,7 @@ export default function ProfessorDashboard() {
   }
 
   // Filtrado de estudiantes
-  const filteredStudents = activeGroup.students as Student[];
+  const filteredStudents = activeGroup.students as unknown as Student[];
 
   // Definir columnas para DataTable
   const studentColumns: ColumnDef<Student>[] = [
@@ -518,10 +519,11 @@ export default function ProfessorDashboard() {
                         {activity.studentName}
                       </p>
                       <p className="text-xs text-muted-foreground truncate">
+                        {t("professor.dashboard.recent_activity_submitted")}{" "}
                         {activity.action}
                       </p>
                       <p className="text-xs text-muted-foreground pt-1">
-                        Hace{" "}
+                        {t("professor.dashboard.recent_activity_time_ago")}{" "}
                         {formatDistanceToNow(new Date(activity.time), {
                           locale: dateLocale,
                         })}
