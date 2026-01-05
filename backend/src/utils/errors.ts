@@ -1,6 +1,3 @@
-/**
- * Clase base para errores personalizados de la aplicación
- */
 export class AppError extends Error {
   /**
    * @param code - Código identificador del error
@@ -26,6 +23,16 @@ export class ValidationError extends AppError {
   constructor(message: string, details?: Record<string, unknown>) {
     super('VALIDATION_ERROR', 400, message, details);
     Object.setPrototypeOf(this, ValidationError.prototype);
+  }
+}
+
+/**
+ * Error de petición incorrecta (400 Bad Request)
+ */
+export class BadRequestError extends AppError {
+  constructor(message: string, details?: Record<string, unknown>) {
+    super('BAD_REQUEST', 400, message, details);
+    Object.setPrototypeOf(this, BadRequestError.prototype);
   }
 }
 

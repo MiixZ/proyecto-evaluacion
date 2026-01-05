@@ -26,6 +26,9 @@ import SubmissionComparison from "./pages/student/SubmissionComparison";
 import UsersPage from "./pages/admin/Users";
 import AcademicManagement from "./pages/admin/AcademicManagement";
 import SecurityPage from "./pages/admin/Security";
+import CourseMigration from "./pages/admin/CourseMigration";
+import CourseDetail from "./pages/admin/CourseDetail";
+import CourseViewer from "./pages/admin/CourseViewer";
 import ManageSyllabi from "./pages/professor/ManageSyllabi";
 import Unauthorized from "./pages/Unauthorized";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
@@ -261,6 +264,30 @@ const App = () => (
                 element={
                   <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
                     <SecurityPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dashboard/course-migration"
+                element={
+                  <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
+                    <CourseMigration />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dashboard/course-viewer"
+                element={
+                  <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
+                    <CourseViewer />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dashboard/courses/:courseId"
+                element={
+                  <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
+                    <CourseDetail />
                   </ProtectedRoute>
                 }
               />

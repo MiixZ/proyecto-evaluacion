@@ -131,6 +131,82 @@ export class CourseModel {
     );
     return rows.length > 0;
   }
+
+  async getMigrationPreview(sourceCourseId: UUID) {
+    // Obtener información del curso origen
+    const course = await this.getById(sourceCourseId);
+
+    // Contar syllabi
+    const [syllabiCount] = await getPool().execute<CountResult[]>(
+      'SELECT COUNT(*) as count FROM syllabi WHERE course_id = ?',
+      [sourceCourseId]
+    );
+
+    // Contar ejercicios (a través de syllabi)
+    const [exercisesCount] = await getPool().execute<CountResult[]>(
+      `SELECT COUNT(*) as count FROM exercises e
+       INNER JOIN syllabi s ON e.syllabus_id = s.id
+       WHERE s.course_id = ?`,
+      [sourceCourseId]
+    );
+
+    // Obtener lista de syllabi con conteo de ejercicios
+    const [syllabiRows] = await getPool().execute<any[]>(
+      `SELECT s.id, s.title, s.description, s.content_type, s.order_index,
+              COUNT(e.id) as exercises_count
+       FROM syllabi s
+       LEFT JOIN exercises e ON e.syllabus_id = s.id
+       WHERE s.course_id = ?
+       GROUP BY s.id, s.title, s.description, s.content_type, s.order_index
+       ORDER BY s.order_index`,
+      [sourceCourseId]
+    );
+
+    // Obtener ejercicios para cada syllabus
+    const syllabi = await Promise.all(
+      syllabiRows.map(async (syllabus) => {
+        const [exercises] = await getPool().execute<any[]>(
+          `SELECT id, title, description, difficulty, language, points, 
+                  is_published, order_index, created_at
+           FROM exercises
+           WHERE syllabus_id = ?
+           ORDER BY order_index`,
+          [syllabus.id]
+        );
+
+        return {
+          ...syllabus,
+          exercises,
+        };
+      })
+    );
+
+    return {
+      course,
+      summary: {
+        totalSyllabi: syllabiCount[0].count,
+        totalExercises: exercisesCount[0].count,
+      },
+      syllabi,
+    };
+  }
+
+  async getCourseHistory(subjectId: UUID) {
+    const query = `
+      SELECT c.*, s.name as subject_name, s.code as subject_code,
+             (SELECT COUNT(*) FROM syllabi WHERE course_id = c.id) as syllabi_count,
+             (SELECT COUNT(*) FROM exercises e 
+              INNER JOIN syllabi sy ON e.syllabus_id = sy.id 
+              WHERE sy.course_id = c.id) as exercises_count
+      FROM courses c
+      INNER JOIN subjects s ON c.subject_id = s.id
+      WHERE c.subject_id = ?
+      ORDER BY c.academic_year DESC, c.semester DESC
+    `;
+
+    const [rows] = await getPool().execute<any[]>(query, [subjectId]);
+    return rows;
+  }
 }
 
 export const courseModel = new CourseModel();

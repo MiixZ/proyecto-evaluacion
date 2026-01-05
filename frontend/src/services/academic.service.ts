@@ -114,4 +114,86 @@ export const academicService = {
     );
     return response.data.data;
   },
+
+  // --- COURSE MIGRATION ---
+  getMigrationPreview: async (sourceCourseId: string) => {
+    const response = await api.get<
+      ApiResponse<{
+        course: Course;
+        summary: {
+          totalSyllabi: number;
+          totalExercises: number;
+        };
+        syllabi: Array<{
+          id: string;
+          title: string;
+          content_type: string;
+          order_index: number;
+          exercises_count: number;
+        }>;
+      }>
+    >(`/v1/courses/${sourceCourseId}/migration-preview`);
+
+    return response.data.data;
+  },
+
+  getCourseHistory: async (subjectId: string) => {
+    const response = await api.get<
+      ApiResponse<
+        Array<{
+          id: string;
+          subject_id: string;
+          academic_year: string;
+          semester: number;
+          status: string;
+          start_date: string | null;
+          end_date: string | null;
+          migrated_from: string | null;
+          subject_name: string;
+          subject_code: string;
+          syllabi_count: number;
+          exercises_count: number;
+          created_at: string;
+          updated_at: string;
+        }>
+      >
+    >(`/v1/courses/subject/${subjectId}/history`);
+
+    return response.data.data;
+  },
+
+  migrateContent: async (
+    sourceCourseId: string,
+    data: {
+      targetCourseId: string;
+      includeSyllabi: boolean;
+      includeExercises: boolean;
+      selectedSyllabiIds?: string[];
+    }
+  ) => {
+    const response = await api.post<
+      ApiResponse<{
+        success: boolean;
+        migratedData: {
+          syllabi: Array<{
+            originalId: string;
+            newId: string;
+            title: string;
+          }>;
+          exercises: Array<{
+            originalId: string;
+            newId: string;
+            title: string;
+            testCasesCount: number;
+          }>;
+        };
+        summary: {
+          syllabi: number;
+          exercises: number;
+        };
+      }>
+    >(`/v1/courses/${sourceCourseId}/migrate`, data);
+
+    return response.data.data;
+  },
 };

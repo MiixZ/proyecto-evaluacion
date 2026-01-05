@@ -110,7 +110,7 @@ const CourseForm = ({
         </div>
       </div>
       <div className="space-y-2">
-        <Label>{t("admin.courses.status")}</Label>
+        <Label>{t("admin.courses.status.name")}</Label>
         <Select
           onValueChange={(val: any) => setValue("status", val)}
           defaultValue={defaultValues?.status || "planning"}>

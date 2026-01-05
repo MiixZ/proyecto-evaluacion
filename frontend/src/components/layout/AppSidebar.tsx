@@ -27,6 +27,7 @@ import {
   BarChart3,
   Lock,
   ListTree,
+  GitBranch,
 } from "lucide-react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
@@ -118,6 +119,16 @@ export function AppSidebar() {
         title: t("sidebar.menu.degrees"),
         url: "/dashboard/degrees",
         icon: GraduationCap,
+      },
+      {
+        title: t("sidebar.menu.course_viewer"),
+        url: "/dashboard/course-viewer",
+        icon: BookOpen,
+      },
+      {
+        title: t("sidebar.menu.course_migration"),
+        url: "/dashboard/course-migration",
+        icon: GitBranch,
       },
       {
         title: t("sidebar.menu.security"),
