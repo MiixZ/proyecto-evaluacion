@@ -404,6 +404,11 @@
       "subtitle": "Join the platform used by computer engineering departments.",
       "button": "Access Platform"
     },
+    "footer": {
+      "privacy": "Privacy",
+      "terms": "Terms",
+      "contact": "Contact"
+    },
     "login_description": "Comprehensive platform for managing, evaluating, and tracking programming exercises in real-time.",
     "login_features": {
       "evaluation": "Automatic code evaluation",

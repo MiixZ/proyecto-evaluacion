@@ -51,20 +51,6 @@ export const Navbar = () => {
               }`}>
               {t("navbar.home")}
             </Link>
-            <Link
-              to="/features"
-              className={`text-sm font-medium transition-colors hover:text-primary ${
-                isActive("/features") ? "text-primary" : "text-foreground/80"
-              }`}>
-              {t("navbar.features")}
-            </Link>
-            <Link
-              to="/about"
-              className={`text-sm font-medium transition-colors hover:text-primary ${
-                isActive("/about") ? "text-primary" : "text-foreground/80"
-              }`}>
-              {t("navbar.about")}
-            </Link>
           </div>
 
           <div className="hidden md:flex items-center gap-3">
@@ -154,18 +140,6 @@ export const Navbar = () => {
                 className="text-sm font-medium text-foreground/80 hover:text-primary"
                 onClick={() => setIsOpen(false)}>
                 {t("navbar.home")}
-              </Link>
-              <Link
-                to="/features"
-                className="text-sm font-medium text-foreground/80 hover:text-primary"
-                onClick={() => setIsOpen(false)}>
-                {t("navbar.features")}
-              </Link>
-              <Link
-                to="/about"
-                className="text-sm font-medium text-foreground/80 hover:text-primary"
-                onClick={() => setIsOpen(false)}>
-                {t("navbar.about")}
               </Link>
 
               <div className="flex flex-col gap-2 pt-4 border-t border-border">

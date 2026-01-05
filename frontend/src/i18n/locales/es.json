@@ -430,6 +430,11 @@
       "subtitle": "Únete a la plataforma utilizada por departamentos de ingeniería informática.",
       "button": "Acceder a la plataforma"
     },
+    "footer": {
+      "privacy": "Privacidad",
+      "terms": "Términos",
+      "contact": "Contacto"
+    },
     "login_description": "Plataforma integral para la gestión, evaluación y seguimiento de ejercicios de programación en tiempo real.",
     "login_features": {
       "evaluation": "Evaluación automática de código",

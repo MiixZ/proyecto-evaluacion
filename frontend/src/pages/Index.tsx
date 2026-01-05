@@ -6,9 +6,11 @@ import { Features } from "@/components/landing/Features";
 import { Stats } from "@/components/landing/Stats";
 import { Button } from "@/components/ui/forms/button";
 import { CheckCircle2, Code2 } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
 
 const Index = () => {
   const { t } = useTranslation();
+  const { isAuthenticated } = useAuth();
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -35,7 +37,7 @@ const Index = () => {
                   size="lg"
                   className="h-14 px-8 text-lg rounded-full shadow-lg shadow-primary/20"
                   asChild>
-                  <Link to="/login">
+                  <Link to={isAuthenticated ? "/dashboard" : "/login"}>
                     <CheckCircle2 className="mr-2 h-5 w-5" />
                     {t("landing.cta_footer.button")}
                   </Link>
@@ -64,15 +66,14 @@ const Footer = () => {
             <span>{t("app.name")}</span>
           </div>
           <div className="flex items-center gap-6 text-sm text-muted-foreground">
-            {/* Links pendientes de traducción, por ahora estáticos o genéricos */}
             <Link to="#" className="hover:text-primary transition-colors">
-              Privacidad
+              {t("landing.footer.privacy")}
             </Link>
             <Link to="#" className="hover:text-primary transition-colors">
-              Términos
+              {t("landing.footer.terms")}
             </Link>
             <Link to="#" className="hover:text-primary transition-colors">
-              Contacto
+              {t("landing.footer.contact")}
             </Link>
           </div>
           <p className="text-sm text-muted-foreground">

@@ -1,11 +1,13 @@
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next"; // Importar hook
 import { Button } from "@/components/ui/forms/button";
-import { ArrowRight, Play, Code2 } from "lucide-react";
+import { ArrowRight, Code2 } from "lucide-react";
 import heroBg from "@/assets/hero-bg.jpg";
+import { useAuth } from "@/hooks/use-auth";
 
 export const Hero = () => {
   const { t } = useTranslation();
+  const { isAuthenticated } = useAuth();
 
   return (
     <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden pt-16">
@@ -41,19 +43,9 @@ export const Hero = () => {
               size="lg"
               className="text-lg px-8 h-12 rounded-full shadow-xl shadow-primary/10 transition-transform hover:scale-105"
               asChild>
-              <Link to="/login">
+              <Link to={isAuthenticated ? "/dashboard" : "/login"}>
                 {t("landing.hero.cta_primary")}
                 <ArrowRight className="ml-2 h-5 w-5" />
-              </Link>
-            </Button>
-            <Button
-              size="lg"
-              variant="outline"
-              className="text-lg px-8 h-12 rounded-full border-primary/20 bg-background/50 backdrop-blur-md hover:bg-primary/10"
-              asChild>
-              <Link to="/demo">
-                <Play className="mr-2 h-5 w-5" />
-                {t("landing.hero.cta_secondary")}
               </Link>
             </Button>
           </div>
