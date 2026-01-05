@@ -21,7 +21,14 @@ import {
   CardTitle,
 } from "@/components/ui/layout/card";
 import { Button } from "@/components/ui/forms/button";
-import { Plus, Loader2, BookOpen, GraduationCap, Calendar } from "lucide-react";
+import {
+  Plus,
+  Loader2,
+  BookOpen,
+  GraduationCap,
+  Calendar,
+  Search,
+} from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -54,6 +61,19 @@ export default function AcademicManagement() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("degrees");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  // Filtros y paginación
+  const [degreeSearch, setDegreeSearch] = useState("");
+  const [degreePage, setDegreePage] = useState(1);
+  const [degreeLimit, setDegreeLimit] = useState(10);
+
+  const [subjectSearch, setSubjectSearch] = useState("");
+  const [subjectPage, setSubjectPage] = useState(1);
+  const [subjectLimit, setSubjectLimit] = useState(10);
+
+  const [courseSearch, setCourseSearch] = useState("");
+  const [coursePage, setCoursePage] = useState(1);
+  const [courseLimit, setCourseLimit] = useState(10);
 
   // --- Queries ---
   const { data: degrees = [], isLoading: loadingDegrees } = useQuery({
@@ -282,6 +302,51 @@ export default function AcademicManagement() {
     );
   };
 
+  // Funciones de filtrado y paginación
+  const filterAndPaginate = <
+    T extends { name?: string; code?: string; academicYear?: string }
+  >(
+    items: T[],
+    search: string,
+    page: number,
+    limit: number
+  ) => {
+    const filtered = items.filter((item) => {
+      const searchLower = search.toLowerCase();
+      return (
+        item.name?.toLowerCase().includes(searchLower) ||
+        item.code?.toLowerCase().includes(searchLower) ||
+        item.academicYear?.toLowerCase().includes(searchLower)
+      );
+    });
+
+    const total = filtered.length;
+    const totalPages = Math.ceil(total / limit);
+    const start = (page - 1) * limit;
+    const paginated = filtered.slice(start, start + limit);
+
+    return { items: paginated, total, totalPages };
+  };
+
+  const filteredDegrees = filterAndPaginate(
+    degrees,
+    degreeSearch,
+    degreePage,
+    degreeLimit
+  );
+  const filteredSubjects = filterAndPaginate(
+    subjects,
+    subjectSearch,
+    subjectPage,
+    subjectLimit
+  );
+  const filteredCourses = filterAndPaginate(
+    courses,
+    courseSearch,
+    coursePage,
+    courseLimit
+  );
+
   const getSubjectName = (id: string) =>
     subjects.find((s) => s.id === id)?.name || "Desconocida";
   const getDegreeName = (id: string) =>
@@ -346,6 +411,32 @@ export default function AcademicManagement() {
               <CardDescription>
                 Listado de grados y másteres disponibles en la plataforma.
               </CardDescription>
+              <div className="flex justify-between items-center gap-4 mt-4">
+                <div className="relative w-64">
+                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar titulación..."
+                    className="pl-8"
+                    value={degreeSearch}
+                    onChange={(e) => {
+                      setDegreeSearch(e.target.value);
+                      setDegreePage(1);
+                    }}
+                  />
+                </div>
+                <Select
+                  value={degreeLimit.toString()}
+                  onValueChange={(v) => setDegreeLimit(Number(v))}>
+                  <SelectTrigger className="w-[100px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="5">5 filas</SelectItem>
+                    <SelectItem value="10">10 filas</SelectItem>
+                    <SelectItem value="20">20 filas</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </CardHeader>
             <CardContent>
               {loadingDegrees ? (
@@ -353,48 +444,78 @@ export default function AcademicManagement() {
                   <Loader2 className="animate-spin" />
                 </div>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Código</TableHead>
-                      <TableHead>Nombre</TableHead>
-                      <TableHead>Duración</TableHead>
-                      <TableHead>Créditos</TableHead>
-                      <TableHead>Estado</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {degrees.length === 0 && (
+                <>
+                  <Table>
+                    <TableHeader>
                       <TableRow>
-                        <TableCell colSpan={5} className="text-center">
-                          No hay titulaciones
-                        </TableCell>
+                        <TableHead>Código</TableHead>
+                        <TableHead>Nombre</TableHead>
+                        <TableHead>Duración</TableHead>
+                        <TableHead>Créditos</TableHead>
+                        <TableHead>Estado</TableHead>
                       </TableRow>
-                    )}
-                    {degrees.map((degree) => (
-                      <TableRow key={degree.id}>
-                        <TableCell className="font-mono">
-                          {degree.code}
-                        </TableCell>
-                        <TableCell className="font-medium">
-                          {degree.name}
-                        </TableCell>
-                        <TableCell>{degree.durationYears} años</TableCell>
-                        <TableCell>{degree.totalCredits} ECTS</TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={
-                              degree.status === "active"
-                                ? "default"
-                                : "secondary"
-                            }>
-                            {degree.status}
-                          </Badge>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredDegrees.items.length === 0 ? (
+                        <TableRow>
+                          <TableCell
+                            colSpan={5}
+                            className="text-center text-muted-foreground">
+                            No se encontraron titulaciones
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        filteredDegrees.items.map((degree) => (
+                          <TableRow key={degree.id}>
+                            <TableCell className="font-mono">
+                              {degree.code}
+                            </TableCell>
+                            <TableCell className="font-medium">
+                              {degree.name}
+                            </TableCell>
+                            <TableCell>{degree.durationYears} años</TableCell>
+                            <TableCell>{degree.totalCredits} ECTS</TableCell>
+                            <TableCell>
+                              <Badge
+                                variant={
+                                  degree.status === "active"
+                                    ? "default"
+                                    : "secondary"
+                                }>
+                                {degree.status}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                  <div className="flex justify-center gap-2 mt-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setDegreePage((p) => Math.max(1, p - 1))}
+                      disabled={degreePage === 1}>
+                      Anterior
+                    </Button>
+                    <div className="flex items-center text-sm text-muted-foreground">
+                      Pág {degreePage} de {filteredDegrees.totalPages || 1}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        setDegreePage((p) =>
+                          Math.min(filteredDegrees.totalPages || 1, p + 1)
+                        )
+                      }
+                      disabled={
+                        degreePage >= (filteredDegrees.totalPages || 1)
+                      }>
+                      Siguiente
+                    </Button>
+                  </div>
+                </>
               )}
             </CardContent>
           </Card>
@@ -408,6 +529,32 @@ export default function AcademicManagement() {
               <CardDescription>
                 Catálogo de asignaturas asociadas a titulaciones.
               </CardDescription>
+              <div className="flex justify-between items-center gap-4 mt-4">
+                <div className="relative w-64">
+                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar asignatura..."
+                    className="pl-8"
+                    value={subjectSearch}
+                    onChange={(e) => {
+                      setSubjectSearch(e.target.value);
+                      setSubjectPage(1);
+                    }}
+                  />
+                </div>
+                <Select
+                  value={subjectLimit.toString()}
+                  onValueChange={(v) => setSubjectLimit(Number(v))}>
+                  <SelectTrigger className="w-[100px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="5">5 filas</SelectItem>
+                    <SelectItem value="10">10 filas</SelectItem>
+                    <SelectItem value="20">20 filas</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </CardHeader>
             <CardContent>
               {loadingSubjects ? (
@@ -415,39 +562,71 @@ export default function AcademicManagement() {
                   <Loader2 className="animate-spin" />
                 </div>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Código</TableHead>
-                      <TableHead>Nombre</TableHead>
-                      <TableHead>Titulación</TableHead>
-                      <TableHead>Créditos</TableHead>
-                      <TableHead>Semestre (Plan)</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {subjects.length === 0 && (
+                <>
+                  <Table>
+                    <TableHeader>
                       <TableRow>
-                        <TableCell colSpan={5} className="text-center">
-                          No hay asignaturas
-                        </TableCell>
+                        <TableHead>Código</TableHead>
+                        <TableHead>Nombre</TableHead>
+                        <TableHead>Titulación</TableHead>
+                        <TableHead>Créditos</TableHead>
+                        <TableHead>Semestre (Plan)</TableHead>
                       </TableRow>
-                    )}
-                    {subjects.map((subject) => (
-                      <TableRow key={subject.id}>
-                        <TableCell className="font-mono">
-                          {subject.code}
-                        </TableCell>
-                        <TableCell className="font-medium">
-                          {subject.name}
-                        </TableCell>
-                        <TableCell>{getDegreeName(subject.degreeId)}</TableCell>
-                        <TableCell>{subject.credits} ECTS</TableCell>
-                        <TableCell>{subject.semester}º</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredSubjects.items.length === 0 ? (
+                        <TableRow>
+                          <TableCell
+                            colSpan={5}
+                            className="text-center text-muted-foreground">
+                            No se encontraron asignaturas
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        filteredSubjects.items.map((subject) => (
+                          <TableRow key={subject.id}>
+                            <TableCell className="font-mono">
+                              {subject.code}
+                            </TableCell>
+                            <TableCell className="font-medium">
+                              {subject.name}
+                            </TableCell>
+                            <TableCell>
+                              {getDegreeName(subject.degreeId)}
+                            </TableCell>
+                            <TableCell>{subject.credits} ECTS</TableCell>
+                            <TableCell>{subject.semester}º</TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                  <div className="flex justify-center gap-2 mt-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSubjectPage((p) => Math.max(1, p - 1))}
+                      disabled={subjectPage === 1}>
+                      Anterior
+                    </Button>
+                    <div className="flex items-center text-sm text-muted-foreground">
+                      Pág {subjectPage} de {filteredSubjects.totalPages || 1}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        setSubjectPage((p) =>
+                          Math.min(filteredSubjects.totalPages || 1, p + 1)
+                        )
+                      }
+                      disabled={
+                        subjectPage >= (filteredSubjects.totalPages || 1)
+                      }>
+                      Siguiente
+                    </Button>
+                  </div>
+                </>
               )}
             </CardContent>
           </Card>
@@ -460,6 +639,32 @@ export default function AcademicManagement() {
               <CardDescription>
                 Instancias de asignaturas impartidas en un año específico.
               </CardDescription>
+              <div className="flex justify-between items-center gap-4 mt-4">
+                <div className="relative w-64">
+                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar curso..."
+                    className="pl-8"
+                    value={courseSearch}
+                    onChange={(e) => {
+                      setCourseSearch(e.target.value);
+                      setCoursePage(1);
+                    }}
+                  />
+                </div>
+                <Select
+                  value={courseLimit.toString()}
+                  onValueChange={(v) => setCourseLimit(Number(v))}>
+                  <SelectTrigger className="w-[100px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="5">5 filas</SelectItem>
+                    <SelectItem value="10">10 filas</SelectItem>
+                    <SelectItem value="20">20 filas</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </CardHeader>
             <CardContent>
               {loadingCourses ? (
@@ -467,46 +672,78 @@ export default function AcademicManagement() {
                   <Loader2 className="animate-spin" />
                 </div>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Año Académico</TableHead>
-                      <TableHead>Asignatura</TableHead>
-                      <TableHead>Semestre</TableHead>
-                      <TableHead>Estado</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {courses.length === 0 && (
+                <>
+                  <Table>
+                    <TableHeader>
                       <TableRow>
-                        <TableCell colSpan={4} className="text-center">
-                          No hay cursos creados
-                        </TableCell>
+                        <TableHead>Año Académico</TableHead>
+                        <TableHead>Asignatura</TableHead>
+                        <TableHead>Semestre</TableHead>
+                        <TableHead>Estado</TableHead>
                       </TableRow>
-                    )}
-                    {courses.map((course) => (
-                      <TableRow key={course.id}>
-                        <TableCell>{course.academicYear}</TableCell>
-                        <TableCell className="font-medium">
-                          {getSubjectName(course.subjectId)}
-                        </TableCell>
-                        <TableCell>
-                          {course.semester === 1
-                            ? "1º Semestre"
-                            : "2º Semestre"}
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={
-                              course.status === "active" ? "default" : "outline"
-                            }>
-                            {course.status}
-                          </Badge>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredCourses.items.length === 0 ? (
+                        <TableRow>
+                          <TableCell
+                            colSpan={4}
+                            className="text-center text-muted-foreground">
+                            No se encontraron cursos
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        filteredCourses.items.map((course) => (
+                          <TableRow key={course.id}>
+                            <TableCell>{course.academicYear}</TableCell>
+                            <TableCell className="font-medium">
+                              {getSubjectName(course.subjectId)}
+                            </TableCell>
+                            <TableCell>
+                              {course.semester === 1
+                                ? "1º Semestre"
+                                : "2º Semestre"}
+                            </TableCell>
+                            <TableCell>
+                              <Badge
+                                variant={
+                                  course.status === "active"
+                                    ? "default"
+                                    : "outline"
+                                }>
+                                {course.status}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                  <div className="flex justify-center gap-2 mt-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCoursePage((p) => Math.max(1, p - 1))}
+                      disabled={coursePage === 1}>
+                      Anterior
+                    </Button>
+                    <div className="flex items-center text-sm text-muted-foreground">
+                      Pág {coursePage} de {filteredCourses.totalPages || 1}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        setCoursePage((p) =>
+                          Math.min(filteredCourses.totalPages || 1, p + 1)
+                        )
+                      }
+                      disabled={
+                        coursePage >= (filteredCourses.totalPages || 1)
+                      }>
+                      Siguiente
+                    </Button>
+                  </div>
+                </>
               )}
             </CardContent>
           </Card>
