@@ -18,6 +18,11 @@ import {
 import { studentService as userService } from "@/services/student.service";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
+import {
+  parseBackendError,
+  applyValidationErrors,
+  extractValidationErrors,
+} from "@/lib/error-handler";
 
 import { Button } from "@/components/ui/forms/button";
 import { Input } from "@/components/ui/forms/input";
@@ -111,10 +116,20 @@ export default function ProfilePage() {
         description: t("profile_page.notifications.success_desc"),
       });
     },
-    onError: () => {
+    onError: (error) => {
+      const errorMessage = parseBackendError(
+        error,
+        t("profile_page.notifications.error_desc")
+      );
+      const validationErrors = extractValidationErrors(error);
+
+      if (validationErrors) {
+        applyValidationErrors(validationErrors, form.setError);
+      }
+
       toast({
         title: t("profile_page.notifications.error_title"),
-        description: t("profile_page.notifications.error_desc"),
+        description: errorMessage,
         variant: "destructive",
       });
     },

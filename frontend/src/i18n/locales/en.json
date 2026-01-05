@@ -470,7 +470,18 @@
       "success_updated": "Exercise updated",
       "success_desc": "Changes have been saved successfully.",
       "error_title": "Error",
-      "error_desc": "Error creating exercise"
+      "error_desc": "Error creating exercise",
+      "validation": {
+        "input_required": "Input is required",
+        "expected_output_required": "Expected output is required",
+        "invalid_syllabus": "You must select a valid syllabus",
+        "title_min": "Title must be at least 5 characters",
+        "title_max": "Title cannot exceed 255 characters",
+        "description_min": "Description must be at least 20 characters",
+        "invalid_difficulty": "Select a valid difficulty",
+        "language_required": "You must select a programming language",
+        "at_least_one_test_case": "There must be at least one test case"
+      }
     },
     "groups": {
       "title": "Group Management",
@@ -483,6 +494,16 @@
       "filter_subject": "Filter by subject",
       "filter_status": "Filter by status",
       "all_subjects": "All subjects",
+      "validation": {
+        "name_min": "Name must be at least 2 characters",
+        "name_max": "Name cannot exceed 100 characters",
+        "invalid_course": "You must select a valid course",
+        "capacity_positive": "Capacity must be a positive number",
+        "capacity_max": "Maximum capacity is 500",
+        "invalid_year_format": "Invalid format. Use: YYYY/YYYY",
+        "invalid_group": "Invalid group ID",
+        "invalid_student": "Invalid student ID"
+      },
       "add_button": "Add",
       "add_student_title": "Add Student",
       "add_student_desc": "Enroll a student manually.",
@@ -896,7 +917,18 @@
       "delete_confirm": "Delete user?",
       "students_desc": "Filter by academic structure to find specific groups.",
       "professors_desc": "Complete list of registered professors.",
-      "admins_desc": "Users with full system privileges."
+      "admins_desc": "Users with full system privileges.",
+      "validation": {
+        "invalid_email": "Invalid email format",
+        "password_min": "Password must be at least 8 characters",
+        "first_name_required": "First name is required",
+        "last_name_required": "Last name is required",
+        "invalid_role": "Invalid role. Allowed roles: admin, teacher, student",
+        "invalid_phone": "Invalid phone number. Format: +34612345678",
+        "invalid_user_id": "Invalid user ID",
+        "invalid_group_id": "Invalid group ID",
+        "invalid_status": "Invalid status"
+      }
     },
     "dashboard": {
       "title": "Administration Panel",

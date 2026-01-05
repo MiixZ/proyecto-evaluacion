@@ -29,6 +29,11 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { getLoginSchema, LoginFormValues } from "@/schemas/auth.schema";
+import {
+  parseBackendError,
+  applyValidationErrors,
+  extractValidationErrors,
+} from "@/lib/error-handler";
 
 const Login = () => {
   const { t } = useTranslation();
@@ -67,8 +72,13 @@ const Login = () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error("Login error:", error);
-      const errorMessage =
-        error.response?.data?.error?.message || t("auth.login.error_desc");
+      const errorMessage = parseBackendError(error, t("auth.login.error_desc"));
+      const validationErrors = extractValidationErrors(error);
+
+      if (validationErrors) {
+        applyValidationErrors(validationErrors, form.setError);
+      }
+
       setServerError(errorMessage);
 
       toast({

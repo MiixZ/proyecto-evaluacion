@@ -33,6 +33,9 @@ export interface SubmissionTestResultEntity {
   memoryUsedMb: number;
   efficiencyAchieved: EfficiencyOrder;
   hintText?: string | null;
+  input?: string;
+  expectedOutput?: string;
+}
 }
 
 export interface SubmissionTestResultDTO {

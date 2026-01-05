@@ -58,6 +58,20 @@ export class SubmissionService {
       throw new ForbiddenError('No tienes permiso para ver esta entrega');
     }
 
+    // Si es estudiante, ocultar detalles de test cases privados
+    if (userRole === UserRole.STUDENT && submission.testResults) {
+      submission.testResults = submission.testResults.map((tr: any) => {
+        if (tr.isHidden) {
+          return {
+            ...tr,
+            input: undefined,
+            expectedOutput: undefined,
+          };
+        }
+        return tr;
+      });
+    }
+
     return submission;
   }
   // --------------------
@@ -242,6 +256,13 @@ export class SubmissionService {
       submissionTestResults
     );
 
+    // Cargar los test results con input/expectedOutput para la respuesta
+    const testResultsWithDetails =
+      await submissionModel.getTestResultsWithDetails(
+        submissionId,
+        UserRole.STUDENT
+      );
+
     await auditService.log(
       'CREATE_SUBMISSION',
       'submission',
@@ -255,7 +276,10 @@ export class SubmissionService {
       userId
     );
 
-    return submissionMapper.toDTO(updatedEntity);
+    const submissionDTO = submissionMapper.toDTO(updatedEntity);
+    submissionDTO.testResults = testResultsWithDetails;
+
+    return submissionDTO;
   }
 
   private mapEngineVerdict(engineVerdict: EngineVerdict): SubmissionVerdict {

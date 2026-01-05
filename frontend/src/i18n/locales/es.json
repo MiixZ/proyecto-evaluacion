@@ -680,7 +680,18 @@
       "success_updated": "Ejercicio actualizado",
       "success_desc": "Los cambios se han guardado correctamente.",
       "error_title": "Error",
-      "error_desc": "Error al crear el ejercicio"
+      "error_desc": "Error al crear el ejercicio",
+      "validation": {
+        "input_required": "La entrada es requerida",
+        "expected_output_required": "La salida esperada es requerida",
+        "invalid_syllabus": "Debes seleccionar un temario válido",
+        "title_min": "El título debe tener al menos 5 caracteres",
+        "title_max": "El título no puede exceder 255 caracteres",
+        "description_min": "La descripción debe tener al menos 20 caracteres",
+        "invalid_difficulty": "Selecciona una dificultad válida",
+        "language_required": "Debes seleccionar un lenguaje de programación",
+        "at_least_one_test_case": "Debe haber al menos un caso de prueba"
+      }
     },
     "groups": {
       "title": "Gestión de Grupos",
@@ -693,6 +704,16 @@
       "filter_subject": "Filtrar por asignatura",
       "filter_status": "Filtrar por estado",
       "all_subjects": "Todas las asignaturas",
+      "validation": {
+        "name_min": "El nombre debe tener al menos 2 caracteres",
+        "name_max": "El nombre no puede exceder 100 caracteres",
+        "invalid_course": "Debes seleccionar un curso válido",
+        "capacity_positive": "La capacidad debe ser un número positivo",
+        "capacity_max": "La capacidad máxima es 500",
+        "invalid_year_format": "Formato inválido. Use: YYYY/YYYY",
+        "invalid_group": "ID de grupo inválido",
+        "invalid_student": "ID de estudiante inválido"
+      },
       "add_button": "Añadir",
       "add_student_title": "Añadir Estudiante",
       "add_student_desc": "Matricula a un estudiante manualmente.",
@@ -922,7 +943,18 @@
       "delete_confirm": "¿Eliminar usuario?",
       "students_desc": "Filtrar por estructura académica para encontrar grupos específicos.",
       "professors_desc": "Listado completo de profesores registrados.",
-      "admins_desc": "Usuarios con privilegios totales sobre el sistema."
+      "admins_desc": "Usuarios con privilegios totales sobre el sistema.",
+      "validation": {
+        "invalid_email": "El formato del correo electrónico no es válido",
+        "password_min": "La contraseña debe tener al menos 8 caracteres",
+        "first_name_required": "El nombre es obligatorio",
+        "last_name_required": "Los apellidos son obligatorios",
+        "invalid_role": "Rol no válido. Roles permitidos: admin, teacher, student",
+        "invalid_phone": "Número de teléfono inválido. Formato: +34612345678",
+        "invalid_user_id": "ID de usuario inválido",
+        "invalid_group_id": "ID de grupo inválido",
+        "invalid_status": "Estado no válido"
+      }
     },
     "dashboard": {
       "title": "Panel de Administración",

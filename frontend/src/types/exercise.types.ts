@@ -75,6 +75,7 @@ export interface SubmissionHistoryItem {
   language: string;
   executionTimeMs?: number;
   code: string;
+  testResults?: TestResult[];
 }
 
 export interface HintResponse {

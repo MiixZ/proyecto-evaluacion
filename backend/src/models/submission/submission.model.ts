@@ -93,7 +93,7 @@ export class SubmissionModel {
         str.id as tr_id, str.status as tr_status, str.actual_output as tr_actual, 
         str.execution_time_ms as tr_time, str.memory_used_mb as tr_memory,
         se.error_message as tr_error_msg,
-        tc.input as tc_input, tc.expected_output as tc_expected
+        tc.input as tc_input, tc.expected_output as tc_expected, tc.is_hidden as tc_is_hidden
       FROM submissions s
       JOIN users u ON s.student_id = u.id
       JOIN exercises e ON s.exercise_id = e.id
@@ -142,8 +142,51 @@ export class SubmissionModel {
           executionTimeMs: r.tr_time,
           memoryUsedMb: r.tr_memory,
           errorMessage: r.tr_error_msg,
+          isHidden: r.tc_is_hidden,
         })),
     };
+  }
+
+  /**
+   * Obtiene los test results de una submission con detalles de los test cases
+   * Filtra input/expectedOutput según el rol del usuario (oculta si isHidden = true para estudiantes)
+   */
+  async getTestResultsWithDetails(
+    submissionId: string,
+    userRole: string
+  ): Promise<any[]> {
+    const query = `
+      SELECT 
+        str.id, str.status, str.actual_output, str.execution_time_ms, str.memory_used_mb,
+        tc.input, tc.expected_output, tc.is_hidden,
+        se.error_message
+      FROM submission_test_results str
+      LEFT JOIN test_cases tc ON str.test_case_id = tc.id
+      LEFT JOIN submission_errors se ON str.error_id = se.id
+      WHERE str.submission_id = ?
+      ORDER BY tc.order_index ASC
+    `;
+
+    const [rows] = await getPool().query<any[]>(query, [submissionId]);
+
+    return rows.map((row) => {
+      const isStudent = userRole === 'student';
+      const shouldHide = isStudent && row.is_hidden;
+
+      return {
+        id: row.id,
+        testCaseId: row.test_case_id,
+        status: row.status,
+        actualOutput: row.actual_output,
+        executionTimeMs: row.execution_time_ms,
+        memoryUsedMb: row.memory_used_mb,
+        // Solo incluir input/expectedOutput si NO está oculto o si es profesor/admin
+        input: shouldHide ? undefined : row.input,
+        expectedOutput: shouldHide ? undefined : row.expected_output,
+        hintText: null,
+        errorMessage: row.error_message,
+      };
+    });
   }
 
   async updateScore(id: string, score: number): Promise<void> {
@@ -271,9 +314,11 @@ export class SubmissionModel {
         str.id as tr_id, str.test_case_id as tr_test_case_id, str.status as tr_status, 
         str.actual_output as tr_actual_output, str.execution_time_ms as tr_execution_time_ms, 
         str.memory_used_mb as tr_memory_used_mb,
-        hu.hint_text as tr_hint_text
+        hu.hint_text as tr_hint_text,
+        tc.input as tc_input, tc.expected_output as tc_expected_output, tc.is_hidden as tc_is_hidden
       FROM submissions s
       LEFT JOIN submission_test_results str ON s.id = str.submission_id
+      LEFT JOIN test_cases tc ON str.test_case_id = tc.id
       LEFT JOIN hint_usage hu ON s.id = hu.submission_id AND str.test_case_id = hu.test_case_id
       WHERE s.student_id = ? AND s.exercise_id = ?
       ORDER BY s.attempt_number DESC, str.created_at ASC`,
@@ -311,6 +356,9 @@ export class SubmissionModel {
           executionTimeMs: row.tr_execution_time_ms,
           memoryUsedMb: row.tr_memory_used_mb,
           hintText: row.tr_hint_text,
+          // Solo incluir input/expectedOutput si NO está oculto
+          input: row.tc_is_hidden ? undefined : row.tc_input,
+          expectedOutput: row.tc_is_hidden ? undefined : row.tc_expected_output,
         });
       }
     });

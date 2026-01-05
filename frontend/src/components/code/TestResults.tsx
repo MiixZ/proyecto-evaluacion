@@ -102,13 +102,13 @@ export const TestResults = ({
         <div className="p-4 space-y-3">
           {testCases.map((test, index) => {
             const isOpen = openItems.includes(test.id);
-            const isHidden = !test.input && !test.expectedOutput;
+            const hasDetails = test.input || test.expectedOutput;
 
             return (
               <Collapsible
                 key={test.id}
                 open={isOpen}
-                onOpenChange={() => !isHidden && toggleItem(test.id)}
+                onOpenChange={() => hasDetails && toggleItem(test.id)}
                 className={cn(
                   "border rounded-lg transition-all duration-200",
                   getStatusColor(test.status)
@@ -126,7 +126,7 @@ export const TestResults = ({
                       {test.executionTimeMs}
                       {t("editor.ms")}
                     </span>
-                    {!isHidden && (
+                    {hasDetails && (
                       <CollapsibleTrigger asChild>
                         <button className="hover:bg-background/20 p-1 rounded">
                           {isOpen ? (

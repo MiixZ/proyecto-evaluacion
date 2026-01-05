@@ -62,6 +62,8 @@ class SubmissionMapper {
       memoryUsedMb: entity.memoryUsedMb,
       error: null,
       hintText: entity.hintText || null,
+      input: entity.input,
+      expectedOutput: entity.expectedOutput,
     };
   }
 }
