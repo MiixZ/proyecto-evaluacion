@@ -26,6 +26,7 @@ import SubmissionComparison from "./pages/student/SubmissionComparison";
 import UsersPage from "./pages/admin/Users";
 import AcademicManagement from "./pages/admin/AcademicManagement";
 import SecurityPage from "./pages/admin/Security";
+import ManageSyllabi from "./pages/professor/ManageSyllabi";
 
 const queryClient = new QueryClient();
 
@@ -84,6 +85,10 @@ const App = () => (
               <Route
                 path="/dashboard/manage-exercises"
                 element={<ExercisesList />}
+              />
+              <Route
+                path="/dashboard/manage-syllabi"
+                element={<ManageSyllabi />}
               />
               <Route
                 path="/dashboard/edit-exercise/:exerciseId"

@@ -392,7 +392,7 @@ export default function CreateExercise() {
                     <SelectContent>
                       {syllabi?.map((s) => (
                         <SelectItem key={s.id} value={s.id}>
-                          {s.title} ({s.type})
+                          {s.title} ({s.contentType})
                         </SelectItem>
                       ))}
                     </SelectContent>

@@ -258,6 +258,7 @@
       "submissions": "Mis Envíos",
       "professor_panel": "Panel Docente",
       "groups": "Gestión de Grupos",
+      "manage_syllabi": "Gestionar Temarios",
       "create_exercise": "Crear Ejercicio",
       "admin_panel": "Administración",
       "users": "Usuarios",
@@ -819,6 +820,25 @@
         "description": "Distribución de envíos por hora del día",
         "submissions": "Envíos"
       }
+    },
+    "syllabi": {
+      "title": "Gestión de Temarios",
+      "subtitle": "Controla la visibilidad de los temas y módulos de tus cursos",
+      "select_course": "Seleccionar Curso",
+      "select_course_placeholder": "Elige un curso para gestionar sus temarios",
+      "topics_list": "Temarios del Curso",
+      "topics_description": "Activa o desactiva la visibilidad de cada tema para los estudiantes",
+      "no_groups": "No tienes grupos asignados. Contacta con el administrador.",
+      "no_topics": "Este curso aún no tiene temarios creados.",
+      "visible": "Visible",
+      "hidden": "Oculto",
+      "visibility_public": "Temario ahora visible para estudiantes",
+      "visibility_hidden": "Temario ocultado para estudiantes",
+      "error_toggle": "Error al cambiar la visibilidad",
+      "type_module": "Módulo",
+      "type_topic": "Tema",
+      "type_lesson": "Lección",
+      "type_unknown": "Desconocido"
     }
   },
   "admin": {
@@ -1141,6 +1161,7 @@
     "actions": "Acciones",
     "save": "Guardar",
     "cancel": "Cancelar",
+    "back": "Volver",
     "delete": "Eliminar",
     "edit": "Editar",
     "create": "Crear",

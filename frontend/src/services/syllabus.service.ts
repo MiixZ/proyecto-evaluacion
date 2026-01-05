@@ -5,8 +5,8 @@ export interface SyllabusDTO {
   courseId: string;
   title: string;
   description: string | null;
-  type: "module" | "topic" | "lesson";
-  order: number;
+  contentType: "module" | "topic" | "lesson";
+  orderIndex: number;
   isPublic: boolean;
 }
 
@@ -20,6 +20,13 @@ export const syllabusService = {
   getByCourse: async (courseId: string): Promise<SyllabusDTO[]> => {
     const { data } = await api.get<ApiResponse<SyllabusDTO[]>>(
       `/v1/syllabi/course/${courseId}`
+    );
+    return data.data;
+  },
+
+  toggleVisibility: async (syllabusId: string): Promise<SyllabusDTO> => {
+    const { data } = await api.patch<ApiResponse<SyllabusDTO>>(
+      `/v1/syllabi/${syllabusId}/visibility`
     );
     return data.data;
   },

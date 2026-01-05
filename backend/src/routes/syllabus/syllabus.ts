@@ -27,6 +27,12 @@ router.patch(
   syllabusController.update
 );
 
+router.patch(
+  '/:id/visibility',
+  validateRequest(z.object({ params: z.object({ id: uuidSchema }) })),
+  syllabusController.toggleVisibility
+);
+
 router.get(
   '/course/:courseId',
   validateRequest(z.object({ params: z.object({ courseId: uuidSchema }) })),

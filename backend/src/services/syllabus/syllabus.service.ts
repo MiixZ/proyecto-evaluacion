@@ -25,6 +25,13 @@ export class SyllabusService {
     return await syllabusModel.update(id as UUID, input);
   }
 
+  async toggleVisibility(id: string) {
+    const syllabus = await syllabusModel.getById(id as UUID);
+    return await syllabusModel.update(id as UUID, {
+      isPublic: !syllabus.isPublic,
+    });
+  }
+
   async listSyllabi(
     page: number,
     limit: number,

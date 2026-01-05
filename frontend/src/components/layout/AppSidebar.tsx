@@ -26,6 +26,7 @@ import {
   Library,
   BarChart3,
   Lock,
+  ListTree,
 } from "lucide-react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
@@ -90,6 +91,11 @@ export function AppSidebar() {
         icon: Users,
       },
       {
+        title: t("sidebar.menu.manage_syllabi"),
+        url: "/dashboard/manage-syllabi",
+        icon: ListTree,
+      },
+      {
         title: t("sidebar.menu.create_exercise"),
         url: "/dashboard/create",
         icon: BookOpen,
@@ -112,16 +118,6 @@ export function AppSidebar() {
         title: t("sidebar.menu.degrees"),
         url: "/dashboard/degrees",
         icon: GraduationCap,
-      },
-      {
-        title: t("sidebar.menu.subjects_admin"),
-        url: "/dashboard/subjects",
-        icon: Library,
-      },
-      {
-        title: t("sidebar.menu.exercises_admin"),
-        url: "/dashboard/exercises-admin",
-        icon: FileCode,
       },
       {
         title: t("sidebar.menu.security"),

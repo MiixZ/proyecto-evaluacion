@@ -45,6 +45,27 @@ export class SyllabusController {
     );
   });
 
+  toggleVisibility = catchAsync(async (req: AuthRequest, res: Response) => {
+    if (
+      req.user?.role !== UserRole.TEACHER &&
+      req.user?.role !== UserRole.ADMIN
+    ) {
+      throw new AppError('FORBIDDEN', 403, 'No autorizado');
+    }
+
+    const { id } = req.params;
+    const result = await syllabusService.toggleVisibility(id);
+
+    return ApiResponse.success(
+      res,
+      syllabusMapper.toDTO(result),
+      200,
+      result.isPublic
+        ? 'Temario visible para estudiantes'
+        : 'Temario oculto para estudiantes'
+    );
+  });
+
   list = catchAsync(async (req: Request, res: Response) => {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 100;

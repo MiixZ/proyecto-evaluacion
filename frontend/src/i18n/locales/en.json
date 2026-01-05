@@ -258,6 +258,7 @@
       "submissions": "My Submissions",
       "professor_panel": "Professor Panel",
       "groups": "Group Management",
+      "manage_syllabi": "Manage Syllabi",
       "create_exercise": "Create Exercise",
       "admin_panel": "Administration",
       "users": "Users",
@@ -609,6 +610,25 @@
         "description": "Distribution of submissions by hour of day",
         "submissions": "Submissions"
       }
+    },
+    "syllabi": {
+      "title": "Syllabus Management",
+      "subtitle": "Control the visibility of topics and modules in your courses",
+      "select_course": "Select Course",
+      "select_course_placeholder": "Choose a course to manage its syllabus",
+      "topics_list": "Course Topics",
+      "topics_description": "Enable or disable visibility of each topic for students",
+      "no_groups": "You don't have assigned groups. Contact the administrator.",
+      "no_topics": "This course doesn't have topics yet.",
+      "visible": "Visible",
+      "hidden": "Hidden",
+      "visibility_public": "Topic now visible to students",
+      "visibility_hidden": "Topic hidden from students",
+      "error_toggle": "Error toggling visibility",
+      "type_module": "Module",
+      "type_topic": "Topic",
+      "type_lesson": "Lesson",
+      "type_unknown": "Unknown"
     }
   },
   "feedback": {
@@ -1115,6 +1135,7 @@
     "actions": "Actions",
     "save": "Save",
     "cancel": "Cancel",
+    "back": "Back",
     "delete": "Delete",
     "edit": "Edit",
     "create": "Create",
