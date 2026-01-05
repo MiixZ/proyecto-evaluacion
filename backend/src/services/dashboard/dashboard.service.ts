@@ -74,6 +74,18 @@ export class DashboardService {
       globalStats,
     };
   }
+
+  async getCurrentAcademicYear(): Promise<string> {
+    const latest = await dashboardModel.getLatestAcademicYear();
+    if (latest) return latest;
+
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const isSecondSemester = now.getMonth() < 8;
+    const startYear = isSecondSemester ? currentYear - 1 : currentYear;
+
+    return `${startYear}-${startYear + 1}`;
+  }
 }
 
 export const dashboardService = new DashboardService();

@@ -363,9 +363,7 @@ export class DashboardModel {
       FROM submissions s
       JOIN exercises e ON s.exercise_id = e.id
       JOIN users u ON s.student_id = u.id
-      -- Verificamos que el usuario pertenezca al grupo solicitado
       JOIN user_groups ug ON u.id = ug.user_id
-      -- Verificamos que la entrega sea del curso al que pertenece el grupo
       JOIN \`groups\` g ON ug.group_id = g.id AND s.course_id = g.course_id
       ${whereClause}
       ORDER BY ${sortCol} ${sortOrder}
@@ -522,8 +520,14 @@ export class DashboardModel {
     `;
 
     const [rows] = await getPool().execute<any[]>(query);
-
     return rows[0] as GlobalStatsRow;
+  }
+
+  async getLatestAcademicYear(): Promise<string | null> {
+    const query =
+      'SELECT academic_year FROM courses ORDER BY academic_year DESC LIMIT 1';
+    const [rows] = await getPool().execute<any[]>(query);
+    return rows.length > 0 ? rows[0].academic_year : null;
   }
 }
 

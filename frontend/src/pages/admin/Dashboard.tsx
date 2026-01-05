@@ -393,7 +393,7 @@ const AdminDashboard = () => {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="w-full mt-2 border-dashed border hover:border-solid"
+                            className="w-auto m-auto flex items-center mt-2 border-dashed border hover:border-solid"
                             onClick={() => openAddSubjectModal(degree.id)}>
                             <Plus className="h-4 w-4 mr-1" />
                             Añadir asignatura a {degree.name}

@@ -157,12 +157,12 @@ export class DashboardController {
       );
     }
 
-    const currentYear = new Date().getFullYear();
-    const nextYear = currentYear + 1;
-    const defaultAcademicYear = `${currentYear}-${nextYear}`;
+    let academicYear = req.query.academicYear as string;
 
-    const academicYear =
-      (req.query.academicYear as string) || defaultAcademicYear;
+    if (!academicYear) {
+      academicYear = await dashboardService.getCurrentAcademicYear();
+    }
+
     const search = req.query.search as string;
 
     const data = await dashboardService.getAdminDashboard(academicYear, search);
