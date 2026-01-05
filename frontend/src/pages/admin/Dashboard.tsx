@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { dashboardService } from "@/services/dashboard.service";
@@ -71,12 +72,20 @@ const AdminDashboard = () => {
 
   const [createDegreeOpen, setCreateDegreeOpen] = useState(false);
   const [createSubjectOpen, setCreateSubjectOpen] = useState(false);
+  const [createUserOpen, setCreateUserOpen] = useState(false);
   const [selectedDegreeId, setSelectedDegreeId] = useState<string | null>(null);
 
   const [newDegreeName, setNewDegreeName] = useState("");
   const [newDegreeCode, setNewDegreeCode] = useState("");
   const [newSubjectName, setNewSubjectName] = useState("");
+  const [newSubjectCode, setNewSubjectCode] = useState("");
   const [newSubjectSemester, setNewSubjectSemester] = useState("1");
+  const [newUser, setNewUser] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    role: "teacher" as const,
+  });
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -126,11 +135,37 @@ const AdminDashboard = () => {
       toast({ title: "Asignatura añadida correctamente" });
       setCreateSubjectOpen(false);
       setNewSubjectName("");
+      setNewSubjectCode("");
       queryClient.invalidateQueries({ queryKey: ["adminDashboard"] });
     },
     onError: () => {
       toast({
         title: "Error al añadir asignatura",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const createUserMutation = useMutation({
+    mutationFn: async (userData: typeof newUser) => {
+      const userService = await import("@/services/user.service");
+      return userService.userService.create(userData);
+    },
+    onSuccess: () => {
+      toast({ title: "Profesor creado correctamente" });
+      setCreateUserOpen(false);
+      setNewUser({
+        firstName: "",
+        lastName: "",
+        email: "",
+        role: "teacher",
+      });
+      queryClient.invalidateQueries({ queryKey: ["adminDashboard"] });
+    },
+    onError: (err: any) => {
+      toast({
+        title: "Error al crear profesor",
+        description: err.response?.data?.message,
         variant: "destructive",
       });
     },
@@ -149,10 +184,16 @@ const AdminDashboard = () => {
     if (!newSubjectName || !selectedDegreeId) return;
     createSubjectMutation.mutate({
       name: newSubjectName,
+      code: newSubjectCode,
       degreeId: selectedDegreeId,
       semester: parseInt(newSubjectSemester),
-      type: "compulsory", // Default
+      type: "compulsory",
     });
+  };
+
+  const handleCreateUser = () => {
+    if (!newUser.firstName || !newUser.lastName || !newUser.email) return;
+    createUserMutation.mutate(newUser);
   };
 
   const openAddSubjectModal = (degreeId: string) => {
@@ -279,6 +320,15 @@ const AdminDashboard = () => {
                     placeholder="Ej: Estructuras de Datos"
                     value={newSubjectName}
                     onChange={(e) => setNewSubjectName(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="subject-code">Código / Alias</Label>
+                  <Input
+                    id="subject-code"
+                    placeholder="Ej: ED o 12345"
+                    value={newSubjectCode}
+                    onChange={(e) => setNewSubjectCode(e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
@@ -459,7 +509,7 @@ const AdminDashboard = () => {
                 </Link>
               </div>
             </CardHeader>
-            <CardContent className="space-y-3 max-h-[400px] overflow-y-auto pr-1">
+            <CardContent className="space-y-3 max-h-[400px] overflow-y-auto pr-2 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-muted-foreground/20 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/30">
               {teachers.map((prof) => (
                 <div
                   key={prof.user_id}
@@ -480,18 +530,96 @@ const AdminDashboard = () => {
                     </div>
                   </div>
                   <Link to={`/dashboard/users/${prof.user_id}`}>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 shrink-0">
                       <ChevronRight className="h-4 w-4" />
                     </Button>
                   </Link>
                 </div>
               ))}
-              <Link to="/dashboard/users/create">
-                <Button className="w-full mt-2" variant="outline">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Añadir profesor
-                </Button>
-              </Link>
+              <Dialog open={createUserOpen} onOpenChange={setCreateUserOpen}>
+                <DialogTrigger asChild>
+                  <Button className="w-auto flex m-auto mt-2" variant="outline">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Añadir profesor
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Crear Nuevo Profesor</DialogTitle>
+                    <DialogDescription>
+                      Añade un nuevo profesor al sistema.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="firstName">Nombre</Label>
+                        <Input
+                          id="firstName"
+                          placeholder="Nombre"
+                          value={newUser.firstName}
+                          onChange={(e) =>
+                            setNewUser({
+                              ...newUser,
+                              firstName: e.target.value,
+                            })
+                          }
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="lastName">Apellidos</Label>
+                        <Input
+                          id="lastName"
+                          placeholder="Apellidos"
+                          value={newUser.lastName}
+                          onChange={(e) =>
+                            setNewUser({ ...newUser, lastName: e.target.value })
+                          }
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        placeholder="profesor@universidad.edu"
+                        value={newUser.email}
+                        onChange={(e) =>
+                          setNewUser({ ...newUser, email: e.target.value })
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="role">Rol</Label>
+                      <Input
+                        id="role"
+                        value="Profesor"
+                        disabled
+                        className="bg-muted"
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button
+                      variant="outline"
+                      onClick={() => setCreateUserOpen(false)}>
+                      Cancelar
+                    </Button>
+                    <Button
+                      onClick={handleCreateUser}
+                      disabled={createUserMutation.isPending}>
+                      {createUserMutation.isPending && (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      )}
+                      Crear profesor
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </CardContent>
           </Card>
 

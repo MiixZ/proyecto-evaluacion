@@ -39,6 +39,8 @@ router.patch(
   userController.updateMe
 );
 
+router.post('/:id/groups', authMiddleware, userController.assignGroup);
+
 router.patch(
   '/:id/role',
   authMiddleware,

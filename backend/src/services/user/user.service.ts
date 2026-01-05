@@ -75,6 +75,35 @@ export class UserService {
     return await userModel.list(page, limit, filters);
   }
 
+  async assignGroup(
+    userId: string,
+    groupId: string,
+    role: string
+  ): Promise<void> {
+    const user = await userModel.getById(userId as UUID);
+    if (!user) throw new NotFoundError('Usuario no encontrado');
+
+    await userModel.assignToGroup(userId as UUID, groupId as UUID, role);
+
+    await auditService.log(
+      'ASSIGN_GROUP',
+      'user',
+      userId as UUID,
+      { groupId, role },
+      userId as UUID
+    );
+  }
+
+  async getUserEnrollments(userId: string) {
+    const enrollments = await userModel.getEnrollments(userId as UUID);
+    return enrollments.map((e) => ({
+      subjectName: e.subject_name,
+      groupName: e.group_name,
+      academicYear: e.academic_year,
+      role: e.role,
+    }));
+  }
+
   async getProfile(userId: string): Promise<UserDTO> {
     const user = await userModel.getById(userId as UUID);
 

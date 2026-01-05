@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { userService } from "@/services/user.service";
 import { dashboardService } from "@/services/dashboard.service";
 import { degreeService } from "@/services/degree.service";
 import { subjectService } from "@/services/subject.service";
 import { groupService } from "@/services/group.service";
-import { User, UserRole, UserStatus } from "@/types/user.type";
+import { UserRole, UserStatus } from "@/types/user.type";
 import {
   Table,
   TableBody,
@@ -69,13 +69,8 @@ import {
   Trash2,
   Shield,
   UserCog,
-  CheckCircle2,
-  XCircle,
-  AlertTriangle,
   Users,
-  ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
+  GraduationCap,
 } from "lucide-react";
 import {
   Tabs,
@@ -92,7 +87,174 @@ import {
   PaginationPrevious,
 } from "@/components/ui/data/pagination";
 
-// --- COMPONENTE AUXILIAR PARA LA TABLA DE USUARIOS ---
+// --- COMPONENTE DE ASIGNACIÓN DE GRUPO ---
+const AssignGroupDialog = ({
+  userId,
+  isOpen,
+  onClose,
+  userName,
+}: {
+  userId: string;
+  isOpen: boolean;
+  onClose: () => void;
+  userName: string;
+}) => {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [selectedYear, setSelectedYear] = useState<string>("");
+  const [selectedDegree, setSelectedDegree] = useState<string>("");
+  const [selectedSubject, setSelectedSubject] = useState<string>("");
+  const [selectedGroup, setSelectedGroup] = useState<string>("");
+
+  const { data: years = [] } = useQuery({
+    queryKey: ["academicYears"],
+    queryFn: dashboardService.getAcademicYears,
+    enabled: isOpen,
+  });
+
+  const { data: degrees = [] } = useQuery({
+    queryKey: ["degrees"],
+    queryFn: async () => (await degreeService.list()).items || [],
+    enabled: isOpen,
+  });
+
+  const { data: subjects = [] } = useQuery({
+    queryKey: ["subjects", selectedDegree],
+    queryFn: async () => {
+      if (!selectedDegree) return [];
+      const res = await subjectService.list(1, 100, {
+        degreeId: selectedDegree,
+      });
+      return res.items;
+    },
+    enabled: !!selectedDegree && isOpen,
+  });
+
+  const { data: groups = [] } = useQuery({
+    queryKey: ["groups", selectedSubject, selectedYear],
+    queryFn: () =>
+      groupService.getBySubjectAndYear(selectedSubject, selectedYear),
+    enabled: !!selectedSubject && !!selectedYear && isOpen,
+  });
+
+  const assignMutation = useMutation({
+    mutationFn: () => userService.assignGroup(userId, selectedGroup, "teacher"),
+    onSuccess: () => {
+      toast({ title: "Profesor asignado correctamente" });
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      onClose();
+      setSelectedYear("");
+      setSelectedDegree("");
+      setSelectedSubject("");
+      setSelectedGroup("");
+    },
+    onError: () => toast({ title: "Error al asignar", variant: "destructive" }),
+  });
+
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Asignar Grupo</DialogTitle>
+          <DialogDescription>
+            Asignando grupos académicos a <b>{userName}</b>.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label>Curso Académico</Label>
+            <Select value={selectedYear} onValueChange={setSelectedYear}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecciona año" />
+              </SelectTrigger>
+              <SelectContent>
+                {years.map((y) => (
+                  <SelectItem key={y} value={y}>
+                    {y}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Titulación</Label>
+            <Select
+              value={selectedDegree}
+              onValueChange={(v) => {
+                setSelectedDegree(v);
+                setSelectedSubject("");
+                setSelectedGroup("");
+              }}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecciona titulación" />
+              </SelectTrigger>
+              <SelectContent>
+                {degrees.map((d: any) => (
+                  <SelectItem key={d.id} value={d.id}>
+                    {d.alias || d.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Asignatura</Label>
+            <Select
+              value={selectedSubject}
+              onValueChange={(v) => {
+                setSelectedSubject(v);
+                setSelectedGroup("");
+              }}
+              disabled={!selectedDegree}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecciona asignatura" />
+              </SelectTrigger>
+              <SelectContent>
+                {subjects.map((s: any) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Grupo</Label>
+            <Select
+              value={selectedGroup}
+              onValueChange={setSelectedGroup}
+              disabled={!selectedSubject || !selectedYear}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecciona grupo" />
+              </SelectTrigger>
+              <SelectContent>
+                {groups.map((g: any) => (
+                  <SelectItem key={g.id} value={g.id}>
+                    {g.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button
+            onClick={() => assignMutation.mutate()}
+            disabled={!selectedGroup || assignMutation.isPending}>
+            {assignMutation.isPending && (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            )}
+            Asignar
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 const UserTable = ({
   role,
   groupId,
@@ -108,6 +270,10 @@ const UserTable = ({
   const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [assignDialogUser, setAssignDialogUser] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -136,6 +302,15 @@ const UserTable = ({
     },
   });
 
+  const changeRoleMutation = useMutation({
+    mutationFn: ({ id, role }: { id: string; role: UserRole }) =>
+      userService.changeRole(id, role),
+    onSuccess: () => {
+      toast({ title: "Rol actualizado" });
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+    },
+  });
+
   const deleteMutation = useMutation({
     mutationFn: userService.delete,
     onSuccess: () => {
@@ -154,150 +329,241 @@ const UserTable = ({
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <div className="relative w-64">
-          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder={`Buscar ${
-              role === "student" ? "estudiante" : "usuario"
-            }...`}
-            className="pl-8"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
-        <Select
-          value={limit.toString()}
-          onValueChange={(v) => setLimit(Number(v))}>
-          <SelectTrigger className="w-[100px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="5">5 filas</SelectItem>
-            <SelectItem value="10">10 filas</SelectItem>
-            <SelectItem value="20">20 filas</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+    <>
+      {assignDialogUser && (
+        <AssignGroupDialog
+          userId={assignDialogUser.id}
+          userName={assignDialogUser.name}
+          isOpen={!!assignDialogUser}
+          onClose={() => setAssignDialogUser(null)}
+        />
+      )}
 
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Usuario</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Estado</TableHead>
-              <TableHead className="w-[50px]"></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
+      <div className="space-y-4">
+        <div className="flex justify-between items-center">
+          <div className="relative w-64">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder={`Buscar ${
+                role === "student" ? "estudiante" : "usuario"
+              }...`}
+              className="pl-8"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          <Select
+            value={limit.toString()}
+            onValueChange={(v) => setLimit(Number(v))}>
+            <SelectTrigger className="w-[100px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="5">5 filas</SelectItem>
+              <SelectItem value="10">10 filas</SelectItem>
+              <SelectItem value="20">20 filas</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={4} className="h-24 text-center">
-                  <Loader2 className="h-6 w-6 animate-spin mx-auto text-primary" />
-                </TableCell>
+                <TableHead>Usuario</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Rol</TableHead>
+                <TableHead>Grupos Asignados</TableHead>
+                <TableHead>Estado</TableHead>
+                <TableHead className="w-[50px]"></TableHead>
               </TableRow>
-            ) : data?.items.length === 0 ? (
-              <TableRow>
-                <TableCell
-                  colSpan={4}
-                  className="h-24 text-center text-muted-foreground">
-                  No se encontraron resultados.
-                </TableCell>
-              </TableRow>
-            ) : (
-              data?.items.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell className="flex items-center gap-3">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={user.profileImageUrl} />
-                      <AvatarFallback>{user.firstName[0]}</AvatarFallback>
-                    </Avatar>
-                    <span className="font-medium">
-                      {user.firstName} {user.lastName}
-                    </span>
-                  </TableCell>
-                  <TableCell>{user.email}</TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={
-                        user.status === "active" ? "default" : "secondary"
-                      }>
-                      {user.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuSub>
-                          <DropdownMenuSubTrigger>
-                            <Shield className="mr-2 h-4 w-4" /> Estado
-                          </DropdownMenuSubTrigger>
-                          <DropdownMenuSubContent>
-                            <DropdownMenuRadioGroup
-                              value={user.status}
-                              onValueChange={(v) =>
-                                changeStatusMutation.mutate({
-                                  id: user.id,
-                                  status: v as UserStatus,
-                                })
-                              }>
-                              <DropdownMenuRadioItem value="active">
-                                Activo
-                              </DropdownMenuRadioItem>
-                              <DropdownMenuRadioItem value="inactive">
-                                Inactivo
-                              </DropdownMenuRadioItem>
-                            </DropdownMenuRadioGroup>
-                          </DropdownMenuSubContent>
-                        </DropdownMenuSub>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          className="text-destructive"
-                          onClick={() => {
-                            if (confirm("¿Eliminar usuario?"))
-                              deleteMutation.mutate(user.id);
-                          }}>
-                          <Trash2 className="mr-2 h-4 w-4" /> Eliminar
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="h-24 text-center">
+                    <Loader2 className="h-6 w-6 animate-spin mx-auto text-primary" />
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+              ) : data?.items.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={6}
+                    className="h-24 text-center text-muted-foreground">
+                    No se encontraron resultados.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                data?.items.map((user) => (
+                  <TableRow key={user.id}>
+                    <TableCell className="flex items-center gap-3">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={user.profileImageUrl} />
+                        <AvatarFallback>{user.firstName[0]}</AvatarFallback>
+                      </Avatar>
+                      <span className="font-medium">
+                        {user.firstName} {user.lastName}
+                      </span>
+                    </TableCell>
+                    <TableCell>{user.email}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{user.role}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      {user.enrollments && user.enrollments.length > 0 ? (
+                        <Select>
+                          <SelectTrigger className="w-[200px] h-8 text-xs">
+                            <SelectValue
+                              placeholder={`${user.enrollments.length} grupo${
+                                user.enrollments.length > 1 ? "s" : ""
+                              }`}
+                            />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {user.enrollments.map((e, idx) => (
+                              <SelectItem
+                                key={`${e.subjectName}-${e.groupName}-${idx}`}
+                                value={`val-${idx}`}
+                                disabled
+                                className="text-xs opacity-100 text-foreground cursor-default">
+                                <span className="font-semibold">
+                                  {e.subjectName}
+                                </span>
+                                <span className="mx-1">•</span>
+                                {e.groupName} ({e.academicYear})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <span className="text-muted-foreground text-xs italic">
+                          Sin asignaciones
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={
+                          user.status === "active" ? "default" : "secondary"
+                        }>
+                        {user.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                          <DropdownMenuSeparator />
 
-      <div className="flex justify-center gap-2 mt-4">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setPage((p) => Math.max(1, p - 1))}
-          disabled={page === 1}>
-          Anterior
-        </Button>
-        <div className="flex items-center text-sm text-muted-foreground">
-          Pág {page} de {data?.totalPages || 1}
+                          <DropdownMenuSub>
+                            <DropdownMenuSubTrigger>
+                              <Shield className="mr-2 h-4 w-4" /> Estado
+                            </DropdownMenuSubTrigger>
+                            <DropdownMenuSubContent>
+                              <DropdownMenuRadioGroup
+                                value={user.status}
+                                onValueChange={(v) =>
+                                  changeStatusMutation.mutate({
+                                    id: user.id,
+                                    status: v as UserStatus,
+                                  })
+                                }>
+                                <DropdownMenuRadioItem value="active">
+                                  Activo
+                                </DropdownMenuRadioItem>
+                                <DropdownMenuRadioItem value="inactive">
+                                  Inactivo
+                                </DropdownMenuRadioItem>
+                              </DropdownMenuRadioGroup>
+                            </DropdownMenuSubContent>
+                          </DropdownMenuSub>
+
+                          <DropdownMenuSub>
+                            <DropdownMenuSubTrigger>
+                              <UserCog className="mr-2 h-4 w-4" /> Rol
+                            </DropdownMenuSubTrigger>
+                            <DropdownMenuSubContent>
+                              <DropdownMenuRadioGroup
+                                value={user.role}
+                                onValueChange={(v) =>
+                                  changeRoleMutation.mutate({
+                                    id: user.id,
+                                    role: v as UserRole,
+                                  })
+                                }>
+                                <DropdownMenuRadioItem value="student">
+                                  Estudiante
+                                </DropdownMenuRadioItem>
+                                <DropdownMenuRadioItem value="teacher">
+                                  Profesor
+                                </DropdownMenuRadioItem>
+                                <DropdownMenuRadioItem value="admin">
+                                  Admin
+                                </DropdownMenuRadioItem>
+                              </DropdownMenuRadioGroup>
+                            </DropdownMenuSubContent>
+                          </DropdownMenuSub>
+
+                          {user.role === "teacher" && (
+                            <DropdownMenuItem
+                              onClick={() =>
+                                setAssignDialogUser({
+                                  id: user.id,
+                                  name: `${user.firstName} ${user.lastName}`,
+                                })
+                              }>
+                              <GraduationCap className="mr-2 h-4 w-4" /> Asignar
+                              a Grupo
+                            </DropdownMenuItem>
+                          )}
+
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            className="text-destructive"
+                            onClick={() => {
+                              if (confirm("¿Eliminar usuario?"))
+                                deleteMutation.mutate(user.id);
+                            }}>
+                            <Trash2 className="mr-2 h-4 w-4" /> Eliminar
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setPage((p) => Math.min(data?.totalPages || 1, p + 1))}
-          disabled={page >= (data?.totalPages || 1)}>
-          Siguiente
-        </Button>
+
+        <div className="flex justify-center gap-2 mt-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page === 1}>
+            Anterior
+          </Button>
+          <div className="flex items-center text-sm text-muted-foreground">
+            Pág {page} de {data?.totalPages || 1}
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() =>
+              setPage((p) => Math.min(data?.totalPages || 1, p + 1))
+            }
+            disabled={page >= (data?.totalPages || 1)}>
+            Siguiente
+          </Button>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

@@ -2,6 +2,7 @@ import api from "@/lib/api";
 
 export interface CreateSubjectPayload {
   name: string;
+  code?: string;
   degreeId: string;
   semester?: number;
   credits?: number;

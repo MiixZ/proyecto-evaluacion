@@ -277,6 +277,20 @@ export class UserModel {
     };
   }
 
+  async assignToGroup(
+    userId: UUID,
+    groupId: UUID,
+    role: string
+  ): Promise<void> {
+    const query = `
+      INSERT INTO user_groups (user_id, group_id, role, enrolled_at)
+      VALUES (?, ?, ?, NOW())
+      ON DUPLICATE KEY UPDATE role = VALUES(role)
+    `;
+
+    await this.getPool().execute(query, [userId, groupId, role]);
+  }
+
   async getTeachers(): Promise<UserEntity[]> {
     const query = `SELECT * FROM users WHERE role = ? AND status = ? AND deleted_at IS NULL ORDER BY first_name, last_name`;
     const [rows] = await this.getPool().execute<UserRow[]>(query, [

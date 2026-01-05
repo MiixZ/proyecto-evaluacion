@@ -38,6 +38,14 @@ export const userService = {
     return data.data;
   },
 
+  assignGroup: async (
+    userId: string,
+    groupId: string,
+    role: string = "teacher"
+  ): Promise<void> => {
+    await api.post(`/v1/users/${userId}/groups`, { groupId, role });
+  },
+
   create: async (payload: CreateUserPayload): Promise<User> => {
     const { data } = await api.post<ApiResponse<User>>("/v1/users", payload);
 

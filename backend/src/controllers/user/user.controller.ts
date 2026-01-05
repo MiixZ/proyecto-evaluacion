@@ -32,6 +32,22 @@ export class UserController {
     return ApiResponse.success(res, user);
   });
 
+  assignGroup = catchAsync(async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    const { groupId, role } = req.body;
+
+    this.validateAdmin(req);
+
+    await userService.assignGroup(id, groupId, role || 'teacher');
+
+    return ApiResponse.success(
+      res,
+      null,
+      200,
+      'Usuario asignado al grupo correctamente'
+    );
+  });
+
   listUsers = catchAsync(async (req: Request, res: Response) => {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
@@ -48,6 +64,19 @@ export class UserController {
     });
 
     const dtos = userMapper.toDTOList(result.items);
+
+    await Promise.all(
+      dtos.map(async (userDto) => {
+        if (
+          userDto.role === UserRole.TEACHER ||
+          userDto.role === UserRole.STUDENT
+        ) {
+          userDto.enrollments = await userService.getUserEnrollments(
+            userDto.id
+          );
+        }
+      })
+    );
 
     return ApiResponse.success(res, {
       ...result,

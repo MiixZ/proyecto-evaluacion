@@ -3,14 +3,20 @@ export type UserStatus = "active" | "inactive" | "suspended";
 
 export interface User {
   id: string;
-  email: string;
   firstName: string;
   lastName: string;
+  email: string;
   role: UserRole;
   status: UserStatus;
-  lastLogin?: string;
-  createdAt: string;
   profileImageUrl?: string;
+  enrollments?: Enrollment[];
+}
+
+export interface Enrollment {
+  subjectName: string;
+  groupName: string;
+  academicYear: string;
+  role: string;
 }
 
 export interface CreateUserPayload {
