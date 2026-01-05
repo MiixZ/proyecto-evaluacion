@@ -23,6 +23,7 @@ import ExercisesList from "./pages/professor/ExerciseList";
 import SubmissionDetails from "./pages/professor/SubmissionDetail";
 import PlagiarismComparison from "./pages/professor/PlagiarismComparison";
 import SubmissionComparison from "./pages/student/SubmissionComparison";
+import UsersPage from "./pages/admin/Users";
 
 const queryClient = new QueryClient();
 
@@ -91,6 +92,9 @@ const App = () => (
                 path="/plagiarism/compare/:id"
                 element={<PlagiarismComparison />}
               />
+
+              {/* Admin */}
+              <Route path="/dashboard/users" element={<UsersPage />} />
 
               {/* Alias/Redirecciones */}
               <Route

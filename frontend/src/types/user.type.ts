@@ -1,3 +1,26 @@
+export type UserRole = "admin" | "teacher" | "student";
+export type UserStatus = "active" | "inactive" | "suspended";
+
+export interface User {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: UserRole;
+  status: UserStatus;
+  lastLogin?: string;
+  createdAt: string;
+  profileImageUrl?: string;
+}
+
+export interface CreateUserPayload {
+  email: string;
+  firstName: string;
+  lastName: string;
+  role: UserRole;
+  password?: string;
+}
+
 export interface UpdateProfilePayload {
   firstName?: string;
   lastName?: string;
@@ -6,12 +29,7 @@ export interface UpdateProfilePayload {
   preferredLanguage?: string;
 }
 
-export interface UserProfile {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  role: string;
+export interface UserProfile extends User {
   phone?: string;
   bio?: string;
   profileImageUrl?: string;

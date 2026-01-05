@@ -2,7 +2,7 @@ import api from "@/lib/api";
 
 export interface CreateDegreePayload {
   name: string;
-  alias?: string;
+  code?: string;
   status?: "active" | "inactive";
 }
 

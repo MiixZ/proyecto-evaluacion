@@ -74,7 +74,7 @@ const AdminDashboard = () => {
   const [selectedDegreeId, setSelectedDegreeId] = useState<string | null>(null);
 
   const [newDegreeName, setNewDegreeName] = useState("");
-  const [newDegreeAlias, setNewDegreeAlias] = useState("");
+  const [newDegreeCode, setNewDegreeCode] = useState("");
   const [newSubjectName, setNewSubjectName] = useState("");
   const [newSubjectSemester, setNewSubjectSemester] = useState("1");
 
@@ -109,7 +109,7 @@ const AdminDashboard = () => {
       toast({ title: "Titulación creada correctamente" });
       setCreateDegreeOpen(false);
       setNewDegreeName("");
-      setNewDegreeAlias("");
+      setNewDegreeCode("");
       queryClient.invalidateQueries({ queryKey: ["adminDashboard"] });
     },
     onError: () => {
@@ -140,7 +140,7 @@ const AdminDashboard = () => {
     if (!newDegreeName) return;
     createDegreeMutation.mutate({
       name: newDegreeName,
-      alias: newDegreeAlias,
+      code: newDegreeCode,
       status: "active",
     });
   };
@@ -231,12 +231,12 @@ const AdminDashboard = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="degree-code">Código / Alias</Label>
+                  <Label htmlFor="code">Código / Alias</Label>
                   <Input
-                    id="degree-code"
+                    id="code"
                     placeholder="Ej: GII"
-                    value={newDegreeAlias}
-                    onChange={(e) => setNewDegreeAlias(e.target.value)}
+                    value={newDegreeCode}
+                    onChange={(e) => setNewDegreeCode(e.target.value)}
                   />
                 </div>
               </div>
