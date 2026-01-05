@@ -483,6 +483,7 @@
       "per_page": "por pág.",
       "table": {
         "student": "Estudiante",
+        "compared_with": "Comparado con",
         "exercise": "Ejercicio",
         "type": "Tipo",
         "similarity": "Similitud",

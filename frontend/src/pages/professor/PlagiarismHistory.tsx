@@ -248,6 +248,9 @@ export default function PlagiarismHistory() {
                     <SortIcon column="studentName" />
                   </div>
                 </TableHead>
+                <TableHead>
+                  {t("plagiarism.history.table.compared_with")}
+                </TableHead>
                 <TableHead
                   className="cursor-pointer hover:bg-muted/50"
                   onClick={() => handleSort("exerciseTitle")}>
@@ -305,6 +308,15 @@ export default function PlagiarismHistory() {
                       {alert.studentName}
                     </div>
                   </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {alert.comparedStudentName || (
+                      <span className="italic">
+                        {alert.type === "ai_generated"
+                          ? t("plagiarism.history.type_ai")
+                          : t("plagiarism.history.type_external")}
+                      </span>
+                    )}
+                  </TableCell>
                   <TableCell>{alert.exerciseTitle}</TableCell>
                   <TableCell className="capitalize">
                     {alert.type === "ai_generated"
@@ -336,7 +348,7 @@ export default function PlagiarismHistory() {
               {data?.items.length === 0 && (
                 <TableRow>
                   <TableCell
-                    colSpan={6}
+                    colSpan={7}
                     className="h-24 text-center text-muted-foreground">
                     {t("plagiarism.history.no_cases")}
                   </TableCell>

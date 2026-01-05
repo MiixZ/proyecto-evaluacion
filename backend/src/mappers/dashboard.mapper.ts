@@ -138,6 +138,7 @@ export const dashboardMapper = {
     return {
       id: row.check_id as UUID,
       studentName: row.student_name,
+      comparedStudentName: row.compared_student_name,
       exerciseTitle: row.exercise_title,
       similarity: Number(row.similarity_percent),
       type: row.plagiarism_type,

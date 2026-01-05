@@ -706,6 +706,7 @@
       "per_page": "per page",
       "table": {
         "student": "Student",
+        "compared_with": "Compared with",
         "exercise": "Exercise",
         "type": "Type",
         "similarity": "Similarity",

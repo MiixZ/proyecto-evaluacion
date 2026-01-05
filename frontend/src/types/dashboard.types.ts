@@ -54,6 +54,7 @@ export interface RecentActivityDTO {
 export interface PlagiarismAlertDTO {
   id: string;
   studentName: string;
+  comparedStudentName?: string | null;
   exerciseTitle: string;
   similarity: number;
   type: string;

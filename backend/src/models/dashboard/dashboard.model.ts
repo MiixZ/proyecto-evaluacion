@@ -302,6 +302,8 @@ export class DashboardModel {
       JOIN users u ON s.student_id = u.id
       JOIN exercises e ON s.exercise_id = e.id
       JOIN user_groups ug ON u.id = ug.user_id
+      LEFT JOIN submissions s2 ON pc.compared_with_submission_id = s2.id
+      LEFT JOIN users u2 ON s2.student_id = u2.id
       WHERE ${whereClause}
     `;
 
@@ -309,6 +311,7 @@ export class DashboardModel {
       SELECT 
         pc.id as check_id,
         CONCAT(u.first_name, ' ', u.last_name) as student_name,
+        CONCAT(u2.first_name, ' ', u2.last_name) as compared_student_name,
         e.title as exercise_title,
         pc.similarity_percent,
         pc.plagiarism_type,

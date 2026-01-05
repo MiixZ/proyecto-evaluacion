@@ -88,6 +88,7 @@ export interface RecentActivityRow extends RowDataPacket {
 export interface PlagiarismAlertRow extends RowDataPacket {
   check_id: string;
   student_name: string;
+  compared_student_name: string | null;
   exercise_title: string;
   similarity_percent: number;
   plagiarism_type: string;

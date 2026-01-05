@@ -88,6 +88,7 @@ export interface RecentActivityDTO {
 export interface PlagiarismAlertDTO {
   id: UUID;
   studentName: string;
+  comparedStudentName: string | null;
   exerciseTitle: string;
   similarity: number;
   type: string;
