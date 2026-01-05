@@ -70,6 +70,7 @@ export const listUsersRequest = z.object({
     role: z.nativeEnum(UserRole).optional(),
     status: z.nativeEnum(UserStatus).optional(),
     search: z.string().optional(),
+    groupId: z.string().uuid().optional(),
   }),
 });
 

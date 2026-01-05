@@ -70,10 +70,8 @@ export class UserService {
   async listUsers(
     page: number,
     limit: number,
-    filters: UserFilters,
-    groupId?: string
+    filters: UserFilters
   ): Promise<PaginatedResponse<UserEntity>> {
-    filters.groupId = groupId;
     return await userModel.list(page, limit, filters);
   }
 
