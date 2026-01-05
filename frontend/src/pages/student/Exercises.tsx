@@ -1,8 +1,8 @@
 import { useState, useMemo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { useSearchParams } from "react-router-dom"; // Importar hook
+import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Search, Loader2, BookOpen, FilterX } from "lucide-react";
+import { Search, Loader2, BookOpen, FilterX, FolderOpen } from "lucide-react";
 import { studentService } from "@/services/student.service";
 import {
   ExerciseCard,
@@ -23,6 +23,14 @@ import {
   AlertTitle,
 } from "@/components/ui/feedback/alert";
 import { Button } from "@/components/ui/forms/button";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/layout/accordion";
+import { Badge } from "@/components/ui/data/badge";
+import { StudentDashboardProgress } from "@/types/dashboard.types";
 
 export default function StudentExercises() {
   const { t } = useTranslation();
@@ -65,7 +73,7 @@ export default function StudentExercises() {
   const subjects = useMemo(() => {
     if (!progressData) return [];
     const uniqueSubjects = new Set(progressData.map((p) => p.subjectName));
-    return Array.from(uniqueSubjects);
+    return Array.from(uniqueSubjects).sort();
   }, [progressData]);
 
   const filteredExercises = useMemo(() => {
@@ -98,6 +106,29 @@ export default function StudentExercises() {
     selectedDifficulty,
     selectedStatus,
   ]);
+
+  const groupedExercises = useMemo(() => {
+    const groups: Record<
+      string,
+      Record<string, StudentDashboardProgress[]>
+    > = {};
+
+    filteredExercises.forEach((ex) => {
+      const subject = ex.subjectName;
+      const syllabus = ex.syllabusTitle || "General";
+
+      if (!groups[subject]) {
+        groups[subject] = {};
+      }
+      if (!groups[subject][syllabus]) {
+        groups[subject][syllabus] = [];
+      }
+
+      groups[subject][syllabus].push(ex);
+    });
+
+    return groups;
+  }, [filteredExercises]);
 
   const mapDifficulty = (diff: string): ExerciseDifficulty => {
     const map: Record<string, ExerciseDifficulty> = {
@@ -142,6 +173,8 @@ export default function StudentExercises() {
     );
   }
 
+  const sortedSubjects = Object.keys(groupedExercises).sort();
+
   return (
     <div className="space-y-6 p-5 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex flex-col gap-2">
@@ -164,7 +197,6 @@ export default function StudentExercises() {
           </div>
         </div>
 
-        {/* Select de Asignatura con el manejador actualizado */}
         <Select value={selectedSubject} onValueChange={handleSubjectChange}>
           <SelectTrigger className="w-full md:w-[250px]">
             <SelectValue placeholder={t("exercises_page.filters.subject")} />
@@ -235,24 +267,70 @@ export default function StudentExercises() {
         </div>
 
         {filteredExercises.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredExercises.map((ex) => (
-              <ExerciseCard
-                key={ex.exerciseId}
-                id={ex.exerciseId}
-                courseId={ex.courseId}
-                title={ex.exerciseTitle}
-                description={ex.subjectName}
-                difficulty={mapDifficulty(ex.difficulty)}
-                status={getStatus(ex)}
-                attempts={ex.attempts}
-                dueDate={
-                  ex.deadline
-                    ? new Date(ex.deadline).toLocaleDateString()
-                    : undefined
-                }
-              />
-            ))}
+          <div className="space-y-6">
+            <Accordion
+              type="multiple"
+              className="w-full space-y-4"
+              defaultValue={
+                selectedSubject !== "all" ? [selectedSubject] : sortedSubjects
+              }>
+              {sortedSubjects.map((subjectName) => (
+                <AccordionItem
+                  key={subjectName}
+                  value={subjectName}
+                  className="border rounded-lg bg-card px-4">
+                  <AccordionTrigger className="hover:no-underline py-4">
+                    <div className="flex items-center gap-3">
+                      <span className="text-lg font-semibold text-foreground">
+                        {subjectName}
+                      </span>
+                      <Badge variant="secondary" className="ml-2">
+                        {Object.values(groupedExercises[subjectName]).reduce(
+                          (acc, curr) => acc + curr.length,
+                          0
+                        )}{" "}
+                        ejercicios
+                      </Badge>
+                    </div>
+                  </AccordionTrigger>
+
+                  <AccordionContent className="pt-2 pb-6 space-y-8">
+                    {Object.entries(groupedExercises[subjectName]).map(
+                      ([syllabusName, exercises]) => (
+                        <div key={syllabusName} className="space-y-3">
+                          <div className="flex items-center gap-2 pl-2 border-l-4 border-primary/20">
+                            <FolderOpen className="h-4 w-4 text-muted-foreground" />
+                            <h3 className="font-medium text-base text-muted-foreground uppercase tracking-wide">
+                              {syllabusName}
+                            </h3>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-2">
+                            {exercises.map((ex) => (
+                              <ExerciseCard
+                                key={ex.exerciseId}
+                                id={ex.exerciseId}
+                                courseId={ex.courseId}
+                                title={ex.exerciseTitle}
+                                description={ex.difficulty.toUpperCase()}
+                                difficulty={mapDifficulty(ex.difficulty)}
+                                status={getStatus(ex)}
+                                attempts={ex.attempts}
+                                dueDate={
+                                  ex.deadline
+                                    ? new Date(ex.deadline).toLocaleDateString()
+                                    : undefined
+                                }
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      )
+                    )}
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-16 text-center border-2 border-dashed rounded-lg bg-muted/10">

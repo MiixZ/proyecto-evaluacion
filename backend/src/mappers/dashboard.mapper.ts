@@ -28,6 +28,7 @@ export const dashboardMapper = {
       courseId: row.course_id as UUID,
       academicYear: row.academic_year,
       subjectName: row.subject_name,
+      syllabusTitle: row.syllabus_title,
       exerciseId: row.exercise_id as UUID,
       exerciseTitle: row.exercise_title,
       attempts: row.attempts,

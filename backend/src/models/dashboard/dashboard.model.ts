@@ -5,6 +5,7 @@ import {
   AcademicStructureRow,
   AdminStatsRow,
   GlobalStatsRow,
+  StudentProgressRow,
   TeacherStatsRow,
 } from './dashboard.row';
 
@@ -12,7 +13,7 @@ export class DashboardModel {
   async getStudentProgress(
     studentId?: UUID,
     courseId?: UUID
-  ): Promise<Rows.StudentProgressRow[]> {
+  ): Promise<StudentProgressRow[]> {
     let query = `
       SELECT 
         u.id AS student_id,
@@ -23,6 +24,7 @@ export class DashboardModel {
         e.id AS exercise_id,
         e.title AS exercise_title,
         s.name AS subject_name,
+        syl.title AS syllabus_title,
         COALESCE(sub_stats.attempts, 0) as attempts,
         COALESCE(sub_stats.is_completed, 0) as is_completed,
         COALESCE(sub_stats.best_score, 0) as best_score,
@@ -50,6 +52,7 @@ export class DashboardModel {
       
       WHERE u.id = ? 
       AND e.is_published = TRUE
+      AND syl.is_public = TRUE
     `;
 
     const params: any[] = [studentId];
@@ -59,7 +62,8 @@ export class DashboardModel {
       params.push(courseId);
     }
 
-    query += ' ORDER BY sub_stats.last_attempt DESC, e.deadline ASC';
+    query +=
+      ' ORDER BY s.name ASC, syl.order_index ASC, e.order_index ASC, e.created_at ASC';
 
     const [rows] = await getPool().execute<Rows.StudentProgressRow[]>(
       query,
