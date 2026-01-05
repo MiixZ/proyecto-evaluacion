@@ -4,14 +4,14 @@ import { authMiddleware } from '@middleware/auth.middleware';
 import { validateRequest } from '@middleware/validator.middleware';
 import {
   createGroupRequest,
-  enrollMemberRequest,
   getGroupRequest,
-  importGroupMembersRequest,
 } from '@validators/group.validator';
 import { uuidSchema } from '@validators/common.validator';
 import { z } from 'zod';
+import multer from 'multer';
 
 const router = Router();
+const upload = multer({ storage: multer.memoryStorage() });
 
 router.use(authMiddleware);
 
@@ -22,34 +22,32 @@ router.get(
   validateRequest(z.object({ params: z.object({ courseId: uuidSchema }) })),
   groupController.listByCourse
 );
-
-router.post(
-  '/:id/members',
-  validateRequest(enrollMemberRequest),
-  groupController.enrollMember
-);
-router.get(
-  '/:id/members',
-  validateRequest(getGroupRequest),
-  groupController.getMembers
-);
-router.delete(
-  '/:id/members/:userId',
-  validateRequest(
-    z.object({ params: z.object({ id: uuidSchema, userId: uuidSchema }) })
-  ),
-  groupController.removeMember
-);
-router.post(
-  '/:id/import',
-  validateRequest(importGroupMembersRequest),
-  groupController.importMembers
-);
-
+router.get('/:groupId/students', groupController.getGroupStudents);
 router.get(
   '/:id/export',
   validateRequest(getGroupRequest),
   groupController.exportData
 );
+
+router.post(
+  '/:groupId/students/import',
+  upload.single('file'),
+  groupController.importStudentsCsv
+);
+router.post('/:groupId/students', groupController.addStudent);
+
+router.get(
+  '/search/context',
+  authMiddleware,
+  groupController.listBySubjectAndYear
+);
+
+router.put('/:groupId/students/:studentId', groupController.updateStudent);
+router.patch(
+  '/:groupId/students/:studentId/status',
+  groupController.toggleStudentStatus
+);
+
+router.delete('/:groupId/students/:studentId', groupController.removeStudent);
 
 export default router;

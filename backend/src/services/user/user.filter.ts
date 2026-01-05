@@ -4,4 +4,5 @@ export interface UserFilters {
   role?: UserRole;
   status?: UserStatus;
   search?: string;
+  groupId?: string;
 }

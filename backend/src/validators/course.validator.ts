@@ -38,5 +38,26 @@ export const listCoursesRequest = z.object({
   }),
 });
 
+export const getMigrationPreviewRequest = z.object({
+  params: z.object({ sourceCourseId: uuidSchema }),
+});
+
+export const getCourseHistoryRequest = z.object({
+  params: z.object({ subjectId: uuidSchema }),
+});
+
+export const migrateContentSchema = z.object({
+  targetCourseId: uuidSchema,
+  includeSyllabi: z.boolean().default(true),
+  includeExercises: z.boolean().default(true),
+  selectedSyllabiIds: z.array(uuidSchema).optional(),
+});
+
+export const migrateContentRequest = z.object({
+  params: z.object({ sourceCourseId: uuidSchema }),
+  body: migrateContentSchema,
+});
+
 export type CreateCourseInput = z.infer<typeof createCourseSchema>;
 export type UpdateCourseInput = z.infer<typeof updateCourseSchema>;
+export type MigrateContentInput = z.infer<typeof migrateContentSchema>;

@@ -6,12 +6,13 @@ import {
   createExerciseRequest,
   getExerciseRequest,
   getExercisesBySyllabusRequest,
-  publishExerciseRequest,
 } from '@validators/exercise.validator';
 
 const router = Router();
 
 router.use(authMiddleware);
+
+router.get('/', exerciseController.listAll);
 
 router.post(
   '/',
@@ -31,10 +32,14 @@ router.get(
   exerciseController.listBySyllabus
 );
 
-router.patch(
-  '/:id/publish',
-  validateRequest(publishExerciseRequest),
-  exerciseController.togglePublish
+router.get('/professor/mine', exerciseController.getMyExercises);
+router.patch('/:id/publish', exerciseController.togglePublish);
+router.post('/:id/clone', exerciseController.clone);
+router.put(
+  '/:id',
+  validateRequest(createExerciseRequest),
+  exerciseController.update
 );
+router.delete('/:id', exerciseController.delete);
 
 export default router;

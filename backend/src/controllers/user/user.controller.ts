@@ -6,8 +6,16 @@ import { UserRole, UserStatus } from '@CustomTypes/common.types';
 import { AppError } from '@utils/errors';
 import { catchAsync } from '@utils/async.handler';
 import { ApiResponse } from '@utils/response.handler';
+import { UpdateUserInput } from '@validators/user.validator';
 
+/**
+ * Controlador para endpoints de gestión de usuarios
+ * Maneja CRUD, perfiles, asignación de grupos y listados
+ */
 export class UserController {
+  /**
+   * Crea un nuevo usuario (solo admin)
+   */
   createUser = catchAsync(async (req: AuthRequest, res: Response) => {
     this.validateAdmin(req);
 
@@ -16,6 +24,9 @@ export class UserController {
     return ApiResponse.created(res, newUser);
   });
 
+  /**
+   * Obtiene el perfil del usuario autenticado
+   */
   getProfile = catchAsync(async (req: AuthRequest, res: Response) => {
     const userId = this.validateAuthenticated(req);
 
@@ -24,6 +35,9 @@ export class UserController {
     return ApiResponse.success(res, user);
   });
 
+  /**
+   * Obtiene un usuario por ID
+   */
   getUserById = catchAsync(async (req: Request, res: Response) => {
     const { id } = req.params;
     const user = await userService.getUserById(id);
@@ -31,17 +45,54 @@ export class UserController {
     return ApiResponse.success(res, user);
   });
 
+  assignGroup = catchAsync(async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    const { groupId, role } = req.body;
+
+    this.validateAdmin(req);
+
+    await userService.assignGroup(id, groupId, role || 'teacher');
+
+    return ApiResponse.success(
+      res,
+      null,
+      200,
+      'Usuario asignado al grupo correctamente'
+    );
+  });
+
+  /**
+   * Lista usuarios con paginación, filtros y enrollments
+   */
   listUsers = catchAsync(async (req: Request, res: Response) => {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
+    const search = req.query.search as string;
+    const role = req.query.role as string;
+    const status = req.query.status as string;
+    const groupId = req.query.groupId as string;
 
     const result = await userService.listUsers(page, limit, {
-      role: req.query.role as UserRole,
-      status: req.query.status as UserStatus,
-      search: req.query.search as string,
+      role: role as UserRole,
+      status: status as UserStatus,
+      search,
+      groupId,
     });
 
     const dtos = userMapper.toDTOList(result.items);
+
+    await Promise.all(
+      dtos.map(async (userDto) => {
+        if (
+          userDto.role === UserRole.TEACHER ||
+          userDto.role === UserRole.STUDENT
+        ) {
+          userDto.enrollments = await userService.getUserEnrollments(
+            userDto.id
+          );
+        }
+      })
+    );
 
     return ApiResponse.success(res, {
       ...result,
@@ -49,14 +100,30 @@ export class UserController {
     });
   });
 
-  updateUser = catchAsync(async (req: AuthRequest, res: Response) => {
-    const { id } = req.params;
+  getMe = catchAsync(async (req: AuthRequest, res: Response) => {
+    const userId = req.user!.id;
+    const profile = await userService.getProfile(userId);
 
-    this.validateUserOrAdmin(req, id);
+    return ApiResponse.success(
+      res,
+      profile,
+      200,
+      'Perfil recuperado correctamente'
+    );
+  });
 
-    const user = await userService.updateUser(id, req.body, req.user?.id);
+  updateMe = catchAsync(async (req: AuthRequest, res: Response) => {
+    const userId = req.user!.id;
+    const input = req.body as UpdateUserInput;
 
-    return ApiResponse.success(res, user);
+    const updatedProfile = await userService.updateProfile(userId, input);
+
+    return ApiResponse.success(
+      res,
+      updatedProfile,
+      200,
+      'Perfil actualizado correctamente'
+    );
   });
 
   changeRole = catchAsync(async (req: AuthRequest, res: Response) => {

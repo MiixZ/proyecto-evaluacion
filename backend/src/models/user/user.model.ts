@@ -5,10 +5,10 @@ import { logger } from '@utils/logger';
 import { PoolConnection } from 'mysql2/promise';
 import { UUID, UserRole, UserStatus } from '@CustomTypes/common.types';
 import { UserEntity } from './user.entity';
-import { CreateUserInput, UpdateUserInput } from '@validators/user.validator';
+import { CreateUserInput } from '@validators/user.validator';
 import { NotFoundError } from '@utils/errors';
 import { userMapper } from '@mappers/user.mapper';
-import { UserRow } from './user.row';
+import { EnrollmentRow, UserRow } from './user.row';
 import { CountResult } from '@models/common/count.row';
 import { hashPassword } from '@utils/jwt.utils';
 
@@ -56,7 +56,7 @@ export class UserModel {
     ]);
 
     return {
-      id: id as any,
+      id: id as UUID,
       authId: passwordHash || `auth_${id}`,
       email: input.email,
       firstName: input.firstName,
@@ -81,6 +81,26 @@ export class UserModel {
     return userMapper.toEntity(rows[0]);
   }
 
+  async getEnrollments(userId: string): Promise<EnrollmentRow[]> {
+    const query = `
+      SELECT 
+        s.name AS subject_name,
+        g.name AS group_name,
+        c.academic_year,
+        ug.role
+      FROM user_groups ug
+      INNER JOIN \`groups\` g ON ug.group_id = g.id
+      INNER JOIN courses c ON g.course_id = c.id
+      INNER JOIN subjects s ON c.subject_id = s.id
+      WHERE ug.user_id = ?
+      ORDER BY c.academic_year DESC, s.name ASC
+    `;
+
+    const [rows] = await this.getPool().query<EnrollmentRow[]>(query, [userId]);
+
+    return rows;
+  }
+
   async getByEmail(email: string): Promise<UserEntity> {
     const query = `SELECT * FROM users WHERE email = ? AND deleted_at IS NULL LIMIT 1`;
     const [rows] = await this.getPool().execute<UserRow[]>(query, [
@@ -89,6 +109,19 @@ export class UserModel {
 
     if (rows.length === 0)
       throw new NotFoundError(`Usuario con email: ${email}`);
+
+    return userMapper.toEntity(rows[0]);
+  }
+
+  async findByEmail(email: string): Promise<UserEntity | null> {
+    const [rows] = await getPool().execute<UserRow[]>(
+      'SELECT * FROM users WHERE email = ? AND deleted_at IS NULL',
+      [email]
+    );
+
+    if (rows.length === 0) {
+      return null;
+    }
 
     return userMapper.toEntity(rows[0]);
   }
@@ -102,56 +135,45 @@ export class UserModel {
     return rows[0].count > 0;
   }
 
-  async update(id: UUID, input: UpdateUserInput): Promise<UserEntity> {
-    const updates: string[] = [];
+  async update(id: UUID, data: Partial<UserEntity>): Promise<void> {
+    const fields: string[] = [];
     const values: any[] = [];
 
-    if (input.firstName !== undefined) {
-      updates.push('first_name = ?');
-      values.push(input.firstName);
+    if (data.firstName) {
+      fields.push('first_name = ?');
+      values.push(data.firstName);
     }
-    if (input.lastName !== undefined) {
-      updates.push('last_name = ?');
-      values.push(input.lastName);
+    if (data.lastName) {
+      fields.push('last_name = ?');
+      values.push(data.lastName);
     }
-    if (input.phone !== undefined) {
-      updates.push('phone = ?');
-      values.push(input.phone);
+    if (data.email) {
+      fields.push('email = ?');
+      values.push(data.email);
     }
-    if (input.bio !== undefined) {
-      updates.push('bio = ?');
-      values.push(input.bio);
+    if (data.status) {
+      fields.push('status = ?');
+      values.push(data.status);
     }
-    if (input.profileImageUrl !== undefined) {
-      updates.push('profile_image_url = ?');
-      values.push(input.profileImageUrl);
+    if (data.phone !== undefined) {
+      fields.push('phone = ?');
+      values.push(data.phone);
     }
-    if (input.preferredLanguage !== undefined) {
-      updates.push('preferred_language = ?');
-      values.push(input.preferredLanguage);
+    if (data.bio !== undefined) {
+      fields.push('bio = ?');
+      values.push(data.bio);
+    }
+    if (data.preferredLanguage) {
+      fields.push('preferred_language = ?');
+      values.push(data.preferredLanguage);
     }
 
-    if (updates.length === 0) {
-      return this.getById(id);
-    }
+    if (fields.length === 0) return;
 
-    updates.push('updated_at = NOW()');
     values.push(id);
+    const query = `UPDATE users SET ${fields.join(', ')}, updated_at = NOW() WHERE id = ?`;
 
-    const query = `UPDATE users SET ${updates.join(', ')} WHERE id = ? AND deleted_at IS NULL`;
-
-    const [result] = await this.getPool().execute<ResultSetHeader>(
-      query,
-      values
-    );
-
-    if (result.affectedRows === 0) {
-      throw new NotFoundError(`Usuario con id: ${id}`);
-    }
-
-    logger.info(`Usuario actualizado: ${id}`);
-
-    return this.getById(id);
+    await getPool().execute(query, values);
   }
 
   async softDelete(id: UUID): Promise<void> {
@@ -196,36 +218,65 @@ export class UserModel {
   async list(
     page: number,
     limit: number,
-    filters?: { role?: UserRole; status?: UserStatus; search?: string }
+    filters?: {
+      role?: string;
+      status?: string;
+      search?: string;
+      groupId?: string;
+    }
   ) {
-    let whereClause = 'deleted_at IS NULL';
-    const filterValues: any[] = [];
+    let whereClause = 'u.deleted_at IS NULL';
+    const params: any[] = [];
+    let joinClause = '';
 
-    if (filters?.role) {
-      whereClause += ' AND role = ?';
-      filterValues.push(filters.role);
+    if (filters?.groupId) {
+      joinClause = 'JOIN user_groups ug ON u.id = ug.user_id';
+      whereClause += ' AND ug.group_id = ?';
+      params.push(filters.groupId);
     }
-    if (filters?.status) {
-      whereClause += ' AND status = ?';
-      filterValues.push(filters.status);
+
+    if (filters?.role && filters.role !== 'all') {
+      whereClause += ' AND u.role = ?';
+      params.push(filters.role);
     }
+
+    if (filters?.status && filters.status !== 'all') {
+      whereClause += ' AND u.status = ?';
+      params.push(filters.status);
+    }
+
     if (filters?.search) {
       whereClause +=
-        ' AND (email LIKE ? OR first_name LIKE ? OR last_name LIKE ?)';
-      const searchTerm = `%${filters.search}%`;
-      filterValues.push(searchTerm, searchTerm, searchTerm);
+        ' AND (u.email LIKE ? OR u.first_name LIKE ? OR u.last_name LIKE ?)';
+
+      const term = `%${filters.search}%`;
+      params.push(term, term, term);
     }
 
-    const [countRows] = await this.getPool().execute<CountResult[]>(
-      `SELECT COUNT(*) as total FROM users WHERE ${whereClause}`,
-      filterValues
+    const countQuery = `SELECT COUNT(DISTINCT u.id) as count FROM users u ${joinClause} WHERE ${whereClause}`;
+    const [countRows] = await this.getPool().query<CountResult[]>(
+      countQuery,
+      params
     );
-    const total = countRows[0].count;
+    const total = countRows[0]?.count || 0;
 
     const offset = (page - 1) * limit;
-    const query = `SELECT * FROM users WHERE ${whereClause} ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}`;
+    const query = `
+      SELECT DISTINCT u.id, u.auth_id, u.email, u.first_name, u.last_name, 
+      u.role, u.status, u.phone, u.bio, u.preferred_language, 
+      u.profile_image_url, u.created_at, u.updated_at, u.deleted_at
+      FROM users u 
+      ${joinClause} 
+      WHERE ${whereClause} 
+      ORDER BY u.created_at DESC 
+      LIMIT ? OFFSET ?
+    `;
 
-    const [rows] = await this.getPool().execute<UserRow[]>(query, filterValues);
+    const [rows] = await this.getPool().query<UserRow[]>(query, [
+      ...params,
+      limit,
+      offset,
+    ]);
     const items = rows.map((row) => userMapper.toEntity(row));
 
     return {
@@ -236,6 +287,20 @@ export class UserModel {
       hasMore: offset + limit < total,
       totalPages: Math.ceil(total / limit),
     };
+  }
+
+  async assignToGroup(
+    userId: UUID,
+    groupId: UUID,
+    role: string
+  ): Promise<void> {
+    const query = `
+      INSERT INTO user_groups (user_id, group_id, role, enrolled_at)
+      VALUES (?, ?, ?, NOW())
+      ON DUPLICATE KEY UPDATE role = VALUES(role)
+    `;
+
+    await this.getPool().execute(query, [userId, groupId, role]);
   }
 
   async getTeachers(): Promise<UserEntity[]> {

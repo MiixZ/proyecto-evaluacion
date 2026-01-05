@@ -29,14 +29,17 @@ router.get(
 router.get('/teachers', userController.getTeachers);
 router.get('/students', userController.getStudents);
 
+router.get('/profile/me', userController.getMe);
 router.get('/:id', authMiddleware, userController.getUserById);
 
 router.patch(
-  '/:id',
+  '/me',
   authMiddleware,
   validateRequest(updateUserRequest),
-  userController.updateUser
+  userController.updateMe
 );
+
+router.post('/:id/groups', authMiddleware, userController.assignGroup);
 
 router.patch(
   '/:id/role',

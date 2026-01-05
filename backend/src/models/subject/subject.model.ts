@@ -113,21 +113,16 @@ export class SubjectModel {
     }
 
     const countQuery = `SELECT COUNT(*) as count FROM subjects WHERE ${whereClause}`;
-    const [countRows] = await getPool().execute<CountResult[]>(
+    const [countRows] = await getPool().query<CountResult[]>(
       countQuery,
       params
     );
     const total = countRows[0].count;
 
     const offset = (page - 1) * limit;
-    const query = `SELECT * FROM subjects WHERE ${whereClause} ORDER BY code ASC LIMIT ? OFFSET ?`;
+    const query = `SELECT * FROM subjects WHERE ${whereClause} ORDER BY created_at DESC LIMIT ${Number(limit)} OFFSET ${Number(offset)}`;
 
-    const [rows] = await getPool().execute<SubjectRow[]>(query, [
-      ...params,
-      limit,
-      offset,
-    ]);
-
+    const [rows] = await getPool().query<SubjectRow[]>(query, params);
     const items = rows.map((row) => subjectMapper.toEntity(row));
 
     return {

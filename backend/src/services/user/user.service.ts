@@ -14,7 +14,17 @@ import { auditService } from '@services/audit/audit.service';
 import { ConflictError, NotFoundError } from '@utils/errors';
 import crypto from 'crypto';
 
+/**
+ * Servicio para gestión de usuarios del sistema
+ * Incluye creación, actualización, listado y asignación a grupos
+ */
 export class UserService {
+  /**
+   * Crea un nuevo usuario en el sistema
+   * @param input - Datos del usuario a crear
+   * @param creatorId - ID del usuario que crea (para auditoría)
+   * @returns DTO del usuario creado
+   */
   async createUser(input: CreateUserInput, creatorId?: UUID): Promise<UserDTO> {
     const existingUser = await userModel.existsByEmail(input.email);
 
@@ -55,6 +65,12 @@ export class UserService {
     return userMapper.toDTO(newUser);
   }
 
+  /**
+   * Obtiene un usuario por su ID
+   * @param id - ID del usuario
+   * @returns DTO del usuario
+   * @throws NotFoundError si el usuario no existe
+   */
   async getUserById(id: string): Promise<UserDTO> {
     const user = await userModel.getById(id as UUID);
 
@@ -67,6 +83,13 @@ export class UserService {
     return await userModel.getByEmail(email);
   }
 
+  /**
+   * Lista usuarios con paginación y filtros
+   * @param page - Número de página
+   * @param limit - Cantidad de resultados por página
+   * @param filters - Filtros de búsqueda
+   * @returns Respuesta paginada con usuarios
+   */
   async listUsers(
     page: number,
     limit: number,
@@ -75,34 +98,154 @@ export class UserService {
     return await userModel.list(page, limit, filters);
   }
 
-  async updateUser(
-    id: string,
-    input: UpdateUserInput,
-    modifierId?: UUID
-  ): Promise<UserDTO> {
-    const user = await userModel.getById(id as UUID);
-
+  async assignGroup(
+    userId: string,
+    groupId: string,
+    role: string
+  ): Promise<void> {
+    const user = await userModel.getById(userId as UUID);
     if (!user) throw new NotFoundError('Usuario no encontrado');
 
-    const updatedUser = await userModel.update(id as UUID, input);
+    await userModel.assignToGroup(userId as UUID, groupId as UUID, role);
 
-    if (modifierId) {
-      await auditService.log(
-        'UPDATE_USER',
-        'user',
-        id as UUID,
-        { changes: Object.keys(input) },
-        modifierId
-      );
-    }
-
-    return userMapper.toDTO(updatedUser);
+    await auditService.log(
+      'ASSIGN_GROUP',
+      'user',
+      userId as UUID,
+      { groupId, role },
+      userId as UUID
+    );
   }
 
+  async getUserEnrollments(userId: string) {
+    const enrollments = await userModel.getEnrollments(userId as UUID);
+    return enrollments.map((e) => ({
+      subjectName: e.subject_name,
+      groupName: e.group_name,
+      academicYear: e.academic_year,
+      role: e.role,
+    }));
+  }
+
+  async getProfile(userId: string): Promise<UserDTO> {
+    const user = await userModel.getById(userId as UUID);
+
+    if (!user) {
+      throw new NotFoundError('Usuario no encontrado');
+    }
+
+    const userDTO = userMapper.toDTO(user);
+
+    const enrollments = await userModel.getEnrollments(userId);
+
+    userDTO.enrollments = enrollments.map((e) => ({
+      subjectName: e.subject_name,
+      groupName: e.group_name,
+      academicYear: e.academic_year,
+      role: e.role,
+    }));
+
+    return userDTO;
+  }
+
+  /**
+   * Busca un estudiante por email o lo crea si no existe
+   * Útil para importaciones masivas de estudiantes
+   * @param email - Email del estudiante
+   * @param firstName - Nombre del estudiante
+   * @param lastName - Apellidos del estudiante
+   * @returns DTO del estudiante encontrado o creado
+   */
+  async findOrCreateStudent(
+    email: string,
+    firstName: string,
+    lastName: string
+  ): Promise<UserDTO> {
+    const existingUser = await userModel.findByEmail(email);
+
+    if (existingUser) {
+      return userMapper.toDTO(existingUser);
+    }
+
+    const password = crypto.randomBytes(8).toString('hex');
+
+    const newUser = await userModel.create(
+      {
+        email,
+        firstName,
+        lastName,
+        role: UserRole.STUDENT,
+        status: UserStatus.ACTIVE,
+        preferredLanguage: 'es',
+      },
+      password
+    );
+
+    await emailService.sendWelcomeEmail(
+      newUser.email,
+      newUser.firstName,
+      password
+    );
+
+    return userMapper.toDTO(newUser);
+  }
+
+  async updateProfile(
+    userId: string,
+    input: UpdateUserInput
+  ): Promise<UserDTO> {
+    const user = await userModel.getById(userId as UUID);
+
+    if (!user) {
+      throw new NotFoundError('Usuario no encontrado');
+    }
+
+    await userModel.update(userId as UUID, {
+      firstName: input.firstName,
+      lastName: input.lastName,
+      phone: input.phone,
+      bio: input.bio,
+      preferredLanguage: input.preferredLanguage,
+    });
+
+    await auditService.log(
+      'UPDATE_PROFILE',
+      'user',
+      userId,
+      input,
+      userId as UUID
+    );
+
+    const updatedUser = await userModel.getById(userId as UUID);
+    const userDTO = userMapper.toDTO(updatedUser!);
+
+    const enrollments = await userModel.getEnrollments(userId as UUID);
+    userDTO.enrollments = enrollments.map((e) => ({
+      subjectName: e.subject_name,
+      groupName: e.group_name,
+      academicYear: e.academic_year,
+      role: e.role,
+    }));
+
+    return userDTO;
+  }
+
+  /**
+   * Cambia el rol de un usuario
+   * @param id - ID del usuario
+   * @param role - Nuevo rol
+   * @returns Usuario actualizado
+   */
   async changeRole(id: string, role: UserRole): Promise<UserEntity> {
     return await userModel.updateRole(id as UUID, role);
   }
 
+  /**
+   * Cambia el estado de un usuario (activo/inactivo/pendiente)
+   * @param id - ID del usuario
+   * @param status - Nuevo estado
+   * @returns Usuario actualizado
+   */
   async changeStatus(id: string, status: UserStatus): Promise<UserEntity> {
     return await userModel.updateStatus(id as UUID, status);
   }

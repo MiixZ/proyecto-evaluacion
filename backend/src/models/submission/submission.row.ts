@@ -29,3 +29,27 @@ export interface SubmissionTestResultRow extends RowDataPacket {
   efficiency_achieved: string;
   created_at: Date;
 }
+
+export interface SubmissionJoinRow extends RowDataPacket {
+  // Campos de Submission
+  s_id: string;
+  s_exercise_id: string;
+  s_student_id: string;
+  s_course_id: string;
+  s_attempt_number: number;
+  s_code: string;
+  s_language: string;
+  s_status: string;
+  s_verdict: string;
+  s_score: number;
+  s_is_late: number;
+  s_created_at: Date;
+
+  // Campos de TestResults
+  tr_id: string | null;
+  tr_test_case_id: string | null;
+  tr_status: string | null;
+  tr_actual_output: string | null;
+  tr_execution_time_ms: number | null;
+  tr_memory_used_mb: number | null;
+}

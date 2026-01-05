@@ -6,16 +6,21 @@ export interface StudentProgressDTO {
   courseId: UUID;
   academicYear: string;
   subjectName: string;
+  syllabusTitle: string;
+  syllabusDescription?: string;
   exerciseId: UUID;
   exerciseTitle: string;
   attempts: number;
   isCompleted: boolean;
   bestScore: number;
-  lastAttempt: Date;
+  lastAttempt: Date | null;
+  difficulty: string;
+  deadline: Date | null;
 }
 
 export interface GroupStatsDTO {
   groupId: UUID;
+  courseId: UUID;
   groupName: string;
   academicYear: string;
   subjectName: string;
@@ -57,4 +62,47 @@ export interface PlagiarismSummaryDTO {
     external: number;
     ai: number;
   };
+}
+
+// --- NUEVOS DTOs ---
+
+export interface GroupStudentDTO {
+  id: UUID;
+  name: string;
+  email: string;
+  avatarUrl: string | null;
+  progress: number;
+  averageScore: number;
+  lastActive: string;
+  status: 'active' | 'inactive' | 'risk';
+}
+
+export interface RecentActivityDTO {
+  id: UUID;
+  studentName: string;
+  action: string;
+  time: string;
+  status: 'success' | 'warning' | 'error' | 'info';
+}
+
+export interface PlagiarismAlertDTO {
+  id: UUID;
+  studentName: string;
+  comparedStudentName: string | null;
+  exerciseTitle: string;
+  similarity: number;
+  type: string;
+  date: string;
+  reviewedAt: string | null;
+  isReviewed: boolean;
+}
+
+export interface TeacherDashboardDTO {
+  groups: GroupStatsDTO[];
+  activeGroup: {
+    info: GroupStatsDTO;
+    students: GroupStudentDTO[];
+    recentActivity: RecentActivityDTO[];
+    plagiarismAlerts: PlagiarismAlertDTO[];
+  } | null;
 }

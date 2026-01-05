@@ -148,12 +148,8 @@ export function errorHandlerMiddleware(
   if (appError.statusCode) {
     res.status(appError.statusCode).json({
       success: false,
-      error: {
-        code: appError.code || 'INTERNAL_ERROR',
-        message: appError.message,
-        details: appError.details,
-      },
-      timestamp: new Date().toISOString(),
+      message: appError.message,
+      code: appError.code,
     });
   } else {
     res.status(500).json({

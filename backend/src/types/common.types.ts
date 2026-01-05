@@ -59,6 +59,7 @@ export enum SubmissionVerdict {
   COMPILATION_ERROR = 'compilation_error',
   MEMORY_LIMIT = 'memory_limit',
   PENDING = 'pending',
+  PLAGIARISM = 'plagiarism',
 }
 
 export enum SubmissionStatus {
@@ -85,6 +86,7 @@ export enum PlagiarismType {
   INTERNAL = 'internal',
   EXTERNAL = 'external',
   AI_GENERATED = 'ai_generated',
+  BEHAVIORAL = 'behavioral',
 }
 
 export enum CourseStatus {

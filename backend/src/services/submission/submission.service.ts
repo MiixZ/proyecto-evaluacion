@@ -6,22 +6,32 @@ import {
   UUID,
   SubmissionVerdict,
   EfficiencyOrder,
+  UserRole,
+  PlagiarismType,
 } from '@CustomTypes/common.types';
 import {
   ExecutionRequest,
   ExecutionResult,
   Veredict as EngineVerdict,
 } from '@CustomTypes/submission.types';
-import { ValidationError, ForbiddenError } from '@utils/errors';
+import { ValidationError, ForbiddenError, NotFoundError } from '@utils/errors';
 import { logger } from '@utils/logger';
-import { SubmissionTestResultEntity } from '@models/submission/submission.entity';
+import {
+  SubmissionTestResultEntity,
+  SubmissionDTO,
+} from '@models/submission/submission.entity';
 import { submissionMapper } from '@mappers/submission.mapper';
-import { SubmissionDTO } from '@models/submission/submission.entity';
 import { CreateSubmissionInput } from '@validators/submission.validator';
 import { auditService } from '@services/audit/audit.service';
 import { languageService } from '@services/language/language.service';
 import { submissionErrorService } from '@services/catalog/submission-error.service';
+import { plagiarismService } from '@services/plagiarism/plagiarism.service';
+import { hintUsageModel } from '@models/hint/hint-usage.model';
 
+/**
+ * Servicio para gestión de envíos de código y ejecución
+ * Coordina la ejecución, evaluación y detección de plagio
+ */
 export class SubmissionService {
   private executionClient: ExecutionEngineClient;
 
@@ -29,6 +39,61 @@ export class SubmissionService {
     this.executionClient = new ExecutionEngineClient();
   }
 
+  /**
+   * Obtiene el historial de envíos de un estudiante
+   * @param userId - ID del estudiante
+   * @param exerciseId - ID del ejercicio (opcional)
+   * @returns Lista de envíos
+   */
+  async getStudentHistory(userId: UUID, exerciseId?: UUID): Promise<any[]> {
+    if (exerciseId) {
+      return await submissionModel.findByUserAndExercise(userId, exerciseId);
+    } else {
+      return await submissionModel.findAllByUser(userId);
+    }
+  }
+
+  async getSubmissionById(
+    submissionId: UUID,
+    userId: UUID,
+    userRole: UserRole
+  ) {
+    const submission = await submissionModel.getDetailsById(submissionId);
+
+    if (!submission) {
+      throw new NotFoundError('Entrega no encontrada');
+    }
+
+    if (userRole === UserRole.STUDENT && submission.student.id !== userId) {
+      throw new ForbiddenError('No tienes permiso para ver esta entrega');
+    }
+
+    // Si es estudiante, ocultar detalles de test cases privados
+    if (userRole === UserRole.STUDENT && submission.testResults) {
+      submission.testResults = submission.testResults.map((tr: any) => {
+        if (tr.isHidden) {
+          return {
+            ...tr,
+            input: undefined,
+            expectedOutput: undefined,
+          };
+        }
+        return tr;
+      });
+    }
+
+    return submission;
+  }
+  /**
+   * Procesa un envío de código completo:
+   * - Valida intentos disponibles y permisos
+   * - Ejecuta el código contra casos de prueba
+   * - Calcula puntuación con penalizaciones
+   * - Registra auditoría y dispara detección de plagio
+   * @param userId - ID del estudiante
+   * @param input - Datos del envío (código, lenguaje, ejercicio)
+   * @returns DTO del envío procesado con resultados
+   */
   async processSubmission(
     userId: UUID,
     input: CreateSubmissionInput & { courseId: UUID }
@@ -60,6 +125,13 @@ export class SubmissionService {
     await languageService.validateLanguageSupport(input.language);
 
     const testCases = await exerciseModel.getTestCases(exercise.id);
+
+    if (!testCases || testCases.length === 0) {
+      throw new ValidationError(
+        'Este ejercicio no tiene casos de prueba configurados. Contacta con el profesor.'
+      );
+    }
+
     const limits = await exerciseModel.getExecutionLimits(
       exercise.id,
       input.language
@@ -87,7 +159,22 @@ export class SubmissionService {
       language: input.language,
       attemptNumber,
       isLate,
+      status: 'pending',
+      verdict: SubmissionVerdict.PENDING,
+      score: 0,
+      usedHint: false,
+      createdAt: now,
+      updatedAt: now,
+      constructor: { name: 'RowDataPacket' },
     });
+
+    this.checkBehavioralAnomaly(userId, exercise.id, submissionId).catch(
+      (err) => logger.error('Error en chequeo de anomalía', err)
+    );
+
+    this.triggerPlagiarismCheck(submissionId, exercise.id, userId).catch(
+      (err) => logger.error('Error en chequeo automático de plagio', err)
+    );
 
     const execRequest: ExecutionRequest = {
       id: uuidv4(),
@@ -120,15 +207,25 @@ export class SubmissionService {
         0,
         []
       );
-      throw error;
+
+      throw new Error('Error interno al comunicar con el motor de ejecución.');
     }
 
     let finalScore = execResult.score;
 
+    const hintsPenalty = await hintUsageModel.getTotalPenaltyForExercise(
+      userId,
+      exercise.id
+    );
+
+    if (hintsPenalty > 0) {
+      finalScore = Math.max(0, finalScore - hintsPenalty);
+    }
+
     if (isLate && exercise.lateSubmissionPenaltyPercent > 0) {
-      const penalty =
+      const latePenalty =
         (finalScore * exercise.lateSubmissionPenaltyPercent) / 100;
-      finalScore = Math.max(0, finalScore - penalty);
+      finalScore = Math.max(0, finalScore - latePenalty);
     }
 
     const submissionTestResults: SubmissionTestResultEntity[] =
@@ -177,6 +274,13 @@ export class SubmissionService {
       submissionTestResults
     );
 
+    // Cargar los test results con input/expectedOutput para la respuesta
+    const testResultsWithDetails =
+      await submissionModel.getTestResultsWithDetails(
+        submissionId,
+        UserRole.STUDENT
+      );
+
     await auditService.log(
       'CREATE_SUBMISSION',
       'submission',
@@ -190,9 +294,15 @@ export class SubmissionService {
       userId
     );
 
-    return submissionMapper.toDTO(updatedEntity);
+    const submissionDTO = submissionMapper.toDTO(updatedEntity);
+    submissionDTO.testResults = testResultsWithDetails;
+
+    return submissionDTO;
   }
 
+  /**
+   * Mapea el veredicto del motor de ejecución al veredicto interno
+   */
   private mapEngineVerdict(engineVerdict: EngineVerdict): SubmissionVerdict {
     const map: Record<EngineVerdict, SubmissionVerdict> = {
       [EngineVerdict.ACCEPTED]: SubmissionVerdict.ACCEPTED,
@@ -207,6 +317,10 @@ export class SubmissionService {
     return map[engineVerdict] || SubmissionVerdict.RUNTIME_ERROR;
   }
 
+  /**
+   * Calcula el orden de eficiencia según tiempo y memoria usados
+   * @returns Clasificación de eficiencia (BEST, GOOD, ACCEPTABLE, ANY)
+   */
   private calculateEfficiency(
     executionTime: number,
     timeLimit: number,
@@ -227,6 +341,68 @@ export class SubmissionService {
     if (timeRatio <= 0.9) return EfficiencyOrder.ACCEPTABLE;
 
     return EfficiencyOrder.ANY;
+  }
+
+  async applyPlagiarismPenalty(submissionId: UUID): Promise<void> {
+    const submission = await submissionModel.getById(submissionId);
+
+    if (!submission) {
+      throw new NotFoundError('Entrega no encontrada para penalizar');
+    }
+
+    await submissionModel.penalize(
+      submissionId,
+      SubmissionVerdict.WRONG_ANSWER,
+      0
+    );
+
+    logger.warn(`Entrega ${submissionId} penalizada por plagio confirmado.`);
+  }
+
+  private async triggerPlagiarismCheck(
+    submissionId: UUID,
+    exerciseId: UUID,
+    currentStudentId: UUID
+  ) {
+    const previousSubmissions =
+      await submissionModel.findAllByExerciseId(exerciseId);
+
+    for (const prev of previousSubmissions) {
+      if (prev.student.id !== currentStudentId) {
+        await plagiarismService.runBasicComparison(submissionId, prev.id);
+      }
+    }
+  }
+
+  private async checkBehavioralAnomaly(
+    studentId: UUID,
+    exerciseId: UUID,
+    currentSubmissionId: UUID
+  ) {
+    const RECENT_MINUTES = 1;
+    const MAX_ATTEMPTS_THRESHOLD = 5;
+
+    const recentCount = await submissionModel.countRecentSubmissions(
+      studentId,
+      exerciseId,
+      RECENT_MINUTES
+    );
+
+    if (recentCount >= MAX_ATTEMPTS_THRESHOLD) {
+      await plagiarismService.createCheck({
+        submissionId: currentSubmissionId,
+        comparedWithSubmissionId: currentSubmissionId,
+        similarityPercent: 100,
+        plagiarismType: PlagiarismType.INTERNAL,
+        isFlagged: true,
+        toolUsed: 'Behavioral Analysis (Rate Limiting)',
+        notes: `ALERTA DE COMPORTAMIENTO: ${recentCount} intentos en <${RECENT_MINUTES} min. Posible "gambling" (fuerza bruta).`,
+      });
+
+      logger.warn(
+        `Anomalía de comportamiento detectada para usuario ${studentId}`
+      );
+    }
   }
 }
 

@@ -37,6 +37,7 @@ export interface UserDTO {
   profileImageUrl?: string | null;
   preferredLanguage: LanguageType;
   createdAt: Date;
+  enrollments?: UserEnrollmentDTO[];
 }
 
 /**
@@ -48,4 +49,11 @@ export interface UserPublicDTO {
   lastName: string;
   profileImageUrl?: string | null;
   bio?: string | null;
+}
+
+export interface UserEnrollmentDTO {
+  subjectName: string;
+  groupName: string;
+  academicYear: string;
+  role: string;
 }

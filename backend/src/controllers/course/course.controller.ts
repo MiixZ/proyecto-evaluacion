@@ -60,6 +60,66 @@ export class CourseController {
       items: courseMapper.toDTOList(result.items),
     });
   });
+
+  getMigrationPreview = catchAsync(async (req: AuthRequest, res: Response) => {
+    if (req.user?.role !== UserRole.ADMIN) {
+      throw new AppError(
+        'FORBIDDEN',
+        403,
+        'Solo administradores pueden ver previsualizaciones de migración'
+      );
+    }
+
+    const result = await courseService.getMigrationPreview(
+      req.params.sourceCourseId
+    );
+
+    return ApiResponse.success(res, {
+      ...result,
+      course: courseMapper.toDTO(result.course),
+    });
+  });
+
+  getCourseHistory = catchAsync(async (req: AuthRequest, res: Response) => {
+    if (req.user?.role !== UserRole.ADMIN) {
+      throw new AppError(
+        'FORBIDDEN',
+        403,
+        'Solo administradores pueden ver historial de cursos'
+      );
+    }
+
+    const result = await courseService.getCourseHistory(req.params.subjectId);
+
+    return ApiResponse.success(res, result);
+  });
+
+  migrateContent = catchAsync(async (req: AuthRequest, res: Response) => {
+    if (req.user?.role !== UserRole.ADMIN) {
+      throw new AppError(
+        'FORBIDDEN',
+        403,
+        'Solo administradores pueden migrar contenido'
+      );
+    }
+
+    const result = await courseService.migrateContent(
+      req.params.sourceCourseId,
+      req.body.targetCourseId,
+      {
+        includeSyllabi: req.body.includeSyllabi,
+        includeExercises: req.body.includeExercises,
+        selectedSyllabiIds: req.body.selectedSyllabiIds,
+      }
+    );
+
+    return ApiResponse.success(
+      res,
+      result,
+      200,
+      'Contenido migrado correctamente'
+    );
+  });
 }
 
 export const courseController = new CourseController();

@@ -10,4 +10,5 @@ export interface SyllabusRow extends RowDataPacket {
   is_public: number;
   created_at: Date;
   updated_at: Date;
+  exercises_count?: number;
 }

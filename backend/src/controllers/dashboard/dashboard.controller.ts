@@ -6,6 +6,7 @@ import { dashboardModel } from '@models/dashboard/dashboard.model';
 import { dashboardMapper } from '@mappers/dashboard.mapper';
 import { UserRole, UUID } from '@CustomTypes/common.types';
 import { AppError } from '@utils/errors';
+import { dashboardService } from '@services/dashboard/dashboard.service';
 
 export class DashboardController {
   getMyProgress = catchAsync(async (req: AuthRequest, res: Response) => {
@@ -23,30 +24,124 @@ export class DashboardController {
     );
   });
 
+  getAcademicYears = catchAsync(async (_req: AuthRequest, res: Response) => {
+    const years = await dashboardService.getAcademicYears();
+
+    return ApiResponse.success(res, years);
+  });
+
   getTeacherOverview = catchAsync(async (req: AuthRequest, res: Response) => {
-    if (req.user?.role === UserRole.STUDENT) {
+    if (
+      req.user?.role !== UserRole.TEACHER &&
+      req.user?.role !== UserRole.ADMIN
+    ) {
       throw new AppError('FORBIDDEN', 403, 'Acceso denegado');
     }
 
     const teacherId = req.user!.id;
+    const requestedGroupId = req.query.groupId as UUID | undefined;
 
-    const [workload, groups] = await Promise.all([
-      dashboardModel.getTeacherWorkload(teacherId as UUID),
-      dashboardModel.getGroupStatistics(
-        req.user?.role === UserRole.ADMIN ? undefined : (teacherId as UUID)
-      ),
-    ]);
+    const allGroups = await dashboardModel.getGroupStatistics(
+      req.user?.role === UserRole.ADMIN ? undefined : (teacherId as UUID)
+    );
+
+    if (allGroups.length === 0) {
+      return ApiResponse.success(res, {
+        groups: [],
+        activeGroup: null,
+      });
+    }
+
+    const activeGroupId = requestedGroupId || (allGroups[0].group_id as UUID);
+    const activeGroupInfo =
+      allGroups.find((g) => g.group_id === activeGroupId) || allGroups[0];
+
+    const [students, recentActivityData, plagiarismAlertsData] =
+      await Promise.all([
+        dashboardModel.getStudentsByGroup(activeGroupId),
+        dashboardModel.getRecentActivityByGroup(activeGroupId, 1, 10),
+        dashboardModel.getPlagiarismAlertsByGroup(activeGroupId, 1, 5),
+      ]);
 
     return ApiResponse.success(res, {
-      workload: workload
-        ? dashboardMapper.toTeacherWorkloadDTO(workload)
-        : null,
-      groups: groups.map(dashboardMapper.toGroupStatsDTO),
+      groups: allGroups.map(dashboardMapper.toGroupStatsDTO),
+      activeGroup: {
+        info: dashboardMapper.toGroupStatsDTO(activeGroupInfo),
+        students: students.map(dashboardMapper.toGroupStudentDTO),
+        recentActivity: recentActivityData.items.map(
+          dashboardMapper.toRecentActivityDTO
+        ),
+        plagiarismAlerts: plagiarismAlertsData.items.map(
+          dashboardMapper.toPlagiarismAlertDTO
+        ),
+      },
+    });
+  });
+
+  getGroupActivity = catchAsync(async (req: AuthRequest, res: Response) => {
+    const { groupId } = req.params;
+    const {
+      page = 1,
+      limit = 10,
+      sortBy = 'time',
+      sortOrder = 'DESC',
+      status,
+      studentId,
+    } = req.query;
+
+    const result = await dashboardService.getGroupActivity(
+      groupId,
+      Number(page),
+      Number(limit),
+      sortBy as string,
+      sortOrder as 'ASC' | 'DESC',
+      status as string,
+      studentId as string
+    );
+
+    return ApiResponse.success(res, result);
+  });
+
+  getGroupPlagiarism = catchAsync(async (req: AuthRequest, res: Response) => {
+    if (
+      req.user?.role !== UserRole.TEACHER &&
+      req.user?.role !== UserRole.ADMIN
+    ) {
+      throw new AppError('FORBIDDEN', 403, 'Acceso denegado');
+    }
+
+    const { groupId } = req.params;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 20;
+    const sortBy = (req.query.sortBy as string) || 'date';
+    const sortOrder = (req.query.sortOrder as 'ASC' | 'DESC') || 'DESC';
+    const type = req.query.type as string | undefined;
+    const reviewStatus = req.query.reviewStatus as string | undefined;
+
+    const { items, total } = await dashboardModel.getPlagiarismAlertsByGroup(
+      groupId as UUID,
+      page,
+      limit,
+      sortBy,
+      sortOrder,
+      type,
+      reviewStatus
+    );
+
+    return ApiResponse.success(res, {
+      items: items.map(dashboardMapper.toPlagiarismAlertDTO),
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
     });
   });
 
   getExerciseAnalytics = catchAsync(async (req: AuthRequest, res: Response) => {
-    if (req.user?.role === UserRole.STUDENT) {
+    if (
+      req.user?.role !== UserRole.TEACHER &&
+      req.user?.role !== UserRole.ADMIN
+    ) {
       throw new AppError('FORBIDDEN', 403, 'Acceso denegado');
     }
 
@@ -59,9 +154,34 @@ export class DashboardController {
     );
   });
 
+  getAdminOverview = catchAsync(async (req: AuthRequest, res: Response) => {
+    if (req.user?.role !== UserRole.ADMIN) {
+      throw new AppError(
+        'FORBIDDEN',
+        403,
+        'Acceso exclusivo para administradores'
+      );
+    }
+
+    let academicYear = req.query.academicYear as string;
+
+    if (!academicYear) {
+      academicYear = await dashboardService.getCurrentAcademicYear();
+    }
+
+    const search = req.query.search as string;
+
+    const data = await dashboardService.getAdminDashboard(academicYear, search);
+
+    return ApiResponse.success(res, data);
+  });
+
   getPlagiarismAnalytics = catchAsync(
     async (req: AuthRequest, res: Response) => {
-      if (req.user?.role === UserRole.STUDENT) {
+      if (
+        req.user?.role !== UserRole.TEACHER &&
+        req.user?.role !== UserRole.ADMIN
+      ) {
         throw new AppError('FORBIDDEN', 403, 'Acceso denegado');
       }
 
@@ -76,6 +196,43 @@ export class DashboardController {
       );
     }
   );
+
+  getAdminCharts = catchAsync(async (req: AuthRequest, res: Response) => {
+    if (req.user?.role !== UserRole.ADMIN) {
+      throw new AppError(
+        'FORBIDDEN',
+        403,
+        'Acceso exclusivo para administradores'
+      );
+    }
+
+    const data = await dashboardService.getAdminChartsData();
+
+    return ApiResponse.success(res, data);
+  });
+
+  getTeacherCharts = catchAsync(async (req: AuthRequest, res: Response) => {
+    if (
+      req.user?.role !== UserRole.TEACHER &&
+      req.user?.role !== UserRole.ADMIN
+    ) {
+      throw new AppError('FORBIDDEN', 403, 'Acceso denegado');
+    }
+
+    const { groupId } = req.query;
+    const data = await dashboardService.getTeacherChartsData(
+      groupId as UUID | undefined
+    );
+
+    return ApiResponse.success(res, data);
+  });
+
+  getStudentCharts = catchAsync(async (req: AuthRequest, res: Response) => {
+    const userId = req.user!.id;
+    const data = await dashboardService.getStudentChartsData(userId as UUID);
+
+    return ApiResponse.success(res, data);
+  });
 }
 
 export const dashboardController = new DashboardController();

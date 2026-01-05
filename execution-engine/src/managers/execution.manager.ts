@@ -6,6 +6,10 @@ import {
   Verdict,
 } from "../types/execution.types";
 
+/**
+ * Gestor principal de ejecución de código
+ * Coordina la ejecución de ejercicios completos con todos sus test cases
+ */
 export class ExecutionManager {
   private codeExecutor: CodeExecutor;
 
@@ -14,7 +18,9 @@ export class ExecutionManager {
   }
 
   /**
-   * Ejecutar ejercicio completo con todos sus test cases
+   * Ejecuta un ejercicio completo con todos sus test cases
+   * @param request - Solicitud de ejecución con código y casos de prueba
+   * @returns Resultado de ejecución con veredicto y puntuación
    */
   async executeExercise(request: ExecutionRequest): Promise<ExecutionResult> {
     console.log(
@@ -96,6 +102,11 @@ export class ExecutionManager {
     }
   }
 
+  /**
+   * Obtiene la imagen Docker apropiada según el lenguaje
+   * @param language - Lenguaje de programación
+   * @returns Nombre de la imagen Docker
+   */
   private getSandboxImage(language: string): string {
     const images = DOCKER_CONFIG.sandboxImages;
 

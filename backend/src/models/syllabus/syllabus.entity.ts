@@ -8,6 +8,7 @@ export interface SyllabusEntity extends Timestamps {
   contentType: 'module' | 'topic' | 'lesson';
   orderIndex: number;
   isPublic: boolean;
+  exercisesCount?: number;
 }
 
 export interface SyllabusDTO {
@@ -15,7 +16,8 @@ export interface SyllabusDTO {
   courseId: UUID;
   title: string;
   description: string | null;
-  type: string;
-  order: number;
+  contentType: 'module' | 'topic' | 'lesson';
+  orderIndex: number;
   isPublic: boolean;
+  exercisesCount?: number;
 }

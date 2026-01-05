@@ -7,6 +7,9 @@ import {
   updateCourseRequest,
   getCourseRequest,
   listCoursesRequest,
+  getMigrationPreviewRequest,
+  getCourseHistoryRequest,
+  migrateContentRequest,
 } from '@validators/course.validator';
 
 const router = Router();
@@ -21,5 +24,22 @@ router.patch(
   courseController.update
 );
 router.get('/', validateRequest(listCoursesRequest), courseController.list);
+
+// Rutas de migración
+router.get(
+  '/:sourceCourseId/migration-preview',
+  validateRequest(getMigrationPreviewRequest),
+  courseController.getMigrationPreview
+);
+router.get(
+  '/subject/:subjectId/history',
+  validateRequest(getCourseHistoryRequest),
+  courseController.getCourseHistory
+);
+router.post(
+  '/:sourceCourseId/migrate',
+  validateRequest(migrateContentRequest),
+  courseController.migrateContent
+);
 
 export default router;

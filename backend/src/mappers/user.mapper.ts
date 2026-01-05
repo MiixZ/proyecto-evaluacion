@@ -36,6 +36,7 @@ class UserMapper extends BaseMapper<UserEntity, UserDTO, UserRow> {
       profileImageUrl: entity.profileImageUrl,
       preferredLanguage: entity.preferredLanguage,
       createdAt: entity.createdAt,
+      enrollments: [],
     };
   }
 }
