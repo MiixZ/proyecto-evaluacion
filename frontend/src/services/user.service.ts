@@ -58,9 +58,7 @@ export const userService = {
   changeStatus: async (id: string, status: UserStatus): Promise<User> => {
     const { data } = await api.patch<ApiResponse<User>>(
       `/v1/users/${id}/status`,
-      {
-        status,
-      }
+      { status }
     );
 
     return data.data;

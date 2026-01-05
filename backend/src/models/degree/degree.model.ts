@@ -105,7 +105,7 @@ export class DegreeModel {
     }
 
     const countQuery = `SELECT COUNT(*) as count FROM degrees WHERE ${whereClause}`;
-    const [countRows] = await getPool().execute<CountResult[]>(
+    const [countRows] = await getPool().query<CountResult[]>(
       countQuery,
       params
     );
@@ -114,7 +114,7 @@ export class DegreeModel {
     const offset = (page - 1) * limit;
     const query = `SELECT * FROM degrees WHERE ${whereClause} ORDER BY name ASC LIMIT ? OFFSET ?`;
 
-    const [rows] = await getPool().execute<DegreeRow[]>(query, [
+    const [rows] = await getPool().query<DegreeRow[]>(query, [
       ...params,
       limit,
       offset,

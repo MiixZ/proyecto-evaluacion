@@ -113,7 +113,7 @@ export class SubjectModel {
     }
 
     const countQuery = `SELECT COUNT(*) as count FROM subjects WHERE ${whereClause}`;
-    const [countRows] = await getPool().execute<CountResult[]>(
+    const [countRows] = await getPool().query<CountResult[]>(
       countQuery,
       params
     );
@@ -122,7 +122,7 @@ export class SubjectModel {
     const offset = (page - 1) * limit;
     const query = `SELECT * FROM subjects WHERE ${whereClause} ORDER BY code ASC LIMIT ? OFFSET ?`;
 
-    const [rows] = await getPool().execute<SubjectRow[]>(query, [
+    const [rows] = await getPool().query<SubjectRow[]>(query, [
       ...params,
       limit,
       offset,

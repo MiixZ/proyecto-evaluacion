@@ -242,7 +242,7 @@ export class UserModel {
     }
 
     const countQuery = `SELECT COUNT(DISTINCT u.id) as count FROM users u ${joinClause} WHERE ${whereClause}`;
-    const [countRows] = await this.getPool().execute<CountResult[]>(
+    const [countRows] = await this.getPool().query<CountResult[]>(
       countQuery,
       params
     );
@@ -260,7 +260,7 @@ export class UserModel {
       LIMIT ? OFFSET ?
     `;
 
-    const [rows] = await this.getPool().execute<UserRow[]>(query, [
+    const [rows] = await this.getPool().query<UserRow[]>(query, [
       ...params,
       limit,
       offset,
