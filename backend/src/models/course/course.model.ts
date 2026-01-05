@@ -108,13 +108,10 @@ export class CourseModel {
     const total = countRows[0].count;
 
     const offset = (page - 1) * limit;
-    const query = `SELECT * FROM courses WHERE ${whereClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`;
 
-    const [rows] = await getPool().execute<CourseRow[]>(query, [
-      ...params,
-      limit,
-      offset,
-    ]);
+    const query = `SELECT * FROM courses WHERE ${whereClause} ORDER BY created_at DESC LIMIT ${Number(limit)} OFFSET ${Number(offset)}`;
+
+    const [rows] = await getPool().query<CourseRow[]>(query, params);
     const items = rows.map((row) => courseMapper.toEntity(row));
 
     return {

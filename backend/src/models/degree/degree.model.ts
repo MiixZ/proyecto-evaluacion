@@ -112,13 +112,9 @@ export class DegreeModel {
     const total = countRows[0].count;
 
     const offset = (page - 1) * limit;
-    const query = `SELECT * FROM degrees WHERE ${whereClause} ORDER BY name ASC LIMIT ? OFFSET ?`;
+    const query = `SELECT * FROM degrees WHERE ${whereClause} ORDER BY created_at DESC LIMIT ${Number(limit)} OFFSET ${Number(offset)}`;
 
-    const [rows] = await getPool().query<DegreeRow[]>(query, [
-      ...params,
-      limit,
-      offset,
-    ]);
+    const [rows] = await getPool().query<DegreeRow[]>(query, params);
     const items = rows.map((row) => degreeMapper.toEntity(row));
 
     return {

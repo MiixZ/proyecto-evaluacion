@@ -24,6 +24,7 @@ import SubmissionDetails from "./pages/professor/SubmissionDetail";
 import PlagiarismComparison from "./pages/professor/PlagiarismComparison";
 import SubmissionComparison from "./pages/student/SubmissionComparison";
 import UsersPage from "./pages/admin/Users";
+import AcademicManagement from "./pages/admin/AcademicManagement";
 
 const queryClient = new QueryClient();
 
@@ -95,6 +96,10 @@ const App = () => (
 
               {/* Admin */}
               <Route path="/dashboard/users" element={<UsersPage />} />
+              <Route
+                path="/dashboard/degrees"
+                element={<AcademicManagement />}
+              />
 
               {/* Alias/Redirecciones */}
               <Route
