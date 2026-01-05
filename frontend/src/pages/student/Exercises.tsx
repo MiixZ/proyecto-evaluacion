@@ -298,11 +298,18 @@ export default function StudentExercises() {
                     {Object.entries(groupedExercises[subjectName]).map(
                       ([syllabusName, exercises]) => (
                         <div key={syllabusName} className="space-y-3">
-                          <div className="flex items-center gap-2 pl-2 border-l-4 border-primary/20">
-                            <FolderOpen className="h-4 w-4 text-muted-foreground" />
-                            <h3 className="font-medium text-base text-muted-foreground uppercase tracking-wide">
-                              {syllabusName}
-                            </h3>
+                          <div className="pl-2 border-l-4 border-primary/20">
+                            <div className="flex items-center gap-2 mb-1">
+                              <FolderOpen className="h-4 w-4 text-muted-foreground" />
+                              <h3 className="font-medium text-base text-muted-foreground uppercase tracking-wide">
+                                {syllabusName}
+                              </h3>
+                            </div>
+                            {exercises[0]?.syllabusDescription && (
+                              <p className="text-sm text-muted-foreground/80 ml-6">
+                                {exercises[0].syllabusDescription}
+                              </p>
+                            )}
                           </div>
 
                           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-2">

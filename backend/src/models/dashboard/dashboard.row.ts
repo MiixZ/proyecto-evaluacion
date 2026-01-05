@@ -9,6 +9,8 @@ export interface StudentProgressRow extends RowDataPacket {
   exercise_id: string;
   exercise_title: string;
   subject_name: string;
+  syllabus_title: string;
+  syllabus_description: string | null;
   attempts: number;
   is_completed: number;
   best_score: number;

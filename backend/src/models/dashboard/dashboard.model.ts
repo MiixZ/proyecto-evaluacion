@@ -25,6 +25,7 @@ export class DashboardModel {
         e.title AS exercise_title,
         s.name AS subject_name,
         syl.title AS syllabus_title,
+        syl.description AS syllabus_description,
         COALESCE(sub_stats.attempts, 0) as attempts,
         COALESCE(sub_stats.is_completed, 0) as is_completed,
         COALESCE(sub_stats.best_score, 0) as best_score,

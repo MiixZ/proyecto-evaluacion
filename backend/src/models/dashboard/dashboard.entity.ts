@@ -7,6 +7,7 @@ export interface StudentProgressDTO {
   academicYear: string;
   subjectName: string;
   syllabusTitle: string;
+  syllabusDescription?: string;
   exerciseId: UUID;
   exerciseTitle: string;
   attempts: number;

@@ -35,6 +35,7 @@ export interface StudentDashboardProgress {
   attempts: number;
   subjectName: any;
   syllabusTitle: string;
+  syllabusDescription?: string;
   exerciseTitle: any;
   stats: StudentStats;
   progressBySubject: StudentProgress[];

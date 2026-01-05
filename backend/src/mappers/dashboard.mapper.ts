@@ -29,6 +29,7 @@ export const dashboardMapper = {
       academicYear: row.academic_year,
       subjectName: row.subject_name,
       syllabusTitle: row.syllabus_title,
+      syllabusDescription: row.syllabus_description || undefined,
       exerciseId: row.exercise_id as UUID,
       exerciseTitle: row.exercise_title,
       attempts: row.attempts,
