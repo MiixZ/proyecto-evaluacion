@@ -15,7 +15,7 @@ export interface SyllabusDTO {
   courseId: UUID;
   title: string;
   description: string | null;
-  type: string;
-  order: number;
+  contentType: 'module' | 'topic' | 'lesson';
+  orderIndex: number;
   isPublic: boolean;
 }

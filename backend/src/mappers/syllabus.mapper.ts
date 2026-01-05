@@ -28,8 +28,8 @@ class SyllabusMapper extends BaseMapper<
       courseId: entity.courseId,
       title: entity.title,
       description: entity.description,
-      type: entity.contentType,
-      order: entity.orderIndex,
+      contentType: entity.contentType,
+      orderIndex: entity.orderIndex,
       isPublic: entity.isPublic,
     };
   }
