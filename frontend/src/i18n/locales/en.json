@@ -509,6 +509,7 @@
   },
   "editor": {
     "copy": "Copy code",
+    "expected": "Expected output",
     "language": "Language",
     "lines": "lines",
     "ready": "Ready",
@@ -518,7 +519,8 @@
     "toasts": {
       "reset_desc": "The editor has been restored to the initial code.",
       "reset_title": "Code reset"
-    }
+    },
+    "your_output": "Your output"
   },
   "errors": {
     "not_found": {

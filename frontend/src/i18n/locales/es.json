@@ -538,6 +538,7 @@
   },
   "editor": {
     "copy": "Copiar código",
+    "expected": "Salida esperada",
     "language": "Lenguaje",
     "lines": "líneas",
     "ms": "ms",
@@ -564,7 +565,8 @@
       "runtime_error": "Error en tiempo de ejecución",
       "time_limit": "Tiempo Excedido",
       "wrong_answer": "Respuesta Incorrecta"
-    }
+    },
+    "your_output": "Tu salida"
   },
   "errors": {
     "not_found": {
