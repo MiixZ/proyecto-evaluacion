@@ -8,20 +8,16 @@ interface PasswordChangeGuardProps {
   children: React.ReactNode;
 }
 
-/**
- * Guard que verifica si el usuario debe cambiar su contraseña
- * Muestra un modal no dismissible hasta que complete el cambio
- */
 export function PasswordChangeGuard({ children }: PasswordChangeGuardProps) {
   const { user, refreshUser } = useAuth();
   const [showModal, setShowModal] = useState(false);
 
-  // Obtener perfil actualizado para verificar mustChangePassword
-  const { data: profile } = useQuery({
+  const { data: profile, isLoading } = useQuery({
     queryKey: ["profile"],
     queryFn: () => userService.getProfile(),
     enabled: !!user,
     refetchOnWindowFocus: false,
+    retry: false,
   });
 
   useEffect(() => {
@@ -31,13 +27,21 @@ export function PasswordChangeGuard({ children }: PasswordChangeGuardProps) {
   }, [profile]);
 
   const handleSuccess = async () => {
-    // Refrescar usuario para actualizar el flag
     await refreshUser();
     setShowModal(false);
   };
 
+  if (isLoading) {
+    return (
+      <div className="h-screen w-full flex items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
   if (showModal) {
     return <FirstPasswordChangeModal open={true} onSuccess={handleSuccess} />;
   }
+
   return <>{children}</>;
 }

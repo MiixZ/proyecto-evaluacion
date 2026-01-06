@@ -47,6 +47,10 @@ export class GroupService {
     );
   }
 
+  async updateGroup(id: string, input: any) {
+    return await groupModel.update(id as UUID, input);
+  }
+
   async enrollMember(groupId: string, input: EnrollMemberInput) {
     const group = await groupModel.getById(groupId as UUID);
 

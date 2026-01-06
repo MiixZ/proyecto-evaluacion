@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import api from "@/lib/api";
 import {
   User,
@@ -67,6 +68,20 @@ export const userService = {
     );
 
     return data.data;
+  },
+
+  getProfile: async (): Promise<User> => {
+    try {
+      const { data } = await api.get<ApiResponse<User>>("/v1/users/profile/me");
+
+      return data.data;
+    } catch (err: any) {
+      if (err?.response?.status === 403) {
+        return { mustChangePassword: true } as unknown as User;
+      }
+
+      throw err;
+    }
   },
 
   /**

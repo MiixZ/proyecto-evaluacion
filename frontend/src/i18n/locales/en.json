@@ -4,6 +4,7 @@
     "tabs": {
       "courses": "Courses",
       "degrees": "Degrees",
+      "groups": "Groups",
       "subjects": "Subjects",
       "syllabi": "Syllabi"
     },
@@ -11,8 +12,9 @@
   },
   "activity_history": {
     "actions": {
-      "download_code": "Download source code",
-      "download_json": "Download JSON report",
+      "create": "Create",
+      "create_group": "Create Group",
+      "edit_group": "Edit Group",
       "menu": "Open menu",
       "title": "Actions",
       "view_details": "View details"
@@ -324,6 +326,30 @@
       "updated": "updated",
       "visibility": "Visibility",
       "visible_students": "Visible to students"
+    },
+    "groups": {
+      "title": "Groups Management",
+      "subtitle": "Manage groups by course.",
+      "name": "Group Name",
+      "name_placeholder": "E.g.: Group A",
+      "description": "Description",
+      "description_placeholder": "Group description...",
+      "capacity": "Capacity",
+      "status": "Status",
+      "active": "Active",
+      "archived": "Archived",
+      "create": "Create",
+      "created": "created",
+      "edit": "Edit",
+      "save_changes": "Save Changes",
+      "save_error": "Error saving group",
+      "group_saved": "Group {{action}} successfully",
+      "updated": "updated",
+      "no_groups": "No groups found",
+      "select_course": "Select Course",
+      "actions": "Actions",
+      "create_group": "Create Group",
+      "actions_label": "Actions"
     },
     "users": {
       "academic_year": "Academic Year",

@@ -12,6 +12,8 @@ import {
   Power,
   PowerOff,
   History,
+  Shield,
+  AlertCircle,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -89,6 +91,11 @@ export default function GroupsPage() {
     lastName: "",
     email: "",
   });
+  const [temporaryPassword, setTemporaryPassword] = useState<string | null>(
+    null
+  );
+  const [createdUserEmail, setCreatedUserEmail] = useState<string>("");
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [editingStudent, setEditingStudent] = useState<GroupStudentDTO | null>(
     null
   );
@@ -135,20 +142,35 @@ export default function GroupsPage() {
   const addStudentMutation = useMutation({
     mutationFn: (data: typeof newStudent) =>
       groupService.addStudent(selectedGroupId, data),
-    onSuccess: () => {
+    onSuccess: (response: any) => {
       queryClient.invalidateQueries({
         queryKey: ["groupStudents", selectedGroupId],
       });
       setIsAddOpen(false);
       setNewStudent({ firstName: "", lastName: "", email: "" });
       setFieldErrors({});
-      toast({
-        title: t("professor.groups.student_added", "Estudiante añadido"),
-        description: t(
-          "professor.groups.student_added_desc",
-          "Matriculado correctamente."
-        ),
-      });
+      const created =
+        response?.data?.created || response?.created || response?.data || {};
+
+      const temp =
+        created?.temporaryPassword ||
+        created?.data?.temporaryPassword ||
+        created?.created?.temporaryPassword ||
+        null;
+
+      if (temp) {
+        setTemporaryPassword(temp);
+        setCreatedUserEmail(created.email || created.data?.email || "");
+        setShowPasswordDialog(true);
+      } else {
+        toast({
+          title: t("professor.groups.student_added", "Estudiante añadido"),
+          description: t(
+            "professor.groups.student_added_desc",
+            "Matriculado correctamente."
+          ),
+        });
+      }
     },
     onError: (error: any) => {
       const errorMessage = parseBackendError(
@@ -182,6 +204,47 @@ export default function GroupsPage() {
         title: t("professor.groups.import_completed", "Importación completada"),
         description: response.message,
       });
+
+      // Si el backend devuelve las contraseñas temporales, generar CSV y descargar
+      const created = response?.data?.created || response?.created || [];
+      if (created.length === 1) {
+        // Mostrar modal para el único creado
+        const c = created[0];
+        setTemporaryPassword(c.temporaryPassword || null);
+        setCreatedUserEmail(c.email || "");
+        setShowPasswordDialog(true);
+      } else if (created.length > 1) {
+        // Generar CSV y descargar
+        const csvRows = ["email,temporaryPassword"];
+        for (const c of created) {
+          const line = `${c.email || ""},${c.temporaryPassword || ""}`;
+          csvRows.push(line);
+        }
+        const blob = new Blob([csvRows.join("\n")], { type: "text/csv" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `imported_students_${new Date().toISOString()}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        toast({
+          title: t(
+            "professor.groups.import_completed",
+            "Importación completada"
+          ),
+          description: response.message,
+        });
+      } else {
+        toast({
+          title: t(
+            "professor.groups.import_completed",
+            "Importación completada"
+          ),
+          description: response.message,
+        });
+      }
     },
     onError: (error: any) => {
       const errorMessage = parseBackendError(
@@ -763,6 +826,112 @@ export default function GroupsPage() {
                 </DialogFooter>
               </form>
             )}
+          </DialogContent>
+        </Dialog>
+        {/* Diálogo de Contraseña Temporal para profesores */}
+        <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5 text-green-600" />
+                {t(
+                  "professor.groups.temporary_password_title",
+                  "Usuario creado exitosamente"
+                )}
+              </DialogTitle>
+              <DialogDescription>
+                {t(
+                  "professor.groups.temporary_password_desc",
+                  "Guarda esta contraseña temporal, no se volverá a mostrar"
+                )}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">
+                  {t("admin.users.email", "Email")}
+                </Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    value={createdUserEmail}
+                    readOnly
+                    className="bg-muted"
+                  />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      navigator.clipboard.writeText(createdUserEmail);
+                      toast({ title: t("common.copied", "Copiado") });
+                    }}>
+                    {t("common.copy", "Copiar")}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">
+                  {t("admin.users.temporary_password", "Contraseña temporal")}
+                </Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    value={temporaryPassword || ""}
+                    readOnly
+                    className="font-mono bg-yellow-50 dark:bg-yellow-950 border-yellow-300 dark:border-yellow-700"
+                    type="text"
+                  />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      if (temporaryPassword) {
+                        navigator.clipboard.writeText(temporaryPassword);
+                        toast({
+                          title: t(
+                            "admin.users.password_copied",
+                            "Contraseña copiada"
+                          ),
+                          description: t(
+                            "admin.users.password_copied_desc",
+                            "Compártela de forma segura con el usuario"
+                          ),
+                        });
+                      }
+                    }}>
+                    {t("common.copy", "Copiar")}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="rounded-lg border border-yellow-200 bg-yellow-50 dark:bg-yellow-950 dark:border-yellow-800 p-3">
+                <div className="flex gap-2">
+                  <AlertCircle className="h-4 w-4 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
+                  <div className="text-sm space-y-1">
+                    <p className="font-medium text-yellow-900 dark:text-yellow-100">
+                      {t("admin.users.important", "Importante")}
+                    </p>
+                    <p className="text-yellow-800 dark:text-yellow-200">
+                      {t(
+                        "admin.users.password_warning",
+                        "El usuario deberá cambiar esta contraseña en su primer inicio de sesión. Esta contraseña no se volverá a mostrar."
+                      )}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button
+                onClick={() => {
+                  setShowPasswordDialog(false);
+                  setTemporaryPassword(null);
+                  setCreatedUserEmail("");
+                }}>
+                {t("common.close", "Cerrar")}
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>

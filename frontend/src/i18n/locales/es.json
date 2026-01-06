@@ -4,6 +4,7 @@
     "tabs": {
       "courses": "Cursos",
       "degrees": "Titulaciones",
+      "groups": "Grupos",
       "subjects": "Asignaturas",
       "syllabi": "Temarios"
     },
@@ -190,6 +191,31 @@
       "unknown": "Desconocida",
       "updated": "actualizado",
       "year": "Año"
+    },
+    "groups": {
+      "title": "Gestión de Grupos",
+      "subtitle": "Administra grupos por curso.",
+      "name": "Nombre del Grupo",
+      "name_placeholder": "Ej: Grupo A",
+      "description": "Descripción",
+      "description_placeholder": "Descripción del grupo...",
+      "capacity": "Capacidad",
+      "status": "Estado",
+      "active": "Activo",
+      "archived": "Archivado",
+      "create": "Crear",
+      "created": "creado",
+      "edit": "Editar",
+      "edit_group": "Editar Grupo",
+      "save_changes": "Guardar Cambios",
+      "save_error": "Error al guardar grupo",
+      "group_saved": "Grupo {{action}} correctamente",
+      "updated": "actualizado",
+      "no_groups": "No se encontraron grupos",
+      "select_course": "Selecciona Curso",
+      "actions": "Acciones",
+      "create_group": "Crear Grupo",
+      "actions_label": "Acciones"
     },
     "dashboard": {
       "academic_structure": "Estructura Académica",

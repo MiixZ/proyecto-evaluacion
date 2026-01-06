@@ -206,10 +206,12 @@ export async function requirePasswordChangeMiddleware(
 ): Promise<void> {
   try {
     // Rutas exceptuadas que no requieren verificación
+    // `req.path` viene relativo al mount point (/api/v1), por tanto las rutas
+    // excepto deben usar el path relativo sin el prefijo `/api/v1`.
     const exemptRoutes = [
-      { method: 'POST', path: '/api/v1/users/me/first-password-change' },
-      { method: 'POST', path: '/api/v1/auth/logout' },
-      { method: 'GET', path: '/api/v1/users/profile/me' },
+      { method: 'POST', path: '/users/me/first-password-change' },
+      { method: 'POST', path: '/auth/logout' },
+      { method: 'GET', path: '/users/profile/me' },
     ];
 
     const isExempt = exemptRoutes.some(

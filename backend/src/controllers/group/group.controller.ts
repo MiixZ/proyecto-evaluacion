@@ -70,8 +70,15 @@ export class GroupController {
 
     await groupModel.addMember(user.id as UUID, groupId as UUID);
 
+    // Devolver también la contraseña temporal si se ha generado, para que
+    // el profesor pueda comunicársela al alumno o descargarla.
     return ApiResponse.created(res, {
       message: 'Estudiante añadido correctamente',
+      created: {
+        id: user.id,
+        email: user.email,
+        temporaryPassword: (user as any).temporaryPassword || null,
+      },
     });
   });
 
@@ -105,6 +112,18 @@ export class GroupController {
     const result = await groupService.listByCourse(courseId);
 
     return ApiResponse.success(res, groupMapper.toDTOList(result));
+  });
+
+  update = catchAsync(async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    const updated = await groupService.updateGroup(id, req.body);
+
+    return ApiResponse.success(
+      res,
+      groupMapper.toDTO(updated),
+      200,
+      'Grupo actualizado'
+    );
   });
 
   enrollMember = catchAsync(async (req: AuthRequest, res: Response) => {
@@ -146,6 +165,11 @@ export class GroupController {
 
     const students = parseStudentCsv(req.file.buffer);
     const results = { added: 0, errors: 0 };
+    const created: Array<{
+      id: string;
+      email: string;
+      temporaryPassword?: string | null;
+    }> = [];
 
     for (const student of students) {
       try {
@@ -158,6 +182,12 @@ export class GroupController {
 
         await groupModel.addMember(user.id as UUID, groupId as UUID);
         results.added++;
+
+        created.push({
+          id: user.id as string,
+          email: user.email,
+          temporaryPassword: (user as any).temporaryPassword || null,
+        });
       } catch (error) {
         results.errors++;
         console.error(`Error importando estudiante ${student.email}:`, error);
@@ -167,6 +197,7 @@ export class GroupController {
     return ApiResponse.success(res, {
       message: `Proceso completado. Añadidos: ${results.added}. Errores: ${results.errors}`,
       stats: results,
+      created,
     });
   });
 
