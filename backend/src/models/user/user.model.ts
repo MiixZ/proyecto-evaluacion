@@ -170,6 +170,10 @@ export class UserModel {
       fields.push('preferred_language = ?');
       values.push(data.preferredLanguage);
     }
+    if (data.profileImageUrl !== undefined) {
+      fields.push('profile_image_url = ?');
+      values.push(data.profileImageUrl);
+    }
 
     if (fields.length === 0) return;
 
@@ -177,6 +181,31 @@ export class UserModel {
     const query = `UPDATE users SET ${fields.join(', ')}, updated_at = NOW() WHERE id = ?`;
 
     await getPool().execute(query, values);
+  }
+
+  async updatePassword(id: UUID, newPasswordHash: string): Promise<void> {
+    const query = `UPDATE users SET auth_id = ?, updated_at = NOW() WHERE id = ? AND deleted_at IS NULL`;
+    const [result] = await this.getPool().execute<ResultSetHeader>(query, [
+      newPasswordHash,
+      id,
+    ]);
+
+    if (result.affectedRows === 0) {
+      throw new NotFoundError(`Usuario con id: ${id}`);
+    }
+
+    logger.info(`Contraseña actualizada para usuario: ${id}`);
+  }
+
+  async getPasswordHash(id: UUID): Promise<string> {
+    const query = `SELECT auth_id FROM users WHERE id = ? AND deleted_at IS NULL LIMIT 1`;
+    const [rows] = await this.getPool().execute<UserRow[]>(query, [id]);
+
+    if (rows.length === 0) {
+      throw new NotFoundError(`Usuario con id: ${id}`);
+    }
+
+    return rows[0].auth_id;
   }
 
   async softDelete(id: UUID): Promise<void> {

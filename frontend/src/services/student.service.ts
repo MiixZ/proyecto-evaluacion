@@ -35,4 +35,26 @@ export const studentService = {
 
     return data.data;
   },
+
+  changePassword: async (
+    currentPassword: string,
+    newPassword: string,
+    confirmPassword: string
+  ): Promise<void> => {
+    await api.patch("/v1/users/me/password", {
+      currentPassword,
+      newPassword,
+      confirmPassword,
+    });
+  },
+
+  updateProfileImage: async (
+    profileImageUrl: string | null
+  ): Promise<UserProfile> => {
+    const { data } = await api.patch("/v1/users/me/profile-image", {
+      profileImageUrl,
+    });
+
+    return data.data;
+  },
 };

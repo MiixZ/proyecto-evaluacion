@@ -1,0 +1,175 @@
+### ========================================
+### PRUEBAS DE PERFIL DE USUARIO
+### Nuevas funcionalidades implementadas
+### ========================================
+
+@baseUrl = http://localhost:3000
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+### 1. Obtener perfil del usuario actual
+GET {{baseUrl}}/v1/users/profile/me
+Authorization: Bearer {{token}}
+
+### ========================================
+### CAMBIO DE CONTRASEÑA
+### ========================================
+
+### 2. Cambiar contraseña (exitoso)
+PATCH {{baseUrl}}/v1/users/me/password
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "currentPassword": "password123",
+  "newPassword": "newSecurePassword456",
+  "confirmPassword": "newSecurePassword456"
+}
+
+### 3. Cambiar contraseña (error - contraseña actual incorrecta)
+PATCH {{baseUrl}}/v1/users/me/password
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "currentPassword": "wrongPassword",
+  "newPassword": "newSecurePassword456",
+  "confirmPassword": "newSecurePassword456"
+}
+
+### 4. Cambiar contraseña (error - contraseñas no coinciden)
+PATCH {{baseUrl}}/v1/users/me/password
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "currentPassword": "password123",
+  "newPassword": "newSecurePassword456",
+  "confirmPassword": "differentPassword789"
+}
+
+### 5. Cambiar contraseña (error - nueva contraseña muy corta)
+PATCH {{baseUrl}}/v1/users/me/password
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "currentPassword": "password123",
+  "newPassword": "short",
+  "confirmPassword": "short"
+}
+
+### 6. Cambiar contraseña (error - nueva contraseña igual a la actual)
+PATCH {{baseUrl}}/v1/users/me/password
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "currentPassword": "password123",
+  "newPassword": "password123",
+  "confirmPassword": "password123"
+}
+
+### ========================================
+### IMAGEN DE PERFIL
+### ========================================
+
+### 7. Actualizar imagen de perfil (exitoso)
+PATCH {{baseUrl}}/v1/users/me/profile-image
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "profileImageUrl": "https://i.pravatar.cc/300?img=12"
+}
+
+### 8. Actualizar imagen de perfil con otra URL
+PATCH {{baseUrl}}/v1/users/me/profile-image
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "profileImageUrl": "https://avatars.githubusercontent.com/u/12345?v=4"
+}
+
+### 9. Eliminar imagen de perfil (establecer a null)
+PATCH {{baseUrl}}/v1/users/me/profile-image
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "profileImageUrl": null
+}
+
+### 10. Actualizar imagen de perfil (cadena vacía)
+PATCH {{baseUrl}}/v1/users/me/profile-image
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "profileImageUrl": ""
+}
+
+### ========================================
+### ACTUALIZACIÓN DE PERFIL (Existente)
+### ========================================
+
+### 11. Actualizar datos de perfil (nombre, teléfono, bio, etc.)
+PATCH {{baseUrl}}/v1/users/me
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "firstName": "Juan",
+  "lastName": "Pérez García",
+  "phone": "+34123456789",
+  "bio": "Desarrollador full-stack apasionado por la educación y la tecnología.",
+  "preferredLanguage": "es"
+}
+
+### ========================================
+### CREACIÓN DE USUARIO (Admin)
+### Esto disparará el envío de correo de bienvenida
+### ========================================
+
+### 12. Crear nuevo usuario (envía correo de bienvenida)
+POST {{baseUrl}}/v1/users
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "email": "nuevo.usuario@example.com",
+  "firstName": "María",
+  "lastName": "González",
+  "role": "student",
+  "status": "active",
+  "preferredLanguage": "es"
+}
+
+### 13. Crear usuario con contraseña personalizada
+POST {{baseUrl}}/v1/users
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "email": "profesor.nuevo@example.com",
+  "firstName": "Carlos",
+  "lastName": "Martínez",
+  "role": "teacher",
+  "password": "MiPassword123",
+  "status": "active",
+  "preferredLanguage": "es"
+}
+
+### ========================================
+### VERIFICAR LOGS DE CORREO (Modo Mock)
+### ========================================
+### En modo desarrollo sin SMTP configurado, 
+### los correos aparecerán en los logs del backend:
+###
+### [INFO] [MOCK EMAIL] To: nuevo.usuario@example.com | 
+###       Subject: Bienvenido a la Plataforma de Evaluación | 
+###       Password: abc12345
+###
+### Para envío real, configura SMTP en .env:
+### Ver docs/EMAIL_CONFIGURATION.md
+### ========================================

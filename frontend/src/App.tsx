@@ -31,6 +31,7 @@ import CourseDetail from "./pages/admin/CourseDetail";
 import CourseViewer from "./pages/admin/CourseViewer";
 import ManageSyllabi from "./pages/professor/ManageSyllabi";
 import Unauthorized from "./pages/Unauthorized";
+import RankingPage from "./pages/common/Ranking";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { UserRole } from "./types/auth.types";
 
@@ -142,6 +143,19 @@ const App = () => (
                       UserRole.ADMIN,
                     ]}>
                     <StudentExerciseView />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/dashboard/ranking"
+                element={
+                  <ProtectedRoute
+                    allowedRoles={[
+                      UserRole.STUDENT,
+                      UserRole.TEACHER,
+                      UserRole.ADMIN,
+                    ]}>
+                    <RankingPage />
                   </ProtectedRoute>
                 }
               />

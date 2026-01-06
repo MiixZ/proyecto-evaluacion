@@ -126,6 +126,37 @@ export class UserController {
     );
   });
 
+  changePassword = catchAsync(async (req: AuthRequest, res: Response) => {
+    const userId = req.user!.id;
+    const { currentPassword, newPassword } = req.body;
+
+    await userService.changePassword(userId, currentPassword, newPassword);
+
+    return ApiResponse.success(
+      res,
+      null,
+      200,
+      'Contraseña actualizada correctamente'
+    );
+  });
+
+  updateProfileImage = catchAsync(async (req: AuthRequest, res: Response) => {
+    const userId = req.user!.id;
+    const { profileImageUrl } = req.body;
+
+    const updatedProfile = await userService.updateProfileImage(
+      userId,
+      profileImageUrl
+    );
+
+    return ApiResponse.success(
+      res,
+      updatedProfile,
+      200,
+      'Imagen de perfil actualizada correctamente'
+    );
+  });
+
   changeRole = catchAsync(async (req: AuthRequest, res: Response) => {
     const { id } = req.params;
     const { role } = req.body;

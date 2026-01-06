@@ -9,6 +9,7 @@ import {
   listUsersRequest,
   updateUserRequest,
 } from '@validators/user.validator';
+import { changePasswordRequest } from '@validators/password.validator';
 
 const router = Router();
 
@@ -37,6 +38,19 @@ router.patch(
   authMiddleware,
   validateRequest(updateUserRequest),
   userController.updateMe
+);
+
+router.patch(
+  '/me/password',
+  authMiddleware,
+  validateRequest(changePasswordRequest),
+  userController.changePassword
+);
+
+router.patch(
+  '/me/profile-image',
+  authMiddleware,
+  userController.updateProfileImage
 );
 
 router.post('/:id/groups', authMiddleware, userController.assignGroup);

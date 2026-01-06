@@ -97,4 +97,33 @@ export const userService = {
   delete: async (id: string): Promise<void> => {
     await api.delete(`/v1/users/${id}`);
   },
+
+  /**
+   * Cambia la contraseña del usuario actual
+   */
+  changePassword: async (
+    currentPassword: string,
+    newPassword: string,
+    confirmPassword: string
+  ): Promise<void> => {
+    await api.patch("/v1/users/me/password", {
+      currentPassword,
+      newPassword,
+      confirmPassword,
+    });
+  },
+
+  /**
+   * Actualiza la imagen de perfil del usuario actual
+   */
+  updateProfileImage: async (profileImageUrl: string | null): Promise<User> => {
+    const { data } = await api.patch<ApiResponse<User>>(
+      "/v1/users/me/profile-image",
+      {
+        profileImageUrl,
+      }
+    );
+
+    return data.data;
+  },
 };

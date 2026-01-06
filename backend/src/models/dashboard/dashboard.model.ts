@@ -842,7 +842,6 @@ export class DashboardModel {
       JOIN exercises e ON s.exercise_id = e.id
       JOIN syllabi syl ON e.syllabus_id = syl.id
       JOIN courses c ON syl.course_id = c.id
-      WHERE s.archived = FALSE AND c.status IN ('active', 'planning', 'closed')
     `;
 
     const params: any[] = [];
@@ -855,6 +854,10 @@ export class DashboardModel {
           AND c.status IN ('active', 'planning', 'closed')
       `;
       params.push(groupId);
+    } else {
+      query += `
+        WHERE s.archived = FALSE AND c.status IN ('active', 'planning', 'closed')
+      `;
     }
 
     query += `

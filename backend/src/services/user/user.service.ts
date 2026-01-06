@@ -11,7 +11,11 @@ import { UserFilters } from './user.filter';
 import { emailService } from '@services/notification/email.service';
 import { userMapper } from '@mappers/user.mapper';
 import { auditService } from '@services/audit/audit.service';
-import { ConflictError, NotFoundError } from '@utils/errors';
+import {
+  AuthenticationError,
+  ConflictError,
+  NotFoundError,
+} from '@utils/errors';
 import crypto from 'crypto';
 
 /**
@@ -234,6 +238,68 @@ export class UserService {
     }));
 
     return userDTO;
+  }
+
+  /**
+   * Cambia la contraseña del usuario
+   * @param userId - ID del usuario
+   * @param currentPassword - Contraseña actual
+   * @param newPassword - Nueva contraseña
+   */
+  async changePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string
+  ): Promise<void> {
+    const currentHash = await userModel.getPasswordHash(userId as UUID);
+
+    const { comparePassword, hashPassword } = await import('@utils/jwt.utils');
+    const isValidPassword = await comparePassword(currentPassword, currentHash);
+
+    if (!isValidPassword) {
+      throw new AuthenticationError('La contraseña actual es incorrecta');
+    }
+
+    const newHash = await hashPassword(newPassword);
+    await userModel.updatePassword(userId as UUID, newHash);
+
+    await auditService.log(
+      'CHANGE_PASSWORD',
+      'user',
+      userId as UUID,
+      {},
+      userId as UUID
+    );
+  }
+
+  /**
+   * Actualiza la imagen de perfil del usuario
+   * @param userId - ID del usuario
+   * @param imageUrl - URL de la nueva imagen de perfil
+   */
+  async updateProfileImage(
+    userId: string,
+    imageUrl: string | null
+  ): Promise<UserDTO> {
+    const user = await userModel.getById(userId as UUID);
+
+    if (!user) {
+      throw new NotFoundError('Usuario no encontrado');
+    }
+
+    await userModel.update(userId as UUID, {
+      profileImageUrl: imageUrl,
+    });
+
+    await auditService.log(
+      'UPDATE_PROFILE_IMAGE',
+      'user',
+      userId as UUID,
+      { imageUrl },
+      userId as UUID
+    );
+
+    return this.getProfile(userId);
   }
 
   /**

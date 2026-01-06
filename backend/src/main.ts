@@ -28,6 +28,7 @@ import routerDashboard from '@routes/dashboard/dashboard';
 import routerLanguages from '@routes/language/language';
 import routerHints from '@routes/hint/hint';
 import routerSubmissionErrors from '@routes/catalog/submission-error';
+import routerRanking from '@routes/ranking/ranking';
 
 const app = express();
 const PORT = config.port;
@@ -116,6 +117,7 @@ apiV1.use('/dashboard', routerDashboard);
 apiV1.use('/languages', routerLanguages);
 apiV1.use('/hints', routerHints);
 apiV1.use('/submission-errors', routerSubmissionErrors);
+apiV1.use('/ranking', routerRanking);
 
 // ==================== MANEJO DE ERRORES ====================
 

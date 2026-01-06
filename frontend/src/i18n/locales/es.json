@@ -90,13 +90,6 @@
       "degree": "Titulación",
       "edit": "Editar",
       "first_semester": "1er Semestre",
-      "status": {
-        "name": "Estado",
-        "active": "Activo",
-        "planning": "En Planificación",
-        "closed": "Cerrado",
-        "archived": "Archivado"
-      },
       "migration": {
         "academicYear": "Año Académico",
         "allStatus": "Todos los estados",
@@ -476,7 +469,12 @@
       "email_invalid": "El formato del correo electrónico no es válido",
       "first_name_short": "El nombre es muy corto",
       "last_name_short": "Los apellidos son muy cortos",
-      "password_required": "La contraseña es obligatoria"
+      "password_required": "La contraseña es obligatoria",
+      "current_password_required": "La contraseña actual es obligatoria",
+      "password_min": "La contraseña debe tener al menos 8 caracteres",
+      "confirm_password_required": "Debes confirmar tu contraseña",
+      "passwords_not_match": "Las contraseñas no coinciden",
+      "new_password_different": "La nueva contraseña debe ser diferente a la actual"
     }
   },
   "common": {
@@ -502,6 +500,7 @@
     "results": "resultados",
     "rows": "filas",
     "save": "Guardar",
+    "saving": "Guardando...",
     "search": "Buscar",
     "select_option": "Selecciona una opción",
     "showing": "Mostrando",
@@ -1144,6 +1143,27 @@
       "success_desc": "Tus datos se han guardado correctamente.",
       "success_title": "Perfil actualizado"
     },
+    "password": {
+      "change_button": "Cambiar contraseña",
+      "current": "Contraseña actual",
+      "new": "Nueva contraseña",
+      "confirm": "Confirmar contraseña",
+      "dialog_title": "Cambiar contraseña",
+      "dialog_desc": "Ingresa tu contraseña actual y la nueva contraseña",
+      "success_title": "Contraseña actualizada",
+      "success_desc": "Tu contraseña ha sido actualizada correctamente",
+      "error_title": "Error",
+      "error_desc": "Error al cambiar la contraseña"
+    },
+    "image": {
+      "dialog_title": "Actualizar imagen de perfil",
+      "dialog_desc": "Ingresa la URL de tu nueva imagen de perfil",
+      "url_label": "URL de imagen",
+      "success_title": "Imagen actualizada",
+      "success_desc": "Tu imagen de perfil ha sido actualizada",
+      "error_title": "Error",
+      "error_desc": "Error al actualizar la imagen"
+    },
     "placeholders": {
       "bio": "Cuéntanos un poco sobre ti...",
       "language": "Selecciona un idioma",
@@ -1193,6 +1213,41 @@
       "subject": "Asignatura"
     },
     "title": "Mi Progreso"
+  },
+  "ranking_page": {
+    "title": "Ranking de Estudiantes",
+    "subtitle": "Clasificación de estudiantes por rendimiento académico",
+    "error": "Error al cargar el ranking. Por favor, intenta de nuevo.",
+    "empty": "No hay estudiantes en el ranking con los filtros seleccionados.",
+    "filters": {
+      "select_subject": "Selecciona una asignatura",
+      "all_subjects": "Todas las asignaturas",
+      "select_group": "Selecciona un grupo",
+      "all_groups": "Todos los grupos"
+    },
+    "podium": {
+      "title": "Top 3 - Podio de Honor",
+      "description": "Los mejores estudiantes de la clasificación",
+      "avg_score": "Promedio",
+      "perfect": "perfectos"
+    },
+    "list": {
+      "title": "Clasificación Completa",
+      "exercises": "Ejercicios",
+      "completion": "Completado",
+      "avg_score": "Promedio"
+    },
+    "teacher": {
+      "title": "Profesor de la Asignatura",
+      "subject": "Asignatura",
+      "courses": "Cursos"
+    },
+    "stats": {
+      "title": "Estadísticas Generales",
+      "total_students": "Estudiantes totales",
+      "avg_completion": "Completado promedio",
+      "perfect_scores": "Notas perfectas"
+    }
   },
   "security": {
     "actions": {
@@ -1315,6 +1370,7 @@
       "my_exercises": "Mis Ejercicios",
       "professor_panel": "Panel Docente",
       "progress": "Mi Progreso",
+      "ranking": "Ranking",
       "security": "Seguridad",
       "subjects": "Mis Asignaturas",
       "subjects_admin": "Asignaturas",
