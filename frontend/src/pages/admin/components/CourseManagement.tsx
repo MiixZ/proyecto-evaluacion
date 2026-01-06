@@ -247,7 +247,7 @@ export default function CourseManagement() {
     },
     {
       key: "status",
-      label: t("admin.courses.status"),
+      label: t("admin.courses.status.name"),
       sortable: true,
       render: (item) => (
         <Badge variant={item.status === "active" ? "default" : "outline"}>
