@@ -77,6 +77,7 @@ import {
   UserCog,
   Users,
   GraduationCap,
+  AlertCircle,
 } from "lucide-react";
 import {
   Tabs,
@@ -627,6 +628,11 @@ const UsersPage = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [temporaryPassword, setTemporaryPassword] = useState<string | null>(
+    null
+  );
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [createdUserEmail, setCreatedUserEmail] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [newUser, setNewUser] = useState({
     firstName: "",
@@ -674,9 +680,17 @@ const UsersPage = () => {
 
   const createMutation = useMutation({
     mutationFn: userService.create,
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast({ title: t("admin.users.user_created") });
       setIsCreateOpen(false);
+
+      // Guardar la contraseña temporal y mostrar diálogo
+      if (data.temporaryPassword) {
+        setTemporaryPassword(data.temporaryPassword);
+        setCreatedUserEmail(newUser.email);
+        setShowPasswordDialog(true);
+      }
+
       setNewUser({
         firstName: "",
         lastName: "",
@@ -987,6 +1001,109 @@ const UsersPage = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Diálogo de Contraseña Temporal */}
+      <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Shield className="h-5 w-5 text-green-600" />
+              {t(
+                "admin.users.temporary_password_title",
+                "Usuario creado exitosamente"
+              )}
+            </DialogTitle>
+            <DialogDescription>
+              {t(
+                "admin.users.temporary_password_desc",
+                "Guarda esta contraseña temporal, no se volverá a mostrar"
+              )}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">
+                {t("admin.users.email", "Email")}
+              </Label>
+              <div className="flex items-center gap-2">
+                <Input value={createdUserEmail} readOnly className="bg-muted" />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    navigator.clipboard.writeText(createdUserEmail);
+                    toast({ title: t("common.copied", "Copiado") });
+                  }}>
+                  {t("common.copy", "Copiar")}
+                </Button>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">
+                {t("admin.users.temporary_password", "Contraseña temporal")}
+              </Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  value={temporaryPassword || ""}
+                  readOnly
+                  className="font-mono bg-yellow-50 dark:bg-yellow-950 border-yellow-300 dark:border-yellow-700"
+                  type="text"
+                />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    if (temporaryPassword) {
+                      navigator.clipboard.writeText(temporaryPassword);
+                      toast({
+                        title: t(
+                          "admin.users.password_copied",
+                          "Contraseña copiada"
+                        ),
+                        description: t(
+                          "admin.users.password_copied_desc",
+                          "Compártela de forma segura con el usuario"
+                        ),
+                      });
+                    }
+                  }}>
+                  {t("common.copy", "Copiar")}
+                </Button>
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-yellow-200 bg-yellow-50 dark:bg-yellow-950 dark:border-yellow-800 p-3">
+              <div className="flex gap-2">
+                <AlertCircle className="h-4 w-4 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
+                <div className="text-sm space-y-1">
+                  <p className="font-medium text-yellow-900 dark:text-yellow-100">
+                    {t("admin.users.important", "Importante")}
+                  </p>
+                  <p className="text-yellow-800 dark:text-yellow-200">
+                    {t(
+                      "admin.users.password_warning",
+                      "El usuario deberá cambiar esta contraseña en su primer inicio de sesión. Esta contraseña no se volverá a mostrar."
+                    )}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              onClick={() => {
+                setShowPasswordDialog(false);
+                setTemporaryPassword(null);
+                setCreatedUserEmail("");
+              }}>
+              {t("common.understood", "Entendido")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

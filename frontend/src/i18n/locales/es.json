@@ -1504,5 +1504,24 @@
     "go_back": "Volver atrás",
     "go_to_dashboard": "Ir a mi Panel",
     "title": "Acceso Denegado"
+  },
+  "first_password_change": {
+    "title": "Establece tu contraseña",
+    "description": "Por seguridad, debes establecer una nueva contraseña antes de continuar usando la plataforma.",
+    "new_password": "Nueva contraseña",
+    "password_placeholder": "Mínimo 8 caracteres",
+    "password_required": "La contraseña es requerida",
+    "password_min_length": "La contraseña debe tener al menos 8 caracteres",
+    "password_pattern": "Debe contener mayúsculas, minúsculas y números",
+    "confirm_password": "Confirmar contraseña",
+    "confirm_placeholder": "Repite tu contraseña",
+    "confirm_required": "Debes confirmar la contraseña",
+    "passwords_no_match": "Las contraseñas no coinciden",
+    "error": "Error al cambiar la contraseña. Inténtalo de nuevo.",
+    "success": "Contraseña establecida correctamente. Redirigiendo...",
+    "success_short": "¡Listo!",
+    "saving": "Guardando...",
+    "submit": "Establecer contraseña",
+    "warning": "Esta acción es obligatoria para acceder a la plataforma."
   }
 }

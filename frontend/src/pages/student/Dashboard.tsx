@@ -135,19 +135,6 @@ export default function StudentDashboard() {
       </div>
     );
   }
-
-  if (error) {
-    return (
-      <div className="p-6">
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>{t("dashboard.error")}</AlertTitle>
-          <AlertDescription>{t("dashboard.errorDescription")}</AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex flex-col gap-2">

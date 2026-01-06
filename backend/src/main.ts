@@ -5,6 +5,7 @@ import { initializeDatabase } from './config/database';
 import { logger } from './utils/logger';
 import {
   authMiddleware,
+  requirePasswordChangeMiddleware,
   requestLoggerMiddleware,
   errorHandlerMiddleware,
 } from './middleware/auth.middleware';
@@ -89,6 +90,9 @@ const apiV1 = express.Router();
 
 // Middleware de autenticación global para v1
 apiV1.use(authMiddleware);
+
+// Middleware de verificación de cambio de contraseña obligatorio
+apiV1.use(requirePasswordChangeMiddleware);
 
 apiV1.get('/me', (req: AuthRequest, res) => {
   res.json({

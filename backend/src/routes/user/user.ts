@@ -9,7 +9,10 @@ import {
   listUsersRequest,
   updateUserRequest,
 } from '@validators/user.validator';
-import { changePasswordRequest } from '@validators/password.validator';
+import {
+  changePasswordRequest,
+  firstPasswordChangeRequest,
+} from '@validators/password.validator';
 
 const router = Router();
 
@@ -45,6 +48,13 @@ router.patch(
   authMiddleware,
   validateRequest(changePasswordRequest),
   userController.changePassword
+);
+
+router.post(
+  '/me/first-password-change',
+  authMiddleware,
+  validateRequest(firstPasswordChangeRequest),
+  userController.firstPasswordChange
 );
 
 router.patch(

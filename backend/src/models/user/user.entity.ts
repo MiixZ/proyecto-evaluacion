@@ -16,6 +16,7 @@ export interface UserEntity extends Timestamps {
   phone?: string | null;
   bio?: string | null;
   profileImageUrl?: string | null;
+  mustChangePassword: boolean;
   preferredLanguage: LanguageType;
   createdAt: Date;
   updatedAt: Date;
@@ -35,6 +36,7 @@ export interface UserDTO {
   phone?: string | null;
   bio?: string | null;
   profileImageUrl?: string | null;
+  mustChangePassword: boolean;
   preferredLanguage: LanguageType;
   createdAt: Date;
   enrollments?: UserEnrollmentDTO[];
@@ -56,4 +58,12 @@ export interface UserEnrollmentDTO {
   groupName: string;
   academicYear: string;
   role: string;
+}
+
+/**
+ * DTO para respuesta de creación de usuario
+ * Incluye la contraseña temporal generada (solo se devuelve una vez)
+ */
+export interface CreateUserResponse extends UserDTO {
+  temporaryPassword?: string;
 }

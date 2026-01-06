@@ -11,6 +11,7 @@ export interface UserRow extends RowDataPacket {
   phone: string | null;
   bio: string | null;
   profile_image_url: string | null;
+  must_change_password: boolean;
   preferred_language: string;
   created_at: Date;
   updated_at: Date;

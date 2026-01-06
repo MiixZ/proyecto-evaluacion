@@ -2,6 +2,7 @@ import api from "@/lib/api";
 import {
   User,
   CreateUserPayload,
+  CreateUserResponse,
   UserRole,
   UserStatus,
 } from "@/types/user.type";
@@ -59,8 +60,11 @@ export const userService = {
   /**
    * Crea un nuevo usuario
    */
-  create: async (payload: CreateUserPayload): Promise<User> => {
-    const { data } = await api.post<ApiResponse<User>>("/v1/users", payload);
+  create: async (payload: CreateUserPayload): Promise<CreateUserResponse> => {
+    const { data } = await api.post<ApiResponse<CreateUserResponse>>(
+      "/v1/users",
+      payload
+    );
 
     return data.data;
   },
@@ -108,6 +112,19 @@ export const userService = {
   ): Promise<void> => {
     await api.patch("/v1/users/me/password", {
       currentPassword,
+      newPassword,
+      confirmPassword,
+    });
+  },
+
+  /**
+   * Primer cambio de contraseña (sin contraseña actual)
+   */
+  firstPasswordChange: async (
+    newPassword: string,
+    confirmPassword: string
+  ): Promise<void> => {
+    await api.post("/v1/users/me/first-password-change", {
       newPassword,
       confirmPassword,
     });

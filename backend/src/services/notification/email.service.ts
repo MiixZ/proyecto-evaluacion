@@ -152,15 +152,9 @@ export class EmailService {
     `;
 
     if (!this.transporter) {
-      if (config.nodeEnv === 'production') {
-        logger.info(
-          `[MOCK EMAIL] Email simulado enviado a ${to}. (Contenido oculto en producción)`
-        );
-      } else {
-        logger.info(
-          `[MOCK EMAIL] To: ${to} | Subject: ${subject} | Password: ${password}`
-        );
-      }
+      logger.debug(
+        `Email mock: Email de bienvenida no enviado (SMTP no configurado). La contraseña temporal se muestra en el frontend.`
+      );
       return;
     }
 

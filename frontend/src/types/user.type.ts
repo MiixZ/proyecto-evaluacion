@@ -9,6 +9,7 @@ export interface User {
   role: UserRole;
   status: UserStatus;
   profileImageUrl?: string;
+  mustChangePassword: boolean;
   enrollments?: Enrollment[];
 }
 
@@ -27,6 +28,10 @@ export interface CreateUserPayload {
   password?: string;
 }
 
+export interface CreateUserResponse extends User {
+  temporaryPassword?: string;
+}
+
 export interface UpdateProfilePayload {
   firstName?: string;
   lastName?: string;
@@ -39,6 +44,7 @@ export interface UserProfile extends User {
   phone?: string;
   bio?: string;
   profileImageUrl?: string;
+  mustChangePassword: boolean;
   preferredLanguage: string;
   createdAt: string;
   enrollments?: UserEnrollment[];
@@ -49,4 +55,15 @@ export interface UserEnrollment {
   groupName: string;
   academicYear: string;
   role: string;
+}
+
+export interface ChangePasswordPayload {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
+export interface FirstPasswordChangePayload {
+  newPassword: string;
+  confirmPassword: string;
 }

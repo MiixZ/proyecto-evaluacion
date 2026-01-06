@@ -187,3 +187,73 @@ export function requestLoggerMiddleware(
 
   next();
 }
+
+/**
+ * Middleware para verificar si el usuario debe cambiar su contraseña
+ * Permite acceso solo a la ruta de primer cambio de contraseña si el flag está activo
+ *
+ * Rutas exceptuadas:
+ * - /api/v1/users/me/first-password-change (POST)
+ * - /api/v1/auth/logout (POST)
+ *
+ * Uso:
+ *   app.use('/api/v1', authMiddleware, requirePasswordChangeMiddleware);
+ */
+export async function requirePasswordChangeMiddleware(
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    // Rutas exceptuadas que no requieren verificación
+    const exemptRoutes = [
+      { method: 'POST', path: '/api/v1/users/me/first-password-change' },
+      { method: 'POST', path: '/api/v1/auth/logout' },
+      { method: 'GET', path: '/api/v1/users/profile/me' },
+    ];
+
+    const isExempt = exemptRoutes.some(
+      (route) => route.method === req.method && route.path === req.path
+    );
+
+    if (isExempt) {
+      return next();
+    }
+
+    // Verificar si el usuario está autenticado
+    if (!req.user) {
+      return next();
+    }
+
+    // Obtener información del usuario desde la base de datos
+    const { userModel } = await import('@models/user/user.model');
+    const user = await userModel.getById(req.user.id);
+
+    if (!user) {
+      return next();
+    }
+
+    // Si el usuario debe cambiar su contraseña, bloquear acceso
+    if (user.mustChangePassword) {
+      logger.warn('Usuario debe cambiar contraseña', {
+        userId: user.id,
+        email: user.email,
+      });
+
+      return res.status(403).json({
+        success: false,
+        error: {
+          code: 'PASSWORD_CHANGE_REQUIRED',
+          message: 'Debes cambiar tu contraseña antes de continuar',
+          mustChangePassword: true,
+        },
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    next();
+  } catch (error) {
+    logger.error('Error en requirePasswordChangeMiddleware', error);
+    next();
+  }
+}

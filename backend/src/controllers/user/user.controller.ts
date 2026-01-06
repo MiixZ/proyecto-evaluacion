@@ -140,6 +140,20 @@ export class UserController {
     );
   });
 
+  firstPasswordChange = catchAsync(async (req: AuthRequest, res: Response) => {
+    const userId = req.user!.id;
+    const { newPassword } = req.body;
+
+    await userService.firstPasswordChange(userId, newPassword);
+
+    return ApiResponse.success(
+      res,
+      null,
+      200,
+      'Contraseña establecida correctamente. Ya puedes usar la aplicación.'
+    );
+  });
+
   updateProfileImage = catchAsync(async (req: AuthRequest, res: Response) => {
     const userId = req.user!.id;
     const { profileImageUrl } = req.body;

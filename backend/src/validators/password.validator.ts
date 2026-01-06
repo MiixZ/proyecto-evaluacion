@@ -27,3 +27,27 @@ export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
 export const changePasswordRequest = z.object({
   body: changePasswordSchema,
 });
+
+/**
+ * Schema para primer cambio de contraseña (sin contraseña actual)
+ */
+export const firstPasswordChangeSchema = z
+  .object({
+    newPassword: passwordSchema.refine(
+      (pwd) => pwd.length >= 8,
+      'La contraseña debe tener al menos 8 caracteres'
+    ),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: 'Las contraseñas no coinciden',
+    path: ['confirmPassword'],
+  });
+
+export type FirstPasswordChangeInput = z.infer<
+  typeof firstPasswordChangeSchema
+>;
+
+export const firstPasswordChangeRequest = z.object({
+  body: firstPasswordChangeSchema,
+});
