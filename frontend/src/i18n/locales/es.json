@@ -89,6 +89,23 @@
       "create_course": "Crear Curso",
       "created": "creado",
       "degree": "Titulación",
+      "detail": {
+        "academicYear": "Año Académico",
+        "content": "Contenido del Curso",
+        "contentDescription": "Temarios y ejercicios organizados por módulos",
+        "courseInfo": "Información del Curso",
+        "description": "Descripción",
+        "exercises": "Ejercicios",
+        "exercisesCount": "ejercicios",
+        "exercisesList": "Ejercicios",
+        "noContent": "Este curso no tiene contenido aún",
+        "noExercises": "No hay ejercicios en este temario",
+        "notFound": "Curso no encontrado",
+        "semester": "Semestre",
+        "subtitle": "Información completa del curso y su contenido",
+        "syllabi": "Temarios",
+        "title": "Detalle del Curso"
+      },
       "edit": "Editar",
       "first_semester": "1er Semestre",
       "migration": {
@@ -138,37 +155,6 @@
         "title": "Migración de Contenido entre Cursos",
         "viewDetail": "Ver Detalle"
       },
-      "detail": {
-        "title": "Detalle del Curso",
-        "subtitle": "Información completa del curso y su contenido",
-        "notFound": "Curso no encontrado",
-        "courseInfo": "Información del Curso",
-        "academicYear": "Año Académico",
-        "semester": "Semestre",
-        "syllabi": "Temarios",
-        "exercises": "Ejercicios",
-        "content": "Contenido del Curso",
-        "contentDescription": "Temarios y ejercicios organizados por módulos",
-        "noContent": "Este curso no tiene contenido aún",
-        "exercisesCount": "ejercicios",
-        "description": "Descripción",
-        "exercisesList": "Ejercicios",
-        "noExercises": "No hay ejercicios en este temario"
-      },
-      "viewer": {
-        "title": "Visualizador de Cursos",
-        "subtitle": "Explora el contenido detallado de los cursos",
-        "selectSubject": "Seleccionar Asignatura",
-        "selectSubjectDesc": "Elige una asignatura para ver sus cursos disponibles",
-        "selectSubjectPlaceholder": "Buscar asignatura...",
-        "selectCourse": "Seleccionar Curso",
-        "selectCourseDesc": "Elige un curso para ver su contenido completo",
-        "selectCoursePlaceholder": "Selecciona un curso...",
-        "searchPlaceholder": "Buscar por año académico...",
-        "noCourses": "No se encontraron cursos para esta asignatura",
-        "syllabi": "temarios",
-        "exercises": "ejercicios"
-      },
       "new_course": "Nuevo Curso",
       "no_courses": "No se encontraron cursos",
       "planning": "Planificación",
@@ -179,10 +165,10 @@
       "select_subject": "Selecciona...",
       "semester": "Semestre",
       "status": {
-        "name": "Estado",
         "active": "Activo",
         "archived": "Archivado",
         "closed": "Cerrado",
+        "name": "Estado",
         "planning": "Planificación"
       },
       "subject": "Asignatura",
@@ -190,32 +176,21 @@
       "title": "Cursos Académicos",
       "unknown": "Desconocida",
       "updated": "actualizado",
+      "viewer": {
+        "exercises": "ejercicios",
+        "noCourses": "No se encontraron cursos para esta asignatura",
+        "searchPlaceholder": "Buscar por año académico...",
+        "selectCourse": "Seleccionar Curso",
+        "selectCourseDesc": "Elige un curso para ver su contenido completo",
+        "selectCoursePlaceholder": "Selecciona un curso...",
+        "selectSubject": "Seleccionar Asignatura",
+        "selectSubjectDesc": "Elige una asignatura para ver sus cursos disponibles",
+        "selectSubjectPlaceholder": "Buscar asignatura...",
+        "subtitle": "Explora el contenido detallado de los cursos",
+        "syllabi": "temarios",
+        "title": "Visualizador de Cursos"
+      },
       "year": "Año"
-    },
-    "groups": {
-      "title": "Gestión de Grupos",
-      "subtitle": "Administra grupos por curso.",
-      "name": "Nombre del Grupo",
-      "name_placeholder": "Ej: Grupo A",
-      "description": "Descripción",
-      "description_placeholder": "Descripción del grupo...",
-      "capacity": "Capacidad",
-      "status": "Estado",
-      "active": "Activo",
-      "archived": "Archivado",
-      "create": "Crear",
-      "created": "creado",
-      "edit": "Editar",
-      "edit_group": "Editar Grupo",
-      "save_changes": "Guardar Cambios",
-      "save_error": "Error al guardar grupo",
-      "group_saved": "Grupo {{action}} correctamente",
-      "updated": "actualizado",
-      "no_groups": "No se encontraron grupos",
-      "select_course": "Selecciona Curso",
-      "actions": "Acciones",
-      "create_group": "Crear Grupo",
-      "actions_label": "Acciones"
     },
     "dashboard": {
       "academic_structure": "Estructura Académica",
@@ -313,6 +288,31 @@
       "total_credits": "Créditos Totales",
       "updated": "actualizada",
       "years": "años"
+    },
+    "groups": {
+      "actions": "Acciones",
+      "actions_label": "Acciones",
+      "active": "Activo",
+      "archived": "Archivado",
+      "capacity": "Capacidad",
+      "create": "Crear",
+      "create_group": "Crear Grupo",
+      "created": "creado",
+      "description": "Descripción",
+      "description_placeholder": "Descripción del grupo...",
+      "edit": "Editar",
+      "edit_group": "Editar Grupo",
+      "group_saved": "Grupo {{action}} correctamente",
+      "name": "Nombre del Grupo",
+      "name_placeholder": "Ej: Grupo A",
+      "no_groups": "No se encontraron grupos",
+      "save_changes": "Guardar Cambios",
+      "save_error": "Error al guardar grupo",
+      "select_course": "Selecciona Curso",
+      "status": "Estado",
+      "subtitle": "Administra grupos por curso.",
+      "title": "Gestión de Grupos",
+      "updated": "actualizado"
     },
     "subjects": {
       "actions": "Acciones",
@@ -492,15 +492,15 @@
     },
     "validation": {
       "bio_max": "Máximo 500 caracteres",
+      "confirm_password_required": "Debes confirmar tu contraseña",
+      "current_password_required": "La contraseña actual es obligatoria",
       "email_invalid": "El formato del correo electrónico no es válido",
       "first_name_short": "El nombre es muy corto",
       "last_name_short": "Los apellidos son muy cortos",
-      "password_required": "La contraseña es obligatoria",
-      "current_password_required": "La contraseña actual es obligatoria",
+      "new_password_different": "La nueva contraseña debe ser diferente a la actual",
       "password_min": "La contraseña debe tener al menos 8 caracteres",
-      "confirm_password_required": "Debes confirmar tu contraseña",
-      "passwords_not_match": "Las contraseñas no coinciden",
-      "new_password_different": "La nueva contraseña debe ser diferente a la actual"
+      "password_required": "La contraseña es obligatoria",
+      "passwords_not_match": "Las contraseñas no coinciden"
     }
   },
   "common": {
@@ -743,6 +743,25 @@
     "visibility_label": "Visibilidad",
     "write_comment": "Escribe un comentario o sugerencia..."
   },
+  "first_password_change": {
+    "confirm_password": "Confirmar contraseña",
+    "confirm_placeholder": "Repite tu contraseña",
+    "confirm_required": "Debes confirmar la contraseña",
+    "description": "Por seguridad, debes establecer una nueva contraseña antes de continuar usando la plataforma.",
+    "error": "Error al cambiar la contraseña. Inténtalo de nuevo.",
+    "new_password": "Nueva contraseña",
+    "password_min_length": "La contraseña debe tener al menos 8 caracteres",
+    "password_pattern": "Debe contener mayúsculas, minúsculas y números",
+    "password_placeholder": "Mínimo 8 caracteres",
+    "password_required": "La contraseña es requerida",
+    "passwords_no_match": "Las contraseñas no coinciden",
+    "saving": "Guardando...",
+    "submit": "Establecer contraseña",
+    "success": "Contraseña establecida correctamente. Redirigiendo...",
+    "success_short": "¡Listo!",
+    "title": "Establece tu contraseña",
+    "warning": "Esta acción es obligatoria para acceder a la plataforma."
+  },
   "landing": {
     "cta_footer": {
       "button": "Acceder a la plataforma",
@@ -983,9 +1002,9 @@
       "panel_title": "Panel del Profesor",
       "plagiarism_alerts_title": "Alertas de Plagio",
       "progress_column": "Progreso",
-      "recent_activity_title": "Actividad Reciente",
       "recent_activity_submitted": "Entregó",
       "recent_activity_time_ago": "Hace",
+      "recent_activity_title": "Actividad Reciente",
       "recent_submissions": "Últimas entregas del grupo",
       "search_student": "Buscar estudiante...",
       "select_group": "Seleccionar grupo",
@@ -1098,28 +1117,28 @@
     },
     "syllabi": {
       "create_button": "Crear Temario",
-      "create_dialog_title": "Crear Nuevo Temario",
       "create_dialog_desc": "Define el título, descripción y tipo del nuevo tema",
-      "create_success": "Temario creado correctamente",
+      "create_dialog_title": "Crear Nuevo Temario",
       "create_error": "Error al crear el temario",
+      "create_success": "Temario creado correctamente",
       "creating": "Creando...",
       "delete_button": "Eliminar",
-      "delete_confirm_title": "¿Eliminar temario?",
       "delete_confirm_desc": "Esta acción no se puede deshacer. Solo puedes eliminar temarios sin ejercicios asociados.",
-      "delete_success": "Temario eliminado correctamente",
+      "delete_confirm_title": "¿Eliminar temario?",
       "delete_error": "Error al eliminar el temario",
+      "delete_success": "Temario eliminado correctamente",
       "deleting": "Eliminando...",
       "error_toggle": "Error al cambiar la visibilidad",
-      "field_title": "Título",
-      "field_title_placeholder": "Ej: Fundamentos de Algoritmos",
       "field_description": "Descripción",
       "field_description_placeholder": "Descripción breve del contenido (opcional)",
+      "field_title": "Título",
+      "field_title_placeholder": "Ej: Fundamentos de Algoritmos",
       "field_type": "Tipo de Contenido",
       "hidden": "Oculto",
       "no_groups": "No tienes grupos asignados. Contacta con el administrador.",
       "no_topics": "Este curso aún no tiene temarios creados.",
-      "reorder_success": "Orden actualizado correctamente",
       "reorder_error": "Error al reordenar el temario",
+      "reorder_success": "Orden actualizado correctamente",
       "select_course": "Seleccionar Curso",
       "select_course_placeholder": "Elige un curso para gestionar sus temarios",
       "subtitle": "Controla la visibilidad de los temas y módulos de tus cursos",
@@ -1159,6 +1178,15 @@
       "phone": "Teléfono",
       "role": "Rol de Usuario"
     },
+    "image": {
+      "dialog_desc": "Ingresa la URL de tu nueva imagen de perfil",
+      "dialog_title": "Actualizar imagen de perfil",
+      "error_desc": "Error al actualizar la imagen",
+      "error_title": "Error",
+      "success_desc": "Tu imagen de perfil ha sido actualizada",
+      "success_title": "Imagen actualizada",
+      "url_label": "URL de imagen"
+    },
     "languages": {
       "en": "Inglés",
       "es": "Español"
@@ -1171,24 +1199,15 @@
     },
     "password": {
       "change_button": "Cambiar contraseña",
-      "current": "Contraseña actual",
-      "new": "Nueva contraseña",
       "confirm": "Confirmar contraseña",
-      "dialog_title": "Cambiar contraseña",
+      "current": "Contraseña actual",
       "dialog_desc": "Ingresa tu contraseña actual y la nueva contraseña",
-      "success_title": "Contraseña actualizada",
+      "dialog_title": "Cambiar contraseña",
+      "error_desc": "Error al cambiar la contraseña",
+      "error_title": "Error",
+      "new": "Nueva contraseña",
       "success_desc": "Tu contraseña ha sido actualizada correctamente",
-      "error_title": "Error",
-      "error_desc": "Error al cambiar la contraseña"
-    },
-    "image": {
-      "dialog_title": "Actualizar imagen de perfil",
-      "dialog_desc": "Ingresa la URL de tu nueva imagen de perfil",
-      "url_label": "URL de imagen",
-      "success_title": "Imagen actualizada",
-      "success_desc": "Tu imagen de perfil ha sido actualizada",
-      "error_title": "Error",
-      "error_desc": "Error al actualizar la imagen"
+      "success_title": "Contraseña actualizada"
     },
     "placeholders": {
       "bio": "Cuéntanos un poco sobre ti...",
@@ -1241,39 +1260,39 @@
     "title": "Mi Progreso"
   },
   "ranking_page": {
-    "title": "Ranking de Estudiantes",
-    "subtitle": "Clasificación de estudiantes por rendimiento académico",
-    "error": "Error al cargar el ranking. Por favor, intenta de nuevo.",
     "empty": "No hay estudiantes en el ranking con los filtros seleccionados.",
+    "error": "Error al cargar el ranking. Por favor, intenta de nuevo.",
     "filters": {
-      "select_subject": "Selecciona una asignatura",
+      "all_groups": "Todos los grupos",
       "all_subjects": "Todas las asignaturas",
       "select_group": "Selecciona un grupo",
-      "all_groups": "Todos los grupos"
-    },
-    "podium": {
-      "title": "Top 3 - Podio de Honor",
-      "description": "Los mejores estudiantes de la clasificación",
-      "avg_score": "Promedio",
-      "perfect": "perfectos"
+      "select_subject": "Selecciona una asignatura"
     },
     "list": {
-      "title": "Clasificación Completa",
-      "exercises": "Ejercicios",
+      "avg_score": "Promedio",
       "completion": "Completado",
-      "avg_score": "Promedio"
+      "exercises": "Ejercicios",
+      "title": "Clasificación Completa"
     },
-    "teacher": {
-      "title": "Profesor de la Asignatura",
-      "subject": "Asignatura",
-      "courses": "Cursos"
+    "podium": {
+      "avg_score": "Promedio",
+      "description": "Los mejores estudiantes de la clasificación",
+      "perfect": "perfectos",
+      "title": "Top 3 - Podio de Honor"
     },
     "stats": {
-      "title": "Estadísticas Generales",
-      "total_students": "Estudiantes totales",
       "avg_completion": "Completado promedio",
-      "perfect_scores": "Notas perfectas"
-    }
+      "perfect_scores": "Notas perfectas",
+      "title": "Estadísticas Generales",
+      "total_students": "Estudiantes totales"
+    },
+    "subtitle": "Clasificación de estudiantes por rendimiento académico",
+    "teacher": {
+      "courses": "Cursos",
+      "subject": "Asignatura",
+      "title": "Profesor de la Asignatura"
+    },
+    "title": "Ranking de Estudiantes"
   },
   "security": {
     "actions": {
@@ -1447,11 +1466,11 @@
     "view_exercises": "Ver ejercicios"
   },
   "submission_detail": {
-    "archive_button": "Archivar",
     "archive": {
       "error": "Error al archivar la entrega",
       "success": "Entrega archivada correctamente"
     },
+    "archive_button": "Archivar",
     "archived": "Archivado",
     "archived_at": "Archivado el",
     "back": "Volver",
@@ -1469,11 +1488,11 @@
     "memory": "Memoria",
     "obtained": "Obtenido:",
     "report_json": "Reporte JSON",
-    "restore_button": "Restaurar",
     "restore": {
       "error": "Error al restaurar la entrega",
       "success": "Entrega restaurada correctamente"
     },
+    "restore_button": "Restaurar",
     "score": "Puntuación",
     "student": "Estudiante",
     "test_cases": "Casos de Prueba",
@@ -1530,24 +1549,5 @@
     "go_back": "Volver atrás",
     "go_to_dashboard": "Ir a mi Panel",
     "title": "Acceso Denegado"
-  },
-  "first_password_change": {
-    "title": "Establece tu contraseña",
-    "description": "Por seguridad, debes establecer una nueva contraseña antes de continuar usando la plataforma.",
-    "new_password": "Nueva contraseña",
-    "password_placeholder": "Mínimo 8 caracteres",
-    "password_required": "La contraseña es requerida",
-    "password_min_length": "La contraseña debe tener al menos 8 caracteres",
-    "password_pattern": "Debe contener mayúsculas, minúsculas y números",
-    "confirm_password": "Confirmar contraseña",
-    "confirm_placeholder": "Repite tu contraseña",
-    "confirm_required": "Debes confirmar la contraseña",
-    "passwords_no_match": "Las contraseñas no coinciden",
-    "error": "Error al cambiar la contraseña. Inténtalo de nuevo.",
-    "success": "Contraseña establecida correctamente. Redirigiendo...",
-    "success_short": "¡Listo!",
-    "saving": "Guardando...",
-    "submit": "Establecer contraseña",
-    "warning": "Esta acción es obligatoria para acceder a la plataforma."
   }
 }

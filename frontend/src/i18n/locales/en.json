@@ -57,6 +57,23 @@
   },
   "admin": {
     "courses": {
+      "detail": {
+        "academicYear": "Academic Year",
+        "content": "Course Content",
+        "contentDescription": "Syllabi and exercises organized by modules",
+        "courseInfo": "Course Information",
+        "description": "Description",
+        "exercises": "Exercises",
+        "exercisesCount": "exercises",
+        "exercisesList": "Exercises",
+        "noContent": "This course has no content yet",
+        "noExercises": "No exercises in this syllabus",
+        "notFound": "Course not found",
+        "semester": "Semester",
+        "subtitle": "Complete course information and content",
+        "syllabi": "Syllabi",
+        "title": "Course Detail"
+      },
       "migration": {
         "academicYear": "Academic Year",
         "allStatus": "All statuses",
@@ -104,43 +121,26 @@
         "title": "Course Content Migration",
         "viewDetail": "View Detail"
       },
-      "detail": {
-        "title": "Course Detail",
-        "subtitle": "Complete course information and content",
-        "notFound": "Course not found",
-        "courseInfo": "Course Information",
-        "academicYear": "Academic Year",
-        "semester": "Semester",
-        "syllabi": "Syllabi",
-        "exercises": "Exercises",
-        "content": "Course Content",
-        "contentDescription": "Syllabi and exercises organized by modules",
-        "noContent": "This course has no content yet",
-        "exercisesCount": "exercises",
-        "description": "Description",
-        "exercisesList": "Exercises",
-        "noExercises": "No exercises in this syllabus"
-      },
-      "viewer": {
-        "title": "Course Viewer",
-        "subtitle": "Explore detailed course content",
-        "selectSubject": "Select Subject",
-        "selectSubjectDesc": "Choose a subject to view its available courses",
-        "selectSubjectPlaceholder": "Search subject...",
-        "selectCourse": "Select Course",
-        "selectCourseDesc": "Choose a course to view its complete content",
-        "selectCoursePlaceholder": "Select a course...",
-        "searchPlaceholder": "Search by academic year...",
-        "noCourses": "No courses found for this subject",
-        "syllabi": "syllabi",
-        "exercises": "exercises"
-      },
       "status": {
-        "name": "Status",
         "active": "Active",
         "archived": "Archived",
         "closed": "Closed",
+        "name": "Status",
         "planning": "Planning"
+      },
+      "viewer": {
+        "exercises": "exercises",
+        "noCourses": "No courses found for this subject",
+        "searchPlaceholder": "Search by academic year...",
+        "selectCourse": "Select Course",
+        "selectCourseDesc": "Choose a course to view its complete content",
+        "selectCoursePlaceholder": "Select a course...",
+        "selectSubject": "Select Subject",
+        "selectSubjectDesc": "Choose a subject to view its available courses",
+        "selectSubjectPlaceholder": "Search subject...",
+        "subtitle": "Explore detailed course content",
+        "syllabi": "syllabi",
+        "title": "Course Viewer"
       }
     },
     "dashboard": {
@@ -261,6 +261,30 @@
       "updated": "updated",
       "years": "years"
     },
+    "groups": {
+      "actions": "Actions",
+      "actions_label": "Actions",
+      "active": "Active",
+      "archived": "Archived",
+      "capacity": "Capacity",
+      "create": "Create",
+      "create_group": "Create Group",
+      "created": "created",
+      "description": "Description",
+      "description_placeholder": "Group description...",
+      "edit": "Edit",
+      "group_saved": "Group {{action}} successfully",
+      "name": "Group Name",
+      "name_placeholder": "E.g.: Group A",
+      "no_groups": "No groups found",
+      "save_changes": "Save Changes",
+      "save_error": "Error saving group",
+      "select_course": "Select Course",
+      "status": "Status",
+      "subtitle": "Manage groups by course.",
+      "title": "Groups Management",
+      "updated": "updated"
+    },
     "subjects": {
       "actions": "Actions",
       "code": "Code",
@@ -326,30 +350,6 @@
       "updated": "updated",
       "visibility": "Visibility",
       "visible_students": "Visible to students"
-    },
-    "groups": {
-      "title": "Groups Management",
-      "subtitle": "Manage groups by course.",
-      "name": "Group Name",
-      "name_placeholder": "E.g.: Group A",
-      "description": "Description",
-      "description_placeholder": "Group description...",
-      "capacity": "Capacity",
-      "status": "Status",
-      "active": "Active",
-      "archived": "Archived",
-      "create": "Create",
-      "created": "created",
-      "edit": "Edit",
-      "save_changes": "Save Changes",
-      "save_error": "Error saving group",
-      "group_saved": "Group {{action}} successfully",
-      "updated": "updated",
-      "no_groups": "No groups found",
-      "select_course": "Select Course",
-      "actions": "Actions",
-      "create_group": "Create Group",
-      "actions_label": "Actions"
     },
     "users": {
       "academic_year": "Academic Year",
@@ -463,15 +463,15 @@
     },
     "validation": {
       "bio_max": "Maximum 500 characters",
+      "confirm_password_required": "You must confirm your password",
+      "current_password_required": "Current password is required",
       "email_invalid": "The email format is not valid",
       "first_name_short": "First name is too short",
       "last_name_short": "Last name is too short",
-      "password_required": "Password is required",
-      "current_password_required": "Current password is required",
+      "new_password_different": "New password must be different from current password",
       "password_min": "Password must be at least 8 characters",
-      "confirm_password_required": "You must confirm your password",
-      "passwords_not_match": "Passwords do not match",
-      "new_password_different": "New password must be different from current password"
+      "password_required": "Password is required",
+      "passwords_not_match": "Passwords do not match"
     }
   },
   "common": {
@@ -687,6 +687,25 @@
     },
     "visibility_label": "Visibility",
     "write_comment": "Write a comment or suggestion..."
+  },
+  "first_password_change": {
+    "confirm_password": "Confirm password",
+    "confirm_placeholder": "Repeat your password",
+    "confirm_required": "You must confirm the password",
+    "description": "For security, you must set a new password before continuing to use the platform.",
+    "error": "Error changing password. Please try again.",
+    "new_password": "New password",
+    "password_min_length": "Password must be at least 8 characters",
+    "password_pattern": "Must contain uppercase, lowercase and numbers",
+    "password_placeholder": "Minimum 8 characters",
+    "password_required": "Password is required",
+    "passwords_no_match": "Passwords don't match",
+    "saving": "Saving...",
+    "submit": "Set Password",
+    "success": "Password set successfully. Redirecting...",
+    "success_short": "Done!",
+    "title": "Set Your Password",
+    "warning": "This action is required to access the platform."
   },
   "landing": {
     "cta_footer": {
@@ -925,9 +944,9 @@
       "panel_title": "Professor Panel",
       "plagiarism_alerts_title": "Plagiarism Alerts",
       "progress_column": "Progress",
-      "recent_activity_title": "Recent Activity",
       "recent_activity_submitted": "Submitted",
       "recent_activity_time_ago": "ago",
+      "recent_activity_title": "Recent Activity",
       "recent_submissions": "Latest group submissions",
       "search_student": "Search student...",
       "select_group": "Select group",
@@ -1040,28 +1059,28 @@
     },
     "syllabi": {
       "create_button": "Create Syllabus",
-      "create_dialog_title": "Create New Syllabus",
       "create_dialog_desc": "Define the title, description and type of the new topic",
-      "create_success": "Syllabus created successfully",
+      "create_dialog_title": "Create New Syllabus",
       "create_error": "Error creating syllabus",
+      "create_success": "Syllabus created successfully",
       "creating": "Creating...",
       "delete_button": "Delete",
-      "delete_confirm_title": "Delete syllabus?",
       "delete_confirm_desc": "This action cannot be undone. You can only delete syllabi without associated exercises.",
-      "delete_success": "Syllabus deleted successfully",
+      "delete_confirm_title": "Delete syllabus?",
       "delete_error": "Error deleting syllabus",
+      "delete_success": "Syllabus deleted successfully",
       "deleting": "Deleting...",
       "error_toggle": "Error toggling visibility",
-      "field_title": "Title",
-      "field_title_placeholder": "E.g.: Algorithm Fundamentals",
       "field_description": "Description",
       "field_description_placeholder": "Brief description of the content (optional)",
+      "field_title": "Title",
+      "field_title_placeholder": "E.g.: Algorithm Fundamentals",
       "field_type": "Content Type",
       "hidden": "Hidden",
       "no_groups": "You don't have assigned groups. Contact the administrator.",
       "no_topics": "This course doesn't have topics yet.",
-      "reorder_success": "Order updated successfully",
       "reorder_error": "Error reordering syllabus",
+      "reorder_success": "Order updated successfully",
       "select_course": "Select Course",
       "select_course_placeholder": "Choose a course to manage its syllabus",
       "subtitle": "Control the visibility of topics and modules in your courses",
@@ -1101,6 +1120,15 @@
       "phone": "Phone",
       "role": "User Role"
     },
+    "image": {
+      "dialog_desc": "Enter the URL of your new profile image",
+      "dialog_title": "Update profile image",
+      "error_desc": "Error updating image",
+      "error_title": "Error",
+      "success_desc": "Your profile image has been updated",
+      "success_title": "Image updated",
+      "url_label": "Image URL"
+    },
     "languages": {
       "en": "English",
       "es": "Spanish"
@@ -1113,24 +1141,15 @@
     },
     "password": {
       "change_button": "Change password",
-      "current": "Current password",
-      "new": "New password",
       "confirm": "Confirm password",
-      "dialog_title": "Change password",
+      "current": "Current password",
       "dialog_desc": "Enter your current password and new password",
-      "success_title": "Password updated",
+      "dialog_title": "Change password",
+      "error_desc": "Error changing password",
+      "error_title": "Error",
+      "new": "New password",
       "success_desc": "Your password has been updated successfully",
-      "error_title": "Error",
-      "error_desc": "Error changing password"
-    },
-    "image": {
-      "dialog_title": "Update profile image",
-      "dialog_desc": "Enter the URL of your new profile image",
-      "url_label": "Image URL",
-      "success_title": "Image updated",
-      "success_desc": "Your profile image has been updated",
-      "error_title": "Error",
-      "error_desc": "Error updating image"
+      "success_title": "Password updated"
     },
     "placeholders": {
       "bio": "Tell us a bit about yourself...",
@@ -1183,39 +1202,39 @@
     "title": "My Progress"
   },
   "ranking_page": {
-    "title": "Student Ranking",
-    "subtitle": "Student classification by academic performance",
-    "error": "Error loading ranking. Please try again.",
     "empty": "No students in the ranking with the selected filters.",
+    "error": "Error loading ranking. Please try again.",
     "filters": {
-      "select_subject": "Select a subject",
+      "all_groups": "All groups",
       "all_subjects": "All subjects",
       "select_group": "Select a group",
-      "all_groups": "All groups"
-    },
-    "podium": {
-      "title": "Top 3 - Honor Podium",
-      "description": "The best students in the classification",
-      "avg_score": "Average",
-      "perfect": "perfect"
+      "select_subject": "Select a subject"
     },
     "list": {
-      "title": "Complete Ranking",
-      "exercises": "Exercises",
+      "avg_score": "Average",
       "completion": "Completed",
-      "avg_score": "Average"
+      "exercises": "Exercises",
+      "title": "Complete Ranking"
     },
-    "teacher": {
-      "title": "Subject Professor",
-      "subject": "Subject",
-      "courses": "Courses"
+    "podium": {
+      "avg_score": "Average",
+      "description": "The best students in the classification",
+      "perfect": "perfect",
+      "title": "Top 3 - Honor Podium"
     },
     "stats": {
-      "title": "General Statistics",
-      "total_students": "Total students",
       "avg_completion": "Average completion",
-      "perfect_scores": "Perfect scores"
-    }
+      "perfect_scores": "Perfect scores",
+      "title": "General Statistics",
+      "total_students": "Total students"
+    },
+    "subtitle": "Student classification by academic performance",
+    "teacher": {
+      "courses": "Courses",
+      "subject": "Subject",
+      "title": "Subject Professor"
+    },
+    "title": "Student Ranking"
   },
   "security": {
     "actions": {
@@ -1460,24 +1479,5 @@
     "go_back": "Go Back",
     "go_to_dashboard": "Go to My Dashboard",
     "title": "Access Denied"
-  },
-  "first_password_change": {
-    "title": "Set Your Password",
-    "description": "For security, you must set a new password before continuing to use the platform.",
-    "new_password": "New password",
-    "password_placeholder": "Minimum 8 characters",
-    "password_required": "Password is required",
-    "password_min_length": "Password must be at least 8 characters",
-    "password_pattern": "Must contain uppercase, lowercase and numbers",
-    "confirm_password": "Confirm password",
-    "confirm_placeholder": "Repeat your password",
-    "confirm_required": "You must confirm the password",
-    "passwords_no_match": "Passwords don't match",
-    "error": "Error changing password. Please try again.",
-    "success": "Password set successfully. Redirecting...",
-    "success_short": "Done!",
-    "saving": "Saving...",
-    "submit": "Set Password",
-    "warning": "This action is required to access the platform."
   }
 }
