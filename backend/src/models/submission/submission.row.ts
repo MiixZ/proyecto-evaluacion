@@ -13,6 +13,10 @@ export interface SubmissionRow extends RowDataPacket {
   score: number;
   is_late: number;
   used_hint: number;
+  archived: number;
+  deleted_at: Date | null;
+  archived_by: string | null;
+  archived_reason: string | null;
   created_at: Date;
   updated_at: Date;
 }
@@ -31,7 +35,6 @@ export interface SubmissionTestResultRow extends RowDataPacket {
 }
 
 export interface SubmissionJoinRow extends RowDataPacket {
-  // Campos de Submission
   s_id: string;
   s_exercise_id: string;
   s_student_id: string;
@@ -45,7 +48,6 @@ export interface SubmissionJoinRow extends RowDataPacket {
   s_is_late: number;
   s_created_at: Date;
 
-  // Campos de TestResults
   tr_id: string | null;
   tr_test_case_id: string | null;
   tr_status: string | null;

@@ -55,6 +55,13 @@
   },
   "admin": {
     "courses": {
+      "status": {
+        "name": "Status",
+        "active": "Active",
+        "planning": "Planning",
+        "closed": "Closed",
+        "archived": "Archived"
+      },
       "migration": {
         "academicYear": "Academic Year",
         "allStatus": "All statuses",
@@ -417,6 +424,8 @@
       "back_home": "Back to home",
       "email": "Email Address",
       "email_placeholder": "name@example.com",
+      "error_desc": "An error occurred while trying to sign in.",
+      "error_title": "Authentication error",
       "forgot_password": "Forgot your password?",
       "no_account": "Don't have an account? Contact your administrator.",
       "password": "Password",

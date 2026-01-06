@@ -22,4 +22,20 @@ export const submissionService = {
 
     return data.data;
   },
+
+  /**
+   * Archiva una entrega (solo profesores/admins)
+   * @param id - ID de la entrega a archivar
+   */
+  archive: async (id: string): Promise<void> => {
+    await api.delete(`/v1/submissions/${id}/archive`);
+  },
+
+  /**
+   * Restaura una entrega archivada (solo profesores/admins)
+   * @param id - ID de la entrega a restaurar
+   */
+  restore: async (id: string): Promise<void> => {
+    await api.patch(`/v1/submissions/${id}/restore`);
+  },
 };

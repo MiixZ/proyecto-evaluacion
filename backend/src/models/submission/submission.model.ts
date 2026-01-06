@@ -320,7 +320,7 @@ export class SubmissionModel {
       LEFT JOIN submission_test_results str ON s.id = str.submission_id
       LEFT JOIN test_cases tc ON str.test_case_id = tc.id
       LEFT JOIN hint_usage hu ON s.id = hu.submission_id AND str.test_case_id = hu.test_case_id
-      WHERE s.student_id = ? AND s.exercise_id = ?
+      WHERE s.student_id = ? AND s.exercise_id = ? AND s.archived = FALSE
       ORDER BY s.attempt_number DESC, str.created_at ASC`,
       [userId, exerciseId]
     );
@@ -379,7 +379,14 @@ export class SubmissionModel {
       JOIN exercises e ON s.exercise_id = e.id
       JOIN courses c ON s.course_id = c.id
       JOIN subjects subj ON c.subject_id = subj.id
-      WHERE s.student_id = ?
+      JOIN users u ON s.student_id = u.id
+      JOIN user_groups ug ON u.id = ug.user_id AND c.id = (SELECT course_id FROM \`groups\` WHERE id = ug.group_id)
+      WHERE s.student_id = ? 
+        AND s.archived = FALSE 
+        AND ug.status = 'active' 
+        AND c.status IN ('active', 'planning', 'closed')
+        AND subj.status = 'active'
+        AND e.is_published = TRUE
       ORDER BY s.created_at DESC`,
       [userId]
     );
@@ -411,7 +418,9 @@ export class SubmissionModel {
       JOIN courses c ON s.course_id = c.id
       JOIN subjects subj ON c.subject_id = subj.id
       JOIN users u ON s.student_id = u.id
-      WHERE s.exercise_id = ?
+      WHERE s.exercise_id = ? AND s.archived = FALSE AND u.status = 'active'
+        AND c.status IN ('active', 'planning', 'closed')
+        AND subj.status = 'active'
       ORDER BY s.created_at DESC`,
       [exerciseId]
     );
@@ -444,6 +453,50 @@ export class SubmissionModel {
        WHERE id = ?`,
       [verdict, score, id]
     );
+  }
+
+  /**
+   * Archiva una entrega (soft delete)
+   * @param submissionId - ID de la entrega a archivar
+   * @param archivedBy - ID del usuario que archiva (profesor/admin)
+   * @param reason - Razón del archivo
+   */
+  async archiveSubmission(
+    submissionId: string,
+    archivedBy: string,
+    reason: 'teacher_deleted' | 'manual' = 'manual'
+  ): Promise<void> {
+    await getPool().execute(
+      `UPDATE submissions 
+       SET archived = TRUE, deleted_at = NOW(), archived_by = ?, archived_reason = ?
+       WHERE id = ?`,
+      [archivedBy, reason, submissionId]
+    );
+  }
+
+  /**
+   * Restaura una entrega archivada
+   * @param submissionId - ID de la entrega a restaurar
+   */
+  async restoreSubmission(submissionId: string): Promise<void> {
+    await getPool().execute(
+      `UPDATE submissions 
+       SET archived = FALSE, deleted_at = NULL, archived_by = NULL, archived_reason = NULL
+       WHERE id = ?`,
+      [submissionId]
+    );
+  }
+
+  /**
+   * Verifica si una entrega está archivada
+   * @param submissionId - ID de la entrega
+   */
+  async isArchived(submissionId: string): Promise<boolean> {
+    const [rows] = await getPool().execute<any[]>(
+      'SELECT archived FROM submissions WHERE id = ?',
+      [submissionId]
+    );
+    return rows.length > 0 && Boolean(rows[0].archived);
   }
 }
 

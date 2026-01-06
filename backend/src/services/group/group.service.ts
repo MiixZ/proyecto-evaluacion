@@ -348,14 +348,9 @@ export class GroupService {
     if (!student)
       throw new AppError('NOT_FOUND', 404, 'Estudiante no encontrado');
 
-    const newStatus =
-      student.status === UserStatus.ACTIVE
-        ? UserStatus.INACTIVE
-        : UserStatus.ACTIVE;
+    await groupModel.toggleMemberStatus(studentId, groupId);
 
-    await userModel.update(studentId, { status: newStatus });
-
-    return newStatus;
+    return 'Status actualizado';
   }
 }
 

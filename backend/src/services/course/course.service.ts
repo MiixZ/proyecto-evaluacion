@@ -84,7 +84,6 @@ export class CourseService {
       await connection.beginTransaction();
 
       if (options.includeSyllabi) {
-        // Obtener syllabi a migrar
         let syllabiQuery = 'SELECT * FROM syllabi WHERE course_id = ?';
         const syllabiParams: any[] = [sourceCourseId];
 

@@ -29,7 +29,6 @@ export async function authMiddleware(
       throw new AuthenticationError('Token no proporcionado');
     }
 
-    // Verificar y decodificar token
     const decoded = verifyToken(token);
 
     req.user = {

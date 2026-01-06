@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -15,6 +15,8 @@ import {
   AlertCircle,
   ChevronDown,
   ChevronRight,
+  Archive,
+  ArchiveRestore,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -53,6 +55,7 @@ export default function SubmissionDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
 
   const [openTestCases, setOpenTestCases] = useState<string[]>([]);
 
@@ -68,10 +71,37 @@ export default function SubmissionDetails() {
     data: submission,
     isLoading,
     error,
+    refetch,
   } = useQuery({
     queryKey: ["submission", id],
     queryFn: () => submissionService.getById(id!),
     enabled: !!id,
+  });
+
+  const archiveMutation = useMutation({
+    mutationFn: () => submissionService.archive(id!),
+    onSuccess: async () => {
+      toast.success(t("submission_detail.archive.success"));
+      await queryClient.invalidateQueries({ queryKey: ["submission", id] });
+      await queryClient.invalidateQueries({ queryKey: ["professorOverview"] });
+      await refetch();
+    },
+    onError: () => {
+      toast.error(t("submission_detail.archive.error"));
+    },
+  });
+
+  const restoreMutation = useMutation({
+    mutationFn: () => submissionService.restore(id!),
+    onSuccess: async () => {
+      toast.success(t("submission_detail.restore.success"));
+      await queryClient.invalidateQueries({ queryKey: ["submission", id] });
+      await queryClient.invalidateQueries({ queryKey: ["professorOverview"] });
+      await refetch();
+    },
+    onError: () => {
+      toast.error(t("submission_detail.restore.error"));
+    },
   });
 
   const handleDownload = async (format: "zip" | "json") => {
@@ -151,6 +181,14 @@ export default function SubmissionDetails() {
                 {t("submission_detail.title")}
               </h1>
               {getVerdictBadge(submission.verdict)}
+              {submission.archived && (
+                <Badge
+                  variant="outline"
+                  className="bg-gray-100 text-gray-800 border-gray-300">
+                  <Archive className="mr-1 h-3 w-3" />
+                  {t("submission_detail.archived")}
+                </Badge>
+              )}
             </div>
             <p className="text-muted-foreground flex items-center gap-2 text-sm mt-1">
               <FileCode className="h-4 w-4" /> {submission.exercise.title}
@@ -158,10 +196,45 @@ export default function SubmissionDetails() {
               <Calendar className="h-4 w-4" />
               {format(new Date(submission.createdAt), "PPP p", { locale: es })}
             </p>
+            {submission.archived && submission.deletedAt && (
+              <p className="text-xs text-muted-foreground mt-1">
+                {t("submission_detail.archived_at")}:{" "}
+                {format(new Date(submission.deletedAt), "PPP p", {
+                  locale: es,
+                })}
+              </p>
+            )}
           </div>
         </div>
 
         <div className="flex gap-2">
+          {submission.archived ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => restoreMutation.mutate()}
+              disabled={restoreMutation.isPending}>
+              {restoreMutation.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <ArchiveRestore className="mr-2 h-4 w-4" />
+              )}
+              {t("submission_detail.restore_button")}
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => archiveMutation.mutate()}
+              disabled={archiveMutation.isPending}>
+              {archiveMutation.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Archive className="mr-2 h-4 w-4" />
+              )}
+              {t("submission_detail.archive_button")}
+            </Button>
+          )}
           <Button
             variant="outline"
             size="sm"

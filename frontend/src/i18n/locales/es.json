@@ -90,6 +90,13 @@
       "degree": "Titulación",
       "edit": "Editar",
       "first_semester": "1er Semestre",
+      "status": {
+        "name": "Estado",
+        "active": "Activo",
+        "planning": "En Planificación",
+        "closed": "Cerrado",
+        "archived": "Archivado"
+      },
       "migration": {
         "academicYear": "Año Académico",
         "allStatus": "Todos los estados",
@@ -446,6 +453,8 @@
       "back_home": "Volver al inicio",
       "email": "Correo Electrónico",
       "email_placeholder": "nombre@ejemplo.com",
+      "error_desc": "Ha ocurrido un error al intentar iniciar sesión.",
+      "error_title": "Error de autenticación",
       "forgot_password": "¿Olvidaste tu contraseña?",
       "no_account": "¿No tienes una cuenta? Contacta con tu administrador.",
       "password": "Contraseña",
@@ -926,8 +935,11 @@
       "create_group": "Crear Grupo",
       "error_loading_data": "Error al cargar los datos del dashboard",
       "exercise_stats": "Estadísticas de Ejercicios",
+      "export_csv": "Exportar CSV (Excel)",
       "export_data": "Exportar datos",
       "export_error": "Error al generar el archivo de exportación",
+      "export_json": "Exportar JSON (Detallado)",
+      "export_json_success": "Estadísticas exportadas en formato JSON",
       "export_success": "Reporte generado correctamente",
       "exporting": "Exportando...",
       "filter_status": "Filtrar por estado",
@@ -1351,6 +1363,13 @@
     "view_exercises": "Ver ejercicios"
   },
   "submission_detail": {
+    "archive_button": "Archivar",
+    "archive": {
+      "error": "Error al archivar la entrega",
+      "success": "Entrega archivada correctamente"
+    },
+    "archived": "Archivado",
+    "archived_at": "Archivado el",
     "back": "Volver",
     "download": {
       "completed": "Descarga completada",
@@ -1366,6 +1385,11 @@
     "memory": "Memoria",
     "obtained": "Obtenido:",
     "report_json": "Reporte JSON",
+    "restore_button": "Restaurar",
+    "restore": {
+      "error": "Error al restaurar la entrega",
+      "success": "Entrega restaurada correctamente"
+    },
     "score": "Puntuación",
     "student": "Estudiante",
     "test_cases": "Casos de Prueba",

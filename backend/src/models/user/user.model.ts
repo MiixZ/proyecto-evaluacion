@@ -92,7 +92,10 @@ export class UserModel {
       INNER JOIN \`groups\` g ON ug.group_id = g.id
       INNER JOIN courses c ON g.course_id = c.id
       INNER JOIN subjects s ON c.subject_id = s.id
-      WHERE ug.user_id = ?
+      WHERE ug.user_id = ? 
+        AND ug.status = 'active'
+        AND c.status IN ('active', 'planning')
+        AND s.status = 'active'
       ORDER BY c.academic_year DESC, s.name ASC
     `;
 

@@ -24,6 +24,10 @@ class SubmissionMapper {
       verdict: submission.verdict,
       score: submission.score,
       isLate: Boolean(submission.isLate),
+      archived: Boolean(submission.archived),
+      deletedAt: submission.deletedAt?.toISOString() || null,
+      archivedBy: submission.archivedBy || null,
+      archivedReason: submission.archivedReason || null,
       createdAt: submission.createdAt.toISOString(),
       testResults: submission.testResults
         ? submission.testResults.map((tr) => this.toTestResultDTO(tr))
@@ -45,6 +49,10 @@ class SubmissionMapper {
       score: row.score,
       isLate: !!row.is_late,
       usedHint: !!row.used_hint,
+      archived: !!row.archived,
+      deletedAt: row.deleted_at || null,
+      archivedBy: row.archived_by || null,
+      archivedReason: (row.archived_reason as any) || null,
       createdAt: row.created_at,
       updatedAt: row.updated_at,
     } as SubmissionEntity;

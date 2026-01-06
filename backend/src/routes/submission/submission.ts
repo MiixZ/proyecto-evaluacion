@@ -31,4 +31,16 @@ router.get(
  */
 router.get('/', submissionController.getHistory);
 
+/**
+ * DELETE /api/v1/submissions/:id/archive
+ * Archiva una entrega (solo profesores/admin)
+ */
+router.delete('/:id/archive', submissionController.archiveSubmission);
+
+/**
+ * PATCH /api/v1/submissions/:id/restore
+ * Restaura una entrega archivada (solo profesores/admin)
+ */
+router.patch('/:id/restore', submissionController.restoreSubmission);
+
 export default router;

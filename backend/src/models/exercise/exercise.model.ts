@@ -335,12 +335,14 @@ export class ExerciseModel {
         s.title as syllabus_title,
         c.academic_year,
         subj.name as subject_name,
-        (SELECT COUNT(*) FROM submissions sub WHERE sub.exercise_id = e.id) as submission_count
+        (SELECT COUNT(*) FROM submissions sub WHERE sub.exercise_id = e.id AND sub.archived = FALSE) as submission_count
       FROM exercises e
       JOIN syllabi s ON e.syllabus_id = s.id
       JOIN courses c ON s.course_id = c.id
       JOIN subjects subj ON c.subject_id = subj.id
       WHERE e.created_by = ?
+        AND c.status IN ('active', 'planning')
+        AND subj.status = 'active'
       ORDER BY e.created_at DESC
     `;
 

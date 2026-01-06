@@ -40,4 +40,13 @@ export interface SubmissionDetailDTO {
   memoryUsedMb?: number;
   createdAt: string;
   testResults: TestResultDTO[];
+  // Campos de archivo
+  archived: boolean;
+  deletedAt?: string;
+  archivedBy?: string;
+  archivedReason?:
+    | "student_removed"
+    | "group_change"
+    | "teacher_deleted"
+    | "manual";
 }

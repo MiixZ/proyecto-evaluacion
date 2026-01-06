@@ -57,6 +57,33 @@ export class ExportController {
       items: exportMapper.toDTOList(result.items),
     });
   });
+
+  /**
+   * Exporta estadísticas completas de un grupo
+   * GET /api/v1/export/group/:groupId/statistics?format=json|csv
+   */
+  exportGroupStatistics = catchAsync(
+    async (req: AuthRequest, res: Response) => {
+      const groupId = req.params.groupId;
+      const format = (req.query.format as string) || 'json';
+
+      const { content, mimeType, filename } =
+        await exportService.exportGroupStatistics(
+          groupId,
+          format as any,
+          req.user!.id,
+          req.user!.role
+        );
+
+      res.setHeader('Content-Type', mimeType);
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="${filename}"`
+      );
+
+      res.status(200).send(content);
+    }
+  );
 }
 
 export const exportController = new ExportController();

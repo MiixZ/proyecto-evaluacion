@@ -164,6 +164,12 @@ export class UserService {
     const existingUser = await userModel.findByEmail(email);
 
     if (existingUser) {
+      if (existingUser.status === UserStatus.INACTIVE) {
+        await userModel.update(existingUser.id, {
+          status: UserStatus.ACTIVE,
+        });
+        existingUser.status = UserStatus.ACTIVE;
+      }
       return userMapper.toDTO(existingUser);
     }
 

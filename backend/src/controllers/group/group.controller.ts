@@ -269,18 +269,10 @@ export class GroupController {
       if (!isOwner) throw new AppError('FORBIDDEN', 403, 'No tienes permiso');
     }
 
-    const student = await userModel.getById(studentId as UUID);
-    if (!student)
-      throw new AppError('NOT_FOUND', 404, 'Estudiante no encontrado');
-
-    const newStatus =
-      student.status === UserStatus.ACTIVE
-        ? UserStatus.INACTIVE
-        : UserStatus.ACTIVE;
-    await userModel.update(studentId as UUID, { status: newStatus });
+    await groupModel.toggleMemberStatus(studentId as UUID, groupId as UUID);
 
     return ApiResponse.success(res, {
-      message: `Estudiante ${newStatus === UserStatus.ACTIVE ? 'activado' : 'desactivado'}`,
+      message: 'Estado del estudiante actualizado en el grupo',
     });
   });
 }
