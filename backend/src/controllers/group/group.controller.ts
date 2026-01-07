@@ -5,7 +5,7 @@ import { ApiResponse } from '@utils/response.handler';
 import { groupService } from '@services/group/group.service';
 import { groupMapper } from '@mappers/group.mapper';
 import { AppError } from '@utils/errors';
-import { UserRole, UserStatus, UUID } from '@CustomTypes/common.types';
+import { UserRole, UUID } from '@CustomTypes/common.types';
 import { groupModel } from '@models/group/group.model';
 import { dashboardModel } from '@models/dashboard/dashboard.model';
 import { dashboardMapper } from '@mappers/dashboard.mapper';

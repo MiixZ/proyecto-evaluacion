@@ -1,5 +1,4 @@
 import { RowDataPacket } from 'mysql2';
-import { UUID } from '@CustomTypes/common.types';
 
 export interface RankingStudentRow extends RowDataPacket {
   student_id: string;

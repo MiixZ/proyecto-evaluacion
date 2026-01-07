@@ -166,6 +166,7 @@ export class SubmissionService {
       createdAt: now,
       updatedAt: now,
       constructor: { name: 'RowDataPacket' },
+      archived: false,
     });
 
     this.checkBehavioralAnomaly(userId, exercise.id, submissionId).catch(

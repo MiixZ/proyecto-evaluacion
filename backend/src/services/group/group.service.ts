@@ -81,11 +81,11 @@ export class GroupService {
       await userModel.getById(userId as UUID);
     }
 
-    await groupModel.addMember(groupId as UUID, userId as UUID, input.role);
+    await groupModel.addMember(userId as UUID, groupId as UUID, input.role);
   }
 
   async removeMember(groupId: string, userId: string) {
-    await groupModel.removeMember(groupId as UUID, userId as UUID);
+    await groupModel.removeMember(userId as UUID, groupId as UUID);
   }
 
   async getGroupMembers(groupId: string, role?: string) {

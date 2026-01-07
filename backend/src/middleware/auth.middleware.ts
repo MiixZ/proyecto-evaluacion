@@ -205,9 +205,6 @@ export async function requirePasswordChangeMiddleware(
   next: NextFunction
 ): Promise<void> {
   try {
-    // Rutas exceptuadas que no requieren verificación
-    // `req.path` viene relativo al mount point (/api/v1), por tanto las rutas
-    // excepto deben usar el path relativo sin el prefijo `/api/v1`.
     const exemptRoutes = [
       { method: 'POST', path: '/users/me/first-password-change' },
       { method: 'POST', path: '/auth/logout' },
@@ -222,12 +219,10 @@ export async function requirePasswordChangeMiddleware(
       return next();
     }
 
-    // Verificar si el usuario está autenticado
     if (!req.user) {
       return next();
     }
 
-    // Obtener información del usuario desde la base de datos
     const { userModel } = await import('@models/user/user.model');
     const user = await userModel.getById(req.user.id);
 
@@ -235,14 +230,13 @@ export async function requirePasswordChangeMiddleware(
       return next();
     }
 
-    // Si el usuario debe cambiar su contraseña, bloquear acceso
     if (user.mustChangePassword) {
       logger.warn('Usuario debe cambiar contraseña', {
         userId: user.id,
         email: user.email,
       });
 
-      return res.status(403).json({
+      res.status(403).json({
         success: false,
         error: {
           code: 'PASSWORD_CHANGE_REQUIRED',
@@ -251,6 +245,8 @@ export async function requirePasswordChangeMiddleware(
         },
         timestamp: new Date().toISOString(),
       });
+
+      return;
     }
 
     next();

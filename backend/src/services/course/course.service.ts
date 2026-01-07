@@ -6,8 +6,6 @@ import {
 import { UUID, CourseStatus } from '@CustomTypes/common.types';
 import { subjectModel } from '@models/subject/subject.model';
 import { NotFoundError, BadRequestError } from '@utils/errors';
-import { syllabusModel } from '@models/syllabus/syllabus.model';
-import { exerciseModel } from '@models/exercise/exercise.model';
 import { getPool } from '@config/database';
 import { v4 as uuidv4 } from 'uuid';
 

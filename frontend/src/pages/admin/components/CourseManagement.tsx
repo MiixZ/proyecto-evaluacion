@@ -5,8 +5,6 @@ import { useTranslation } from "react-i18next";
 import { academicService } from "@/services/academic.service";
 import { Course } from "@/types/academic.types";
 import { useForm } from "react-hook-form";
-
-// UI Components
 import {
   Card,
   CardContent,
@@ -45,7 +43,12 @@ const CourseForm = ({
   isPending: boolean;
 }) => {
   const { register, handleSubmit, setValue } = useForm<Course>({
-    defaultValues,
+    defaultValues:
+      defaultValues ||
+      ({
+        semester: 1,
+        status: "planning",
+      } as any),
   });
   const { t } = useTranslation();
 
@@ -311,7 +314,6 @@ export default function CourseManagement() {
               {editingItem
                 ? t("admin.courses.edit")
                 : t("admin.courses.create")}{" "}
-              {t("admin.courses.create_course")}
             </DialogTitle>
           </DialogHeader>
           <CourseForm

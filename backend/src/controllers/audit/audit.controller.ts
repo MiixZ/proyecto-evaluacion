@@ -1,4 +1,4 @@
-import { Response, Request } from 'express';
+import { Response } from 'express';
 import { AuthRequest } from '@CustomTypes/request.types';
 import { catchAsync } from '@utils/async.handler';
 import { ApiResponse } from '@utils/response.handler';

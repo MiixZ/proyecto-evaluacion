@@ -4,6 +4,7 @@ import { catchAsync } from '@utils/async.handler';
 import { ApiResponse } from '@utils/response.handler';
 import { exportService } from '@services/export/export.service';
 import { exportMapper } from '@mappers/export.mapper';
+import { UUID } from '@CustomTypes/common.types';
 
 export class ExportController {
   create = catchAsync(async (req: AuthRequest, res: Response) => {
@@ -69,7 +70,7 @@ export class ExportController {
 
       const { content, mimeType, filename } =
         await exportService.exportGroupStatistics(
-          groupId,
+          groupId as UUID,
           format as any,
           req.user!.id,
           req.user!.role

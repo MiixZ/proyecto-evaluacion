@@ -4,7 +4,7 @@ services:
   # ============================================================
   mysql:
     image: mysql:8.0
-    container_name: evaluacion-mysql-dev
+    container_name: codeeval_db
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
@@ -19,7 +19,7 @@ services:
       - ./database/init:/docker-entrypoint-initdb.d
       - ./database/mysql.cnf:/etc/mysql/conf.d/custom.cnf:ro
     networks:
-      - evaluacion-net
+      - codeeval-net
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
@@ -38,7 +38,7 @@ services:
   # ============================================================
   phpmyadmin:
     image: phpmyadmin:latest
-    container_name: evaluacion-phpmyadmin-dev
+    container_name: codeeval-phpmyadmin
     restart: unless-stopped
     environment:
       PMA_HOST: mysql
@@ -51,7 +51,7 @@ services:
       mysql:
         condition: service_healthy
     networks:
-      - evaluacion-net
+      - codeeval-net
 
   # ============================================================
   # Backend API
@@ -60,55 +60,80 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: evaluacion-backend-dev
+    container_name: codeeval-backend
     restart: unless-stopped
     environment:
-      NODE_ENV: development
+      NODE_ENV: production
       DB_HOST: mysql
       DB_USER: ${MYSQL_USER}
       DB_PASSWORD: ${MYSQL_PASSWORD}
       DB_NAME: ${MYSQL_DATABASE}
       EXECUTION_ENGINE_URL: http://execution-engine:3001
       EXECUTION_ENGINE_API_KEY: ${EXECUTION_ENGINE_API_KEY}
+      CORS_ORIGIN: http://localhost:8081
+      JWT_SECRET: ${JWT_SECRET:-secret_default_para_pruebas}
+      JWT_EXPIRY: 7d
+      PORT: 4000
     ports:
-      - "${BACKEND_PORT}:3000"
+      - "${BACKEND_PORT:-4000}:4000"
     depends_on:
       mysql:
         condition: service_healthy
     networks:
-      - evaluacion-net
+      - codeeval-net
     volumes:
       - ./backend/src:/app/src
 
   # ============================================================
-  # Execution Engine (capa de ejecución - NUEVA)
+  # Execution Engine (capa de ejecución)
   # ============================================================
   execution-engine:
     build:
       context: ./execution-engine
       dockerfile: Dockerfile
-    container_name: evaluacion-execution-engine-dev
+    container_name: codeeval-execution-engine
     environment:
-      NODE_ENV: development
+      NODE_ENV: production
       EXECUTION_ENGINE_API_KEY: ${EXECUTION_ENGINE_API_KEY}
       DOCKER_SOCKET: /var/run/docker.sock
-      SANDBOX_VOLUME_NAME: evaluacion-shared-vol
+      SANDBOX_VOLUME_NAME: codeeval-shared-vol
+      SANDBOX_IMAGE_PYTHON: python:3.9-slim
+      SANDBOX_IMAGE_JAVA: openjdk:17-slim
+      SANDBOX_IMAGE_JAVASCRIPT: node:18-alpine
+      SANDBOX_IMAGE_CPP: gcc:12-alpine
     ports:
       - "3001:3001"
     networks:
-      - evaluacion-net
+      - codeeval-net
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./src:/app/src
-      - evaluacion-shared-vol:/app/sandbox_data
+      - codeeval-shared-vol:/app/sandbox_data
     privileged: true
 
+  # ============================================================
+  # Frontend (NUEVO)
+  # ============================================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:${BACKEND_PORT:-4000}/api
+    container_name: codeeval-frontend
+    ports:
+      - "8081:80"
+    depends_on:
+      - backend
+    networks:
+      - codeeval-net
+
 networks:
-  evaluacion-net:
+  codeeval-net:
     driver: bridge
 
 volumes:
   mysql_data:
     driver: local
-  evaluacion-shared-vol:
-    name: evaluacion-shared-vol
+  codeeval-shared-vol:
+    name: codeeval-shared-vol

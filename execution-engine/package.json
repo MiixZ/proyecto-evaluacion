@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "description": "Capa de ejecución segura de código con contenedores Docker efímeros",
   "main": "dist/index.js",
-  "type": "module",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only --no-notify src/index.ts",
     "build": "tsc",

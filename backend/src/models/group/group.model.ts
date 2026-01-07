@@ -279,7 +279,7 @@ export class GroupModel {
 
   async isTeacherOfGroup(userId: UUID, groupId: UUID): Promise<boolean> {
     const [rows] = await getPool().execute<RowDataPacket[]>(
-      'SELECT 1 FROM user_groups WHERE user_id = ? AND group_id = ? AND role = "teacher"',
+      "SELECT 1 FROM user_groups WHERE user_id = ? AND group_id = ? AND role = 'teacher'",
       [userId, groupId]
     );
 

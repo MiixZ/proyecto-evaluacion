@@ -39,6 +39,7 @@ export interface UserDTO {
   mustChangePassword: boolean;
   preferredLanguage: LanguageType;
   createdAt: Date;
+  temporaryPassword?: string;
   enrollments?: UserEnrollmentDTO[];
 }
 

@@ -65,6 +65,7 @@ export const groupService = {
   },
 
   getGroupStudents: async (groupId: string): Promise<GroupStudentDTO[]> => {
+    if (!groupId) return Promise.resolve([]);
     const { data } = await api.get(`/v1/groups/${groupId}/students`);
 
     return data.data;

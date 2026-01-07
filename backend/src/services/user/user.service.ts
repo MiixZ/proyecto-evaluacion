@@ -17,7 +17,6 @@ import { userMapper } from '@mappers/user.mapper';
 import { auditService } from '@services/audit/audit.service';
 import {
   AuthenticationError,
-  ConflictError,
   NotFoundError,
 } from '@utils/errors';
 import { generateTemporaryPassword } from '@utils/jwt.utils';

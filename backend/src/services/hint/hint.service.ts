@@ -14,7 +14,11 @@ export class HintService {
   ) {
     const submission = await submissionModel.getById(submissionId);
 
-    if (userRole === UserRole.STUDENT && submission.studentId !== userId) {
+    if (!submission) {
+      throw new NotFoundError('Entrega no encontrada');
+    }
+
+    if (userRole === UserRole.STUDENT && submission?.studentId !== userId) {
       throw new ForbiddenError(
         'No tienes permiso para ver pistas de este envío'
       );

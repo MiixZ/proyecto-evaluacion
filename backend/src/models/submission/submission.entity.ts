@@ -40,7 +40,6 @@ export interface SubmissionTestResultEntity {
   input?: string;
   expectedOutput?: string;
 }
-}
 
 export interface SubmissionTestResultDTO {
   id: string;

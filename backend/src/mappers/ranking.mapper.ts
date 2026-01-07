@@ -1,10 +1,17 @@
-import { RankingStudentRow, SubjectTeacherRow } from './ranking.row';
-import { RankingStudentDTO, SubjectTeacherDTO } from './ranking.entity';
+import {
+  RankingStudentRow,
+  SubjectTeacherRow,
+} from '@models/ranking/ranking.row';
+import {
+  RankingStudentDTO,
+  SubjectTeacherDTO,
+} from '@models/ranking/ranking.entity';
+import { UUID } from '@CustomTypes/common.types';
 
 export const rankingMapper = {
   toStudentDTO(row: RankingStudentRow, rank: number): RankingStudentDTO {
     return {
-      studentId: row.student_id,
+      studentId: row.student_id as UUID,
       firstName: row.first_name,
       lastName: row.last_name,
       email: row.email,
@@ -26,7 +33,7 @@ export const rankingMapper = {
 
   toTeacherDTO(row: SubjectTeacherRow): SubjectTeacherDTO {
     return {
-      teacherId: row.teacher_id,
+      teacherId: row.teacher_id as UUID,
       teacherName: row.teacher_name,
       teacherEmail: row.teacher_email,
       teacherImage: row.teacher_image,
