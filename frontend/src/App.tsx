@@ -31,7 +31,9 @@ import CourseDetail from "./pages/admin/CourseDetail";
 import CourseViewer from "./pages/admin/CourseViewer";
 import ManageSyllabi from "./pages/professor/ManageSyllabi";
 import Unauthorized from "./pages/Unauthorized";
+import RankingPage from "./pages/common/Ranking";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
+import { PasswordChangeGuard } from "./components/auth/PasswordChangeGuard";
 import { UserRole } from "./types/auth.types";
 
 const queryClient = new QueryClient();
@@ -43,273 +45,288 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <Routes>
-            {/* Rutas Públicas */}
-            <Route path="/" element={<Index />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/unauthorized" element={<Unauthorized />} />
+          <PasswordChangeGuard>
+            <Routes>
+              {/* Rutas Públicas */}
+              <Route path="/" element={<Index />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/unauthorized" element={<Unauthorized />} />
 
-            {/* Rutas Protegidas */}
-            <Route element={<DashboardLayout />}>
-              {/* Dashboard principal - accesible por todos los autenticados */}
-              <Route
-                path="/dashboard"
-                element={
-                  <ProtectedRoute
-                    allowedRoles={[
-                      UserRole.STUDENT,
-                      UserRole.TEACHER,
-                      UserRole.ADMIN,
-                    ]}>
-                    <DashboardWrapper />
-                  </ProtectedRoute>
-                }
-              />
+              {/* Rutas Protegidas */}
+              <Route element={<DashboardLayout />}>
+                {/* Dashboard principal - accesible por todos los autenticados */}
+                <Route
+                  path="/dashboard"
+                  element={
+                    <ProtectedRoute
+                      allowedRoles={[
+                        UserRole.STUDENT,
+                        UserRole.TEACHER,
+                        UserRole.ADMIN,
+                      ]}>
+                      <DashboardWrapper />
+                    </ProtectedRoute>
+                  }
+                />
 
-              {/* Rutas de Estudiante - accesibles por estudiantes, profesores y admin */}
-              <Route
-                path="/dashboard/exercises"
-                element={
-                  <ProtectedRoute
-                    allowedRoles={[
-                      UserRole.STUDENT,
-                      UserRole.TEACHER,
-                      UserRole.ADMIN,
-                    ]}>
-                    <StudentExercises />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/dashboard/subjects"
-                element={
-                  <ProtectedRoute
-                    allowedRoles={[
-                      UserRole.STUDENT,
-                      UserRole.TEACHER,
-                      UserRole.ADMIN,
-                    ]}>
-                    <StudentSubjects />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/dashboard/profile"
-                element={
-                  <ProtectedRoute
-                    allowedRoles={[
-                      UserRole.STUDENT,
-                      UserRole.TEACHER,
-                      UserRole.ADMIN,
-                    ]}>
-                    <ProfilePage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/dashboard/progress"
-                element={
-                  <ProtectedRoute
-                    allowedRoles={[
-                      UserRole.STUDENT,
-                      UserRole.TEACHER,
-                      UserRole.ADMIN,
-                    ]}>
-                    <StudentProgressPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/dashboard/submissions"
-                element={
-                  <ProtectedRoute
-                    allowedRoles={[
-                      UserRole.STUDENT,
-                      UserRole.TEACHER,
-                      UserRole.ADMIN,
-                    ]}>
-                    <StudentSubmissionsPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/dashboard/exercise/:id"
-                element={
-                  <ProtectedRoute
-                    allowedRoles={[
-                      UserRole.STUDENT,
-                      UserRole.TEACHER,
-                      UserRole.ADMIN,
-                    ]}>
-                    <StudentExerciseView />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/dashboard/compare/:exerciseId"
-                element={
-                  <ProtectedRoute
-                    allowedRoles={[
-                      UserRole.STUDENT,
-                      UserRole.TEACHER,
-                      UserRole.ADMIN,
-                    ]}>
-                    <SubmissionComparison />
-                  </ProtectedRoute>
-                }
-              />
+                {/* Rutas de Estudiante - accesibles por estudiantes, profesores y admin */}
+                <Route
+                  path="/dashboard/exercises"
+                  element={
+                    <ProtectedRoute
+                      allowedRoles={[
+                        UserRole.STUDENT,
+                        UserRole.TEACHER,
+                        UserRole.ADMIN,
+                      ]}>
+                      <StudentExercises />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard/subjects"
+                  element={
+                    <ProtectedRoute
+                      allowedRoles={[
+                        UserRole.STUDENT,
+                        UserRole.TEACHER,
+                        UserRole.ADMIN,
+                      ]}>
+                      <StudentSubjects />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard/profile"
+                  element={
+                    <ProtectedRoute
+                      allowedRoles={[
+                        UserRole.STUDENT,
+                        UserRole.TEACHER,
+                        UserRole.ADMIN,
+                      ]}>
+                      <ProfilePage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard/progress"
+                  element={
+                    <ProtectedRoute
+                      allowedRoles={[
+                        UserRole.STUDENT,
+                        UserRole.TEACHER,
+                        UserRole.ADMIN,
+                      ]}>
+                      <StudentProgressPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard/submissions"
+                  element={
+                    <ProtectedRoute
+                      allowedRoles={[
+                        UserRole.STUDENT,
+                        UserRole.TEACHER,
+                        UserRole.ADMIN,
+                      ]}>
+                      <StudentSubmissionsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard/exercise/:id"
+                  element={
+                    <ProtectedRoute
+                      allowedRoles={[
+                        UserRole.STUDENT,
+                        UserRole.TEACHER,
+                        UserRole.ADMIN,
+                      ]}>
+                      <StudentExerciseView />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard/ranking"
+                  element={
+                    <ProtectedRoute
+                      allowedRoles={[
+                        UserRole.STUDENT,
+                        UserRole.TEACHER,
+                        UserRole.ADMIN,
+                      ]}>
+                      <RankingPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard/compare/:exerciseId"
+                  element={
+                    <ProtectedRoute
+                      allowedRoles={[
+                        UserRole.STUDENT,
+                        UserRole.TEACHER,
+                        UserRole.ADMIN,
+                      ]}>
+                      <SubmissionComparison />
+                    </ProtectedRoute>
+                  }
+                />
 
-              {/* Rutas de Profesor - solo profesores y admin */}
-              <Route
-                path="/dashboard/groups"
-                element={
-                  <ProtectedRoute
-                    allowedRoles={[UserRole.TEACHER, UserRole.ADMIN]}>
-                    <GroupsPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/dashboard/group/:groupId/activity"
-                element={
-                  <ProtectedRoute
-                    allowedRoles={[UserRole.TEACHER, UserRole.ADMIN]}>
-                    <ActivityHistory />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/dashboard/group/:groupId/plagiarism"
-                element={
-                  <ProtectedRoute
-                    allowedRoles={[UserRole.TEACHER, UserRole.ADMIN]}>
-                    <PlagiarismHistory />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/dashboard/create"
-                element={
-                  <ProtectedRoute
-                    allowedRoles={[UserRole.TEACHER, UserRole.ADMIN]}>
-                    <CreateExercise />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/dashboard/manage-exercises"
-                element={
-                  <ProtectedRoute
-                    allowedRoles={[UserRole.TEACHER, UserRole.ADMIN]}>
-                    <ExercisesList />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/dashboard/manage-syllabi"
-                element={
-                  <ProtectedRoute
-                    allowedRoles={[UserRole.TEACHER, UserRole.ADMIN]}>
-                    <ManageSyllabi />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/dashboard/edit-exercise/:exerciseId"
-                element={
-                  <ProtectedRoute
-                    allowedRoles={[UserRole.TEACHER, UserRole.ADMIN]}>
-                    <CreateExercise />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/submissions/:id"
-                element={
-                  <ProtectedRoute
-                    allowedRoles={[UserRole.TEACHER, UserRole.ADMIN]}>
-                    <SubmissionDetails />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/plagiarism/compare/:id"
-                element={
-                  <ProtectedRoute
-                    allowedRoles={[UserRole.TEACHER, UserRole.ADMIN]}>
-                    <PlagiarismComparison />
-                  </ProtectedRoute>
-                }
-              />
+                {/* Rutas de Profesor - solo profesores y admin */}
+                <Route
+                  path="/dashboard/groups"
+                  element={
+                    <ProtectedRoute
+                      allowedRoles={[UserRole.TEACHER, UserRole.ADMIN]}>
+                      <GroupsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard/group/:groupId/activity"
+                  element={
+                    <ProtectedRoute
+                      allowedRoles={[UserRole.TEACHER, UserRole.ADMIN]}>
+                      <ActivityHistory />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard/group/:groupId/plagiarism"
+                  element={
+                    <ProtectedRoute
+                      allowedRoles={[UserRole.TEACHER, UserRole.ADMIN]}>
+                      <PlagiarismHistory />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard/create"
+                  element={
+                    <ProtectedRoute
+                      allowedRoles={[UserRole.TEACHER, UserRole.ADMIN]}>
+                      <CreateExercise />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard/manage-exercises"
+                  element={
+                    <ProtectedRoute
+                      allowedRoles={[UserRole.TEACHER, UserRole.ADMIN]}>
+                      <ExercisesList />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard/manage-syllabi"
+                  element={
+                    <ProtectedRoute
+                      allowedRoles={[UserRole.TEACHER, UserRole.ADMIN]}>
+                      <ManageSyllabi />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard/edit-exercise/:exerciseId"
+                  element={
+                    <ProtectedRoute
+                      allowedRoles={[UserRole.TEACHER, UserRole.ADMIN]}>
+                      <CreateExercise />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/submissions/:id"
+                  element={
+                    <ProtectedRoute
+                      allowedRoles={[UserRole.TEACHER, UserRole.ADMIN]}>
+                      <SubmissionDetails />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/plagiarism/compare/:id"
+                  element={
+                    <ProtectedRoute
+                      allowedRoles={[UserRole.TEACHER, UserRole.ADMIN]}>
+                      <PlagiarismComparison />
+                    </ProtectedRoute>
+                  }
+                />
 
-              {/* Rutas de Admin - solo administradores */}
-              <Route
-                path="/dashboard/users"
-                element={
-                  <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
-                    <UsersPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/dashboard/degrees"
-                element={
-                  <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
-                    <AcademicManagement />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/dashboard/security"
-                element={
-                  <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
-                    <SecurityPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/dashboard/course-migration"
-                element={
-                  <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
-                    <CourseMigration />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/dashboard/course-viewer"
-                element={
-                  <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
-                    <CourseViewer />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/dashboard/courses/:courseId"
-                element={
-                  <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
-                    <CourseDetail />
-                  </ProtectedRoute>
-                }
-              />
+                {/* Rutas de Admin - solo administradores */}
+                <Route
+                  path="/dashboard/users"
+                  element={
+                    <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
+                      <UsersPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard/degrees"
+                  element={
+                    <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
+                      <AcademicManagement />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard/security"
+                  element={
+                    <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
+                      <SecurityPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard/course-migration"
+                  element={
+                    <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
+                      <CourseMigration />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard/course-viewer"
+                  element={
+                    <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
+                      <CourseViewer />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard/courses/:courseId"
+                  element={
+                    <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
+                      <CourseDetail />
+                    </ProtectedRoute>
+                  }
+                />
 
-              {/* Alias/Redirecciones */}
-              <Route
-                path="/professor"
-                element={<Navigate to="/dashboard" replace />}
-              />
-              <Route
-                path="/professor/*"
-                element={<Navigate to="/dashboard" replace />}
-              />
-              <Route
-                path="/admin"
-                element={<Navigate to="/dashboard" replace />}
-              />
-            </Route>
+                {/* Alias/Redirecciones */}
+                <Route
+                  path="/professor"
+                  element={<Navigate to="/dashboard" replace />}
+                />
+                <Route
+                  path="/professor/*"
+                  element={<Navigate to="/dashboard" replace />}
+                />
+                <Route
+                  path="/admin"
+                  element={<Navigate to="/dashboard" replace />}
+                />
+              </Route>
 
-            {/* Ruta 404 */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+              {/* Ruta 404 */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </PasswordChangeGuard>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

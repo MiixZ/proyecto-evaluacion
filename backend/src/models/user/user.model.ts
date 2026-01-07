@@ -27,19 +27,64 @@ export class UserModel {
     plainPassword?: string,
     connection?: PoolConnection
   ): Promise<UserEntity> {
-    const id = randomUUID();
+    // Buscar usuario por email, aunque esté borrado lógicamente
+    const db = connection || this.getPool();
+    const [rows] = await db.execute<UserRow[]>(
+      'SELECT * FROM users WHERE email = ? LIMIT 1',
+      [input.email]
+    );
+
     const passwordHash = plainPassword
       ? await hashPassword(plainPassword)
       : null;
 
+    if (rows.length > 0) {
+      // Si está borrado lógicamente, lo reactivamos y actualizamos datos
+      const user = rows[0];
+      await db.execute(
+        `UPDATE users SET 
+          auth_id = ?, first_name = ?, last_name = ?, role = ?, status = ?, phone = ?, bio = ?, preferred_language = ?, profile_image_url = ?, deleted_at = NULL, must_change_password = 1, updated_at = NOW()
+        WHERE id = ?`,
+        [
+          passwordHash || `auth_${user.id}`,
+          input.firstName,
+          input.lastName,
+          input.role || UserRole.STUDENT,
+          input.status || UserStatus.ACTIVE,
+          input.phone || null,
+          input.bio || null,
+          input.preferredLanguage || 'es',
+          input.profileImageUrl || null,
+          user.id,
+        ]
+      );
+      // Devolver el usuario reactivado
+      return {
+        id: user.id as UUID,
+        authId: passwordHash || `auth_${user.id}`,
+        email: input.email,
+        firstName: input.firstName,
+        lastName: input.lastName,
+        role: input.role || UserRole.STUDENT,
+        status: input.status || UserStatus.ACTIVE,
+        phone: input.phone,
+        bio: input.bio,
+        profileImageUrl: input.profileImageUrl || null,
+        preferredLanguage: input.preferredLanguage || 'es',
+        createdAt: user.created_at,
+        updatedAt: new Date(),
+        mustChangePassword: true,
+      };
+    }
+
+    // Si no existe, crear usuario nuevo
+    const id = randomUUID();
     const query = `
       INSERT INTO users (
         id, auth_id, email, first_name, last_name, role, status, 
-        phone, bio, preferred_language, profile_image_url, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+        phone, bio, preferred_language, profile_image_url, created_at, updated_at, must_change_password
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), 1)
     `;
-
-    const db = connection || this.getPool();
 
     await db.execute(query, [
       id,
@@ -69,6 +114,7 @@ export class UserModel {
       preferredLanguage: input.preferredLanguage || 'es',
       createdAt: new Date(),
       updatedAt: new Date(),
+      mustChangePassword: true,
     };
   }
 
@@ -92,7 +138,10 @@ export class UserModel {
       INNER JOIN \`groups\` g ON ug.group_id = g.id
       INNER JOIN courses c ON g.course_id = c.id
       INNER JOIN subjects s ON c.subject_id = s.id
-      WHERE ug.user_id = ?
+      WHERE ug.user_id = ? 
+        AND ug.status = 'active'
+        AND c.status IN ('active', 'planning')
+        AND s.status = 'active'
       ORDER BY c.academic_year DESC, s.name ASC
     `;
 
@@ -167,6 +216,14 @@ export class UserModel {
       fields.push('preferred_language = ?');
       values.push(data.preferredLanguage);
     }
+    if (data.profileImageUrl !== undefined) {
+      fields.push('profile_image_url = ?');
+      values.push(data.profileImageUrl);
+    }
+    if (data.mustChangePassword !== undefined) {
+      fields.push('must_change_password = ?');
+      values.push(data.mustChangePassword ? 1 : 0);
+    }
 
     if (fields.length === 0) return;
 
@@ -174,6 +231,31 @@ export class UserModel {
     const query = `UPDATE users SET ${fields.join(', ')}, updated_at = NOW() WHERE id = ?`;
 
     await getPool().execute(query, values);
+  }
+
+  async updatePassword(id: UUID, newPasswordHash: string): Promise<void> {
+    const query = `UPDATE users SET auth_id = ?, updated_at = NOW() WHERE id = ? AND deleted_at IS NULL`;
+    const [result] = await this.getPool().execute<ResultSetHeader>(query, [
+      newPasswordHash,
+      id,
+    ]);
+
+    if (result.affectedRows === 0) {
+      throw new NotFoundError(`Usuario con id: ${id}`);
+    }
+
+    logger.info(`Contraseña actualizada para usuario: ${id}`);
+  }
+
+  async getPasswordHash(id: UUID): Promise<string> {
+    const query = `SELECT auth_id FROM users WHERE id = ? AND deleted_at IS NULL LIMIT 1`;
+    const [rows] = await this.getPool().execute<UserRow[]>(query, [id]);
+
+    if (rows.length === 0) {
+      throw new NotFoundError(`Usuario con id: ${id}`);
+    }
+
+    return rows[0].auth_id;
   }
 
   async softDelete(id: UUID): Promise<void> {

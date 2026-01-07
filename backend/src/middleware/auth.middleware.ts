@@ -29,7 +29,6 @@ export async function authMiddleware(
       throw new AuthenticationError('Token no proporcionado');
     }
 
-    // Verificar y decodificar token
     const decoded = verifyToken(token);
 
     req.user = {
@@ -187,4 +186,72 @@ export function requestLoggerMiddleware(
   });
 
   next();
+}
+
+/**
+ * Middleware para verificar si el usuario debe cambiar su contraseña
+ * Permite acceso solo a la ruta de primer cambio de contraseña si el flag está activo
+ *
+ * Rutas exceptuadas:
+ * - /api/v1/users/me/first-password-change (POST)
+ * - /api/v1/auth/logout (POST)
+ *
+ * Uso:
+ *   app.use('/api/v1', authMiddleware, requirePasswordChangeMiddleware);
+ */
+export async function requirePasswordChangeMiddleware(
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const exemptRoutes = [
+      { method: 'POST', path: '/users/me/first-password-change' },
+      { method: 'POST', path: '/auth/logout' },
+      { method: 'GET', path: '/users/profile/me' },
+    ];
+
+    const isExempt = exemptRoutes.some(
+      (route) => route.method === req.method && route.path === req.path
+    );
+
+    if (isExempt) {
+      return next();
+    }
+
+    if (!req.user) {
+      return next();
+    }
+
+    const { userModel } = await import('@models/user/user.model');
+    const user = await userModel.getById(req.user.id);
+
+    if (!user) {
+      return next();
+    }
+
+    if (user.mustChangePassword) {
+      logger.warn('Usuario debe cambiar contraseña', {
+        userId: user.id,
+        email: user.email,
+      });
+
+      res.status(403).json({
+        success: false,
+        error: {
+          code: 'PASSWORD_CHANGE_REQUIRED',
+          message: 'Debes cambiar tu contraseña antes de continuar',
+          mustChangePassword: true,
+        },
+        timestamp: new Date().toISOString(),
+      });
+
+      return;
+    }
+
+    next();
+  } catch (error) {
+    logger.error('Error en requirePasswordChangeMiddleware', error);
+    next();
+  }
 }

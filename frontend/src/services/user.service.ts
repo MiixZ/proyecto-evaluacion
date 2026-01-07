@@ -1,7 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import api from "@/lib/api";
 import {
   User,
   CreateUserPayload,
+  CreateUserResponse,
   UserRole,
   UserStatus,
 } from "@/types/user.type";
@@ -59,10 +61,27 @@ export const userService = {
   /**
    * Crea un nuevo usuario
    */
-  create: async (payload: CreateUserPayload): Promise<User> => {
-    const { data } = await api.post<ApiResponse<User>>("/v1/users", payload);
+  create: async (payload: CreateUserPayload): Promise<CreateUserResponse> => {
+    const { data } = await api.post<ApiResponse<CreateUserResponse>>(
+      "/v1/users",
+      payload
+    );
 
     return data.data;
+  },
+
+  getProfile: async (): Promise<User> => {
+    try {
+      const { data } = await api.get<ApiResponse<User>>("/v1/users/profile/me");
+
+      return data.data;
+    } catch (err: any) {
+      if (err?.response?.status === 403) {
+        return { mustChangePassword: true } as unknown as User;
+      }
+
+      throw err;
+    }
   },
 
   /**
@@ -96,5 +115,47 @@ export const userService = {
    */
   delete: async (id: string): Promise<void> => {
     await api.delete(`/v1/users/${id}`);
+  },
+
+  /**
+   * Cambia la contraseña del usuario actual
+   */
+  changePassword: async (
+    currentPassword: string,
+    newPassword: string,
+    confirmPassword: string
+  ): Promise<void> => {
+    await api.patch("/v1/users/me/password", {
+      currentPassword,
+      newPassword,
+      confirmPassword,
+    });
+  },
+
+  /**
+   * Primer cambio de contraseña (sin contraseña actual)
+   */
+  firstPasswordChange: async (
+    newPassword: string,
+    confirmPassword: string
+  ): Promise<void> => {
+    await api.post("/v1/users/me/first-password-change", {
+      newPassword,
+      confirmPassword,
+    });
+  },
+
+  /**
+   * Actualiza la imagen de perfil del usuario actual
+   */
+  updateProfileImage: async (profileImageUrl: string | null): Promise<User> => {
+    const { data } = await api.patch<ApiResponse<User>>(
+      "/v1/users/me/profile-image",
+      {
+        profileImageUrl,
+      }
+    );
+
+    return data.data;
   },
 };

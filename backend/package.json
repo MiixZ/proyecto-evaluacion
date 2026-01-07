@@ -17,7 +17,6 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@dodona/dolos-lib": "^3.5.1",
     "@types/multer": "^2.0.0",
     "@types/nodemailer": "^7.0.4",
     "@types/string-similarity": "^4.0.2",

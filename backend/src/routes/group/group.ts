@@ -6,6 +6,7 @@ import {
   createGroupRequest,
   getGroupRequest,
 } from '@validators/group.validator';
+import { updateGroupRequest } from '@validators/group.validator';
 import { uuidSchema } from '@validators/common.validator';
 import { z } from 'zod';
 import multer from 'multer';
@@ -17,6 +18,11 @@ router.use(authMiddleware);
 
 router.post('/', validateRequest(createGroupRequest), groupController.create);
 router.get('/:id', validateRequest(getGroupRequest), groupController.getById);
+router.patch(
+  '/:id',
+  validateRequest(updateGroupRequest),
+  groupController.update
+);
 router.get(
   '/course/:courseId',
   validateRequest(z.object({ params: z.object({ courseId: uuidSchema }) })),

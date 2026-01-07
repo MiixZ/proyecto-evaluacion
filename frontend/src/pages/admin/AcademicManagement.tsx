@@ -8,12 +8,19 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/layout/tabs";
-import { BookOpen, GraduationCap, Calendar, ListTree } from "lucide-react";
+import {
+  BookOpen,
+  GraduationCap,
+  Calendar,
+  ListTree,
+  Users,
+} from "lucide-react";
 
 import DegreeManagement from "./components/DegreeManagement";
 import SubjectManagement from "./components/SubjectManagement";
 import CourseManagement from "./components/CourseManagement";
 import SyllabusManagement from "./components/SyllabusManagement";
+import GroupsManagement from "./components/GroupsManagement";
 
 export default function AcademicManagement() {
   const [activeTab, setActiveTab] = useState("degrees");
@@ -53,6 +60,9 @@ export default function AcademicManagement() {
             <ListTree className="h-4 w-4" />{" "}
             {t("academic_management.tabs.syllabi")}
           </TabsTrigger>
+          <TabsTrigger value="groups" className="flex gap-2">
+            <Users className="h-4 w-4" /> {t("academic_management.tabs.groups")}
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="degrees">
@@ -69,6 +79,10 @@ export default function AcademicManagement() {
 
         <TabsContent value="syllabi">
           <SyllabusManagement />
+        </TabsContent>
+
+        <TabsContent value="groups">
+          <GroupsManagement />
         </TabsContent>
       </Tabs>
     </div>

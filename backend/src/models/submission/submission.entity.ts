@@ -18,6 +18,10 @@ export interface SubmissionEntity extends RowDataPacket {
   score: number;
   isLate: boolean;
   usedHint: boolean;
+  archived: boolean;
+  deletedAt?: Date | null;
+  archivedBy?: UUID | null;
+  archivedReason?: 'teacher_deleted' | 'student_removed' | 'manual' | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -35,7 +39,6 @@ export interface SubmissionTestResultEntity {
   hintText?: string | null;
   input?: string;
   expectedOutput?: string;
-}
 }
 
 export interface SubmissionTestResultDTO {
@@ -63,6 +66,10 @@ export interface SubmissionDTO {
   verdict: string;
   score: number;
   isLate: boolean;
+  archived: boolean;
+  deletedAt?: string | null;
+  archivedBy?: string | null;
+  archivedReason?: string | null;
   createdAt: string;
   testResults: SubmissionTestResultDTO[];
 }

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import api from "@/lib/api";
 import { GroupStudentDTO } from "@/types/dashboard.types";
 
@@ -13,7 +14,7 @@ interface UpdateStudentData {
   email: string;
 }
 
-export interface GroupDetails {
+export interface GroupDetails extends Record<string, unknown> {
   id: string;
   courseId: string;
   name: string;
@@ -39,7 +40,32 @@ export const groupService = {
     return data.data;
   },
 
+  listByCourse: async (courseId: string) => {
+    const { data } = await api.get(`/v1/groups/course/${courseId}`);
+
+    return data.data;
+  },
+
+  createGroup: async (payload: {
+    courseId: string;
+    name: string;
+    description?: string;
+    capacity?: number | null;
+    status?: string;
+  }) => {
+    const { data } = await api.post(`/v1/groups`, payload);
+
+    return data.data;
+  },
+
+  updateGroup: async (id: string, payload: any) => {
+    const { data } = await api.patch(`/v1/groups/${id}`, payload);
+
+    return data.data;
+  },
+
   getGroupStudents: async (groupId: string): Promise<GroupStudentDTO[]> => {
+    if (!groupId) return Promise.resolve([]);
     const { data } = await api.get(`/v1/groups/${groupId}/students`);
 
     return data.data;

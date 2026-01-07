@@ -62,6 +62,7 @@ export class GroupModel {
       SELECT g.* FROM \`groups\` g
       JOIN courses c ON g.course_id = c.id
       WHERE c.subject_id = ? AND c.academic_year = ?
+        AND c.status IN ('active', 'planning')
       ORDER BY g.name ASC
     `;
 
@@ -80,10 +81,39 @@ export class GroupModel {
     groupId: UUID,
     role: string = 'student'
   ): Promise<void> {
-    await getPool().execute(
-      'INSERT IGNORE INTO user_groups (user_id, group_id, role, enrolled_at) VALUES (?, ?, ?, NOW())',
-      [userId, groupId, role]
+    const [existing] = await getPool().execute<any[]>(
+      'SELECT status FROM user_groups WHERE user_id = ? AND group_id = ?',
+      [userId, groupId]
     );
+
+    if (existing.length === 0) {
+      await getPool().execute(
+        'INSERT INTO user_groups (user_id, group_id, role, enrolled_at) VALUES (?, ?, ?, NOW())',
+        [userId, groupId, role]
+      );
+
+      // Si es estudiante, restaurar sus entregas archivadas previas
+      if (role === 'student') {
+        await getPool().query('CALL restore_student_submissions(?, ?)', [
+          userId,
+          groupId,
+        ]);
+      }
+    } else if (existing[0].status === 'inactive') {
+      // Si el usuario ya existe pero está inactivo, reactivarlo
+      await getPool().execute(
+        "UPDATE user_groups SET status = 'active' WHERE user_id = ? AND group_id = ?",
+        [userId, groupId]
+      );
+
+      // Si es estudiante, restaurar sus entregas archivadas previas
+      if (role === 'student') {
+        await getPool().query('CALL restore_student_submissions(?, ?)', [
+          userId,
+          groupId,
+        ]);
+      }
+    }
   }
 
   async countMembers(groupId: UUID, role: string = 'student'): Promise<number> {
@@ -101,7 +131,7 @@ export class GroupModel {
       SELECT 1 
       FROM user_groups ug
       JOIN \`groups\` g ON ug.group_id = g.id
-      WHERE ug.user_id = ? AND g.course_id = ?
+      WHERE ug.user_id = ? AND g.course_id = ? AND ug.status = 'active'
       LIMIT 1
     `;
 
@@ -114,9 +144,34 @@ export class GroupModel {
   }
 
   async removeMember(userId: UUID, groupId: UUID): Promise<void> {
+    await getPool().query('CALL archive_student_submissions(?, ?, ?)', [
+      userId,
+      groupId,
+      userId,
+    ]);
+
     await getPool().execute(
       'DELETE FROM user_groups WHERE user_id = ? AND group_id = ?',
       [userId, groupId]
+    );
+  }
+
+  async toggleMemberStatus(userId: UUID, groupId: UUID): Promise<void> {
+    const [rows] = await getPool().execute<any[]>(
+      'SELECT status FROM user_groups WHERE user_id = ? AND group_id = ?',
+      [userId, groupId]
+    );
+
+    if (rows.length === 0) {
+      throw new Error('El usuario no pertenece al grupo');
+    }
+
+    const currentStatus = rows[0].status;
+    const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+
+    await getPool().execute(
+      'UPDATE user_groups SET status = ? WHERE user_id = ? AND group_id = ?',
+      [newStatus, userId, groupId]
     );
   }
 
@@ -128,7 +183,7 @@ export class GroupModel {
       SELECT g.id 
       FROM \`groups\` g
       JOIN user_groups ug ON g.id = ug.group_id
-      WHERE g.course_id = ? AND ug.user_id = ? AND ug.role = 'student'
+      WHERE g.course_id = ? AND ug.user_id = ? AND ug.role = 'student' AND ug.status = 'active'
       LIMIT 1
     `;
 
@@ -211,7 +266,7 @@ export class GroupModel {
     const query = `
       SELECT v.* FROM v_student_progress v
       INNER JOIN user_groups ug ON v.student_id = ug.user_id
-      WHERE ug.group_id = ? AND ug.role = 'student'
+      WHERE ug.group_id = ? AND ug.role = 'student' AND ug.status = 'active'
       ORDER BY v.last_name, v.first_name, v.exercise_title
     `;
 
@@ -224,7 +279,7 @@ export class GroupModel {
 
   async isTeacherOfGroup(userId: UUID, groupId: UUID): Promise<boolean> {
     const [rows] = await getPool().execute<RowDataPacket[]>(
-      'SELECT 1 FROM user_groups WHERE user_id = ? AND group_id = ? AND role = "teacher"',
+      "SELECT 1 FROM user_groups WHERE user_id = ? AND group_id = ? AND role = 'teacher'",
       [userId, groupId]
     );
 

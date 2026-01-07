@@ -12,6 +12,9 @@ import {
   Search,
   UserPlus,
   Download,
+  ChevronDown,
+  FileJson,
+  FileSpreadsheet,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { es, enUS } from "date-fns/locale";
@@ -40,9 +43,16 @@ import { Badge } from "@/components/ui/data/badge";
 import { Progress } from "@/components/ui/feedback/progress";
 import { Alert, AlertDescription } from "@/components/ui/feedback/alert";
 import { Button } from "@/components/ui/forms/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/overlay/dropdown-menu";
 import { DataTable, ColumnDef } from "@/components/ui/data/data-table";
 import { dashboardService } from "@/services/dashboard.service";
 import { professorDashboardService } from "@/services/dashboard.professor.service";
+import { exportService } from "@/services/export.service";
 import { toast } from "sonner";
 import { ProfessorSubmissionsByDayChart } from "@/components/professor/charts/SubmissionsByDayChart";
 import { AcceptanceRateByExerciseChart } from "@/components/professor/charts/AcceptanceRateByExerciseChart";
@@ -103,8 +113,8 @@ export default function ProfessorDashboard() {
     }
   }, [dashboardData, selectedGroupId]);
 
-  const handleExportData = () => {
-    if (!dashboardData?.activeGroup) {
+  const handleExportData = async (format: "json" | "csv" = "csv") => {
+    if (!selectedGroupId || !dashboardData?.activeGroup) {
       toast.error(t("professor.dashboard.no_export_data"));
       return;
     }
@@ -112,72 +122,18 @@ export default function ProfessorDashboard() {
     try {
       setIsExporting(true);
       const groupInfo = dashboardData.activeGroup.info;
-      const students = dashboardData.activeGroup.students;
 
-      const statsRows = [
-        ["REPORTE DE GRUPO", groupInfo.groupName],
-        ["Asignatura", groupInfo.subjectName],
-        ["Fecha de emisión", new Date().toLocaleDateString("es-ES")],
-        [""],
-        ["MÉTRICAS GENERALES"],
-        ["Nota Media del Grupo", groupInfo.avgScore.toFixed(2)],
-        ["Porcentaje de Completitud", `${groupInfo.completionPercentage}%`],
-        ["Total Estudiantes", groupInfo.studentCount],
-        [
-          "Alertas de Plagio (último mes)",
-          dashboardData.activeGroup.plagiarismAlerts.length,
-        ],
-        [""],
-        ["DETALLE DE ESTUDIANTES"],
-      ];
+      await exportService.downloadGroupStatistics(
+        selectedGroupId,
+        groupInfo.groupName,
+        format
+      );
 
-      const tableHeaders = [
-        "ID Estudiante",
-        "Nombre",
-        "Email",
-        "Estado",
-        "Progreso (%)",
-        "Nota Media",
-      ];
-
-      const tableRows = students.map((student) => [
-        student.id,
-        `"${student.name.replace(/"/g, '""')}"`,
-        student.email,
-        student.status === "active"
-          ? "Activo"
-          : student.status === "risk"
-          ? "Riesgo"
-          : "Inactivo",
-        student.progress.toFixed(2),
-        student.averageScore.toFixed(2),
-      ]);
-
-      const csvArray = [...statsRows, tableHeaders, ...tableRows];
-
-      const csvContent = csvArray.map((row) => row.join(",")).join("\n");
-
-      const blob = new Blob(["\uFEFF" + csvContent], {
-        type: "text/csv;charset=utf-8;",
-      });
-
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.setAttribute("href", url);
-
-      const safeGroupName = groupInfo.groupName
-        .replace(/[^a-z0-9]/gi, "_")
-        .toLowerCase();
-      const timestamp = new Date().toISOString().split("T")[0];
-      const fileName = `reporte_${safeGroupName}_${timestamp}.csv`;
-
-      link.setAttribute("download", fileName);
-      link.style.visibility = "hidden";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      toast.success(t("professor.dashboard.export_success"));
+      toast.success(
+        format === "json"
+          ? t("professor.dashboard.export_json_success")
+          : t("professor.dashboard.export_success")
+      );
     } catch (err) {
       console.error(err);
       toast.error(t("professor.dashboard.export_error"));
@@ -336,20 +292,34 @@ export default function ProfessorDashboard() {
               {t("professor.dashboard.add_student")}
             </Button>
 
-            <Button
-              variant="outline"
-              className="flex-1 sm:flex-none"
-              onClick={handleExportData}
-              disabled={isExporting || isLoading}>
-              {isExporting ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Download className="mr-2 h-4 w-4" />
-              )}
-              {isExporting
-                ? t("professor.dashboard.exporting")
-                : t("professor.dashboard.export_data")}
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="flex-1 sm:flex-none"
+                  disabled={isExporting || isLoading}>
+                  {isExporting ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Download className="mr-2 h-4 w-4" />
+                  )}
+                  {isExporting
+                    ? t("professor.dashboard.exporting")
+                    : t("professor.dashboard.export_data")}
+                  <ChevronDown className="ml-2 h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => handleExportData("csv")}>
+                  <FileSpreadsheet className="mr-2 h-4 w-4" />
+                  {t("professor.dashboard.export_csv")}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExportData("json")}>
+                  <FileJson className="mr-2 h-4 w-4" />
+                  {t("professor.dashboard.export_json")}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           {/* Selector de Grupo */}

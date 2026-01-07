@@ -166,6 +166,7 @@ export class SubmissionService {
       createdAt: now,
       updatedAt: now,
       constructor: { name: 'RowDataPacket' },
+      archived: false,
     });
 
     this.checkBehavioralAnomaly(userId, exercise.id, submissionId).catch(
@@ -403,6 +404,97 @@ export class SubmissionService {
         `Anomalía de comportamiento detectada para usuario ${studentId}`
       );
     }
+  }
+
+  /**
+   * Archiva una entrega manualmente (profesor/admin)
+   * @param submissionId - ID de la entrega a archivar
+   * @param userId - ID del usuario que realiza la acción
+   * @param userRole - Rol del usuario
+   */
+  async archiveSubmission(
+    submissionId: UUID,
+    userId: UUID,
+    userRole: UserRole
+  ): Promise<void> {
+    if (userRole !== UserRole.TEACHER && userRole !== UserRole.ADMIN) {
+      throw new ForbiddenError(
+        'Solo profesores y administradores pueden archivar entregas'
+      );
+    }
+
+    const submission = await submissionModel.getDetailsById(submissionId);
+    if (!submission) {
+      throw new NotFoundError('Entrega no encontrada');
+    }
+
+    const isArchived = await submissionModel.isArchived(submissionId);
+    if (isArchived) {
+      throw new ValidationError('La entrega ya está archivada');
+    }
+
+    await submissionModel.archiveSubmission(
+      submissionId,
+      userId,
+      'teacher_deleted'
+    );
+
+    await auditService.log(
+      'ARCHIVE_SUBMISSION',
+      'submission',
+      submissionId,
+      {
+        studentId: submission.student.id,
+        exerciseId: submission.exercise.id,
+        reason: 'Manual deletion by teacher',
+      },
+      userId
+    );
+
+    logger.info(`Entrega ${submissionId} archivada por usuario ${userId}`);
+  }
+
+  /**
+   * Restaura una entrega archivada (profesor/admin)
+   * @param submissionId - ID de la entrega a restaurar
+   * @param userId - ID del usuario que realiza la acción
+   * @param userRole - Rol del usuario
+   */
+  async restoreSubmission(
+    submissionId: UUID,
+    userId: UUID,
+    userRole: UserRole
+  ): Promise<void> {
+    if (userRole !== UserRole.TEACHER && userRole !== UserRole.ADMIN) {
+      throw new ForbiddenError(
+        'Solo profesores y administradores pueden restaurar entregas'
+      );
+    }
+
+    const submission = await submissionModel.getDetailsById(submissionId);
+    if (!submission) {
+      throw new NotFoundError('Entrega no encontrada');
+    }
+
+    const isArchived = await submissionModel.isArchived(submissionId);
+    if (!isArchived) {
+      throw new ValidationError('La entrega no está archivada');
+    }
+
+    await submissionModel.restoreSubmission(submissionId);
+
+    await auditService.log(
+      'RESTORE_SUBMISSION',
+      'submission',
+      submissionId,
+      {
+        studentId: submission.student.id,
+        exerciseId: submission.exercise.id,
+      },
+      userId
+    );
+
+    logger.info(`Entrega ${submissionId} restaurada por usuario ${userId}`);
   }
 }
 

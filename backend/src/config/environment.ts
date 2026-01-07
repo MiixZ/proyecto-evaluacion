@@ -6,7 +6,7 @@ import { logger } from '@utils/logger';
  */
 const envSchema = z.object({
   // Server
-  PORT: z.coerce.number().int().positive().default(3000),
+  PORT: z.coerce.number().int().positive().default(4000),
   NODE_ENV: z
     .enum(['development', 'production', 'test'])
     .default('development'),

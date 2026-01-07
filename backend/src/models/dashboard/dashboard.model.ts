@@ -48,10 +48,14 @@ export class DashboardModel {
               MAX(score) as best_score,
               MAX(created_at) as last_attempt
           FROM submissions
+          WHERE archived = FALSE
           GROUP BY exercise_id, student_id
       ) sub_stats ON e.id = sub_stats.exercise_id AND u.id = sub_stats.student_id
       
       WHERE u.id = ? 
+      AND ug.status = 'active'
+      AND c.status IN ('active', 'planning')
+      AND s.status = 'active'
       AND e.is_published = TRUE
       AND syl.is_public = TRUE
     `;
@@ -170,15 +174,15 @@ export class DashboardModel {
         u.last_name,
         u.email,
         u.profile_image_url,
-        COUNT(DISTINCT CASE WHEN s.verdict = 'accepted' THEN s.exercise_id END) as exercises_completed,
-        COALESCE(AVG(s.score), 0) as avg_score,
-        MAX(s.created_at) as last_access,
-        u.status
+        COUNT(DISTINCT CASE WHEN s.verdict = 'accepted' AND s.archived = FALSE THEN s.exercise_id END) as exercises_completed,
+        COALESCE(AVG(CASE WHEN s.archived = FALSE THEN s.score END), 0) as avg_score,
+        MAX(CASE WHEN s.archived = FALSE THEN s.created_at END) as last_access,
+        ug.status
       FROM users u
       JOIN user_groups ug ON u.id = ug.user_id
       LEFT JOIN submissions s ON u.id = s.student_id
       WHERE ug.group_id = ? AND ug.role = 'student'
-      GROUP BY u.id
+      GROUP BY u.id, ug.status
       ORDER BY u.last_name ASC
     `;
 
@@ -229,6 +233,9 @@ export class DashboardModel {
       JOIN exercises e ON s.exercise_id = e.id
       JOIN user_groups ug ON u.id = ug.user_id 
       WHERE ${whereClause}
+        AND ug.status = 'active'
+        AND s.archived = FALSE
+        AND e.is_published = TRUE
     `;
 
     const query = `
@@ -305,6 +312,9 @@ export class DashboardModel {
       LEFT JOIN submissions s2 ON pc.compared_with_submission_id = s2.id
       LEFT JOIN users u2 ON s2.student_id = u2.id
       WHERE ${whereClause}
+        AND ug.status = 'active'
+        AND s.archived = FALSE
+        AND e.is_published = TRUE
     `;
 
     const query = `
@@ -382,6 +392,9 @@ export class DashboardModel {
       JOIN user_groups ug ON u.id = ug.user_id
       JOIN \`groups\` g ON ug.group_id = g.id AND s.course_id = g.course_id
       ${whereClause}
+        AND u.status = 'active'
+        AND s.archived = FALSE
+        AND e.is_published = TRUE
       ORDER BY ${sortCol} ${sortOrder}
       LIMIT ? OFFSET ?
     `;
@@ -392,7 +405,11 @@ export class DashboardModel {
       JOIN users u ON s.student_id = u.id
       JOIN user_groups ug ON u.id = ug.user_id
       JOIN \`groups\` g ON ug.group_id = g.id AND s.course_id = g.course_id
+      JOIN exercises e ON s.exercise_id = e.id
       ${whereClause}
+        AND u.status = 'active'
+        AND s.archived = FALSE
+        AND e.is_published = TRUE
     `;
 
     try {
@@ -433,24 +450,32 @@ export class DashboardModel {
          FROM degrees d 
          JOIN subjects s ON d.id = s.degree_id 
          JOIN courses c ON s.id = c.subject_id 
-         WHERE c.academic_year = ?) as activeDegrees,
+         WHERE c.academic_year = ? 
+           AND d.status = 'active'
+           AND s.status = 'active'
+           AND c.status IN ('active', 'planning')) as activeDegrees,
          
         (SELECT COUNT(DISTINCT s.id) 
          FROM subjects s 
          JOIN courses c ON s.id = c.subject_id 
-         WHERE c.academic_year = ?) as activeSubjects,
+         WHERE c.academic_year = ?
+           AND s.status = 'active'
+           AND c.status IN ('active', 'planning')) as activeSubjects,
          
         (SELECT COUNT(DISTINCT ug.user_id) 
          FROM user_groups ug 
          JOIN \`groups\` g ON ug.group_id = g.id 
          JOIN courses c ON g.course_id = c.id 
-         WHERE c.academic_year = ? AND ug.role = 'teacher') as activeTeachers,
+         WHERE c.academic_year = ? 
+           AND ug.role = 'teacher'
+           AND c.status IN ('active', 'planning')) as activeTeachers,
          
         (SELECT COUNT(DISTINCT e.id) 
          FROM exercises e 
          JOIN syllabi syl ON e.syllabus_id = syl.id 
          JOIN courses c ON syl.course_id = c.id 
-         WHERE c.academic_year = ?) as totalExercises
+         WHERE c.academic_year = ?
+           AND c.status IN ('active', 'planning')) as totalExercises
     `;
 
     const [rows] = await getPool().execute<any[]>(query, [
@@ -491,7 +516,11 @@ export class DashboardModel {
       LEFT JOIN user_groups ug_student ON g.id = ug_student.group_id AND ug_student.role = 'student'
       LEFT JOIN syllabi syl ON c.id = syl.course_id
       LEFT JOIN exercises e ON syl.id = e.syllabus_id
-      WHERE c.academic_year = ? ${searchClause}
+      WHERE c.academic_year = ? 
+        AND d.status = 'active'
+        AND s.status = 'active'
+        AND c.status IN ('active', 'planning')
+        ${searchClause}
       GROUP BY d.id, s.id
       ORDER BY d.name, s.name
     `;
@@ -514,7 +543,9 @@ export class DashboardModel {
       JOIN user_groups ug ON u.id = ug.user_id
       JOIN \`groups\` g ON ug.group_id = g.id
       JOIN courses c ON g.course_id = c.id
-      WHERE ug.role = 'teacher' AND c.academic_year = ?
+      WHERE ug.role = 'teacher' 
+        AND c.academic_year = ?
+        AND c.status IN ('active', 'planning')
       GROUP BY u.id
       ORDER BY u.last_name ASC
     `;
@@ -653,6 +684,7 @@ export class DashboardModel {
         DATE(s.created_at) as date,
         COUNT(*) as count
       FROM submissions s
+      JOIN users u ON s.student_id = u.id
       JOIN exercises e ON s.exercise_id = e.id
       JOIN syllabi syl ON e.syllabus_id = syl.id
       JOIN courses c ON syl.course_id = c.id
@@ -663,11 +695,16 @@ export class DashboardModel {
     if (groupId) {
       query += `
         JOIN \`groups\` g ON c.id = g.course_id
+        JOIN user_groups ug ON u.id = ug.user_id AND g.id = ug.group_id
         WHERE g.id = ? AND s.created_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+          AND ug.status = 'active' AND s.archived = FALSE
+          AND c.status IN ('active', 'planning', 'closed')
       `;
       params.push(groupId);
     } else {
-      query += ` WHERE s.created_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) `;
+      query += ` WHERE s.created_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+        AND s.archived = FALSE
+        AND c.status IN ('active', 'planning', 'closed') `;
     }
 
     query += `
@@ -704,7 +741,8 @@ export class DashboardModel {
       FROM exercises e
       JOIN syllabi syl ON e.syllabus_id = syl.id
       JOIN courses c ON syl.course_id = c.id
-      LEFT JOIN submissions s ON e.id = s.exercise_id
+      LEFT JOIN submissions s ON e.id = s.exercise_id AND s.archived = FALSE
+      LEFT JOIN users u ON s.student_id = u.id
     `;
 
     const params: any[] = [];
@@ -712,9 +750,16 @@ export class DashboardModel {
     if (groupId) {
       query += `
         JOIN \`groups\` g ON c.id = g.course_id
-        WHERE g.id = ?
+        JOIN user_groups ug ON u.id = ug.user_id AND g.id = ug.group_id
+        WHERE g.id = ? AND (ug.status = 'active' OR u.id IS NULL)
+          AND c.status IN ('active', 'planning', 'closed')
       `;
       params.push(groupId);
+    } else {
+      query += ` WHERE (u.id IS NULL OR u.id IN (
+        SELECT user_id FROM user_groups WHERE status = 'active'
+      )) 
+      AND c.status IN ('active', 'planning', 'closed') `;
     }
 
     query += `
@@ -747,10 +792,10 @@ export class DashboardModel {
       SELECT 
         u.id as studentId,
         CONCAT(u.first_name, ' ', u.last_name) as studentName,
-        COUNT(DISTINCT CASE WHEN s.verdict = 'accepted' THEN e.id END) as exercisesCompleted,
+        COUNT(DISTINCT CASE WHEN s.verdict = 'accepted' AND s.archived = FALSE THEN e.id END) as exercisesCompleted,
         COUNT(DISTINCT e.id) as totalExercises,
-        COALESCE(AVG(s.score), 0) as averageScore,
-        MAX(s.created_at) as lastActivity
+        COALESCE(AVG(CASE WHEN s.archived = FALSE THEN s.score END), 0) as averageScore,
+        MAX(CASE WHEN s.archived = FALSE THEN s.created_at END) as lastActivity
       FROM users u
       JOIN user_groups ug ON u.id = ug.user_id
       JOIN \`groups\` g ON ug.group_id = g.id
@@ -758,7 +803,8 @@ export class DashboardModel {
       JOIN syllabi syl ON c.id = syl.course_id
       JOIN exercises e ON syl.id = e.syllabus_id
       LEFT JOIN submissions s ON e.id = s.exercise_id AND u.id = s.student_id
-      WHERE ug.role = 'student'
+      WHERE ug.role = 'student' AND ug.status = 'active'
+        AND c.status IN ('active', 'planning', 'closed')
     `;
 
     const params: any[] = [];
@@ -792,6 +838,7 @@ export class DashboardModel {
         HOUR(s.created_at) as hour,
         COUNT(*) as count
       FROM submissions s
+      JOIN users u ON s.student_id = u.id
       JOIN exercises e ON s.exercise_id = e.id
       JOIN syllabi syl ON e.syllabus_id = syl.id
       JOIN courses c ON syl.course_id = c.id
@@ -802,9 +849,15 @@ export class DashboardModel {
     if (groupId) {
       query += `
         JOIN \`groups\` g ON c.id = g.course_id
-        WHERE g.id = ?
+        JOIN user_groups ug ON u.id = ug.user_id AND g.id = ug.group_id
+        WHERE g.id = ? AND ug.status = 'active' AND s.archived = FALSE
+          AND c.status IN ('active', 'planning', 'closed')
       `;
       params.push(groupId);
+    } else {
+      query += `
+        WHERE s.archived = FALSE AND c.status IN ('active', 'planning', 'closed')
+      `;
     }
 
     query += `
@@ -901,6 +954,8 @@ export class DashboardModel {
       JOIN exercises e ON syl.id = e.syllabus_id
       LEFT JOIN submissions s ON e.id = s.exercise_id AND s.student_id = ug.user_id
       WHERE ug.user_id = ? AND ug.role = 'student'
+        AND ug.status = 'active'
+        AND c.status IN ('active', 'planning', 'closed')
       GROUP BY syl.id
       ORDER BY percentage DESC
     `;

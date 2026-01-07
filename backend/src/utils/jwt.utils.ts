@@ -242,3 +242,34 @@ export function extractBearerToken(
 
   return token.trim() || null;
 }
+
+/**
+ * Genera una contraseña temporal segura
+ * Formato: 8 caracteres alfanuméricos (mayúsculas, minúsculas y números)
+ * Incluye al menos una mayúscula, una minúscula y un número
+ *
+ * @returns Contraseña temporal aleatoria
+ */
+export function generateTemporaryPassword(): string {
+  const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const lowercase = 'abcdefghijklmnopqrstuvwxyz';
+  const numbers = '0123456789';
+  const allChars = uppercase + lowercase + numbers;
+
+  // Garantizar al menos un carácter de cada tipo
+  let password = '';
+  password += uppercase[Math.floor(Math.random() * uppercase.length)];
+  password += lowercase[Math.floor(Math.random() * lowercase.length)];
+  password += numbers[Math.floor(Math.random() * numbers.length)];
+
+  // Completar hasta 10 caracteres con caracteres aleatorios
+  for (let i = 3; i < 10; i++) {
+    password += allChars[Math.floor(Math.random() * allChars.length)];
+  }
+
+  // Mezclar los caracteres para que no sean predecibles
+  return password
+    .split('')
+    .sort(() => Math.random() - 0.5)
+    .join('');
+}

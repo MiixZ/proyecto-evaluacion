@@ -1,25 +1,22 @@
-FROM node:20-alpine
-
+FROM oven/bun:1 AS base
 WORKDIR /app
 
-# Instalar bun
-RUN npm install -g bun
+RUN apt-get update && apt-get install -y python3 make g++ && rm -rf /var/lib/apt/lists/*
 
 # Copiar archivos de dependencias
-COPY package.json bun.lock* ./
+COPY package.json bun.lock ./
 
 # Instalar dependencias
-RUN bun install --frozen-lockfile
+RUN bun install
 
-# Copiar código fuente y configuración TypeScript
-COPY src ./src
-COPY tsconfig.json ./
+# Copiar el código fuente
+COPY . .
 
-# ✅ COMPILAR TYPESCRIPT A JAVASCRIPT
+# Compilar el proyecto (genera la carpeta dist)
 RUN bun run build
 
-# Exponer puerto
-EXPOSE 3000
+# Exponer el puerto
+EXPOSE 4000
 
-# ✅ Ejecutar archivo compilado
+# Comando de inicio
 CMD ["bun", "run", "start"]

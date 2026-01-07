@@ -28,6 +28,7 @@ import {
   Lock,
   ListTree,
   GitBranch,
+  Trophy,
 } from "lucide-react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
@@ -74,6 +75,11 @@ export function AppSidebar() {
         icon: BarChart3,
       },
       {
+        title: t("sidebar.menu.ranking"),
+        url: "/dashboard/ranking",
+        icon: Trophy,
+      },
+      {
         title: t("sidebar.menu.submissions"),
         url: "/dashboard/submissions",
         icon: BookOpen,
@@ -85,6 +91,11 @@ export function AppSidebar() {
         url: "/dashboard",
         icon: GraduationCap,
         exact: true,
+      },
+      {
+        title: t("sidebar.menu.ranking"),
+        url: "/dashboard/ranking",
+        icon: Trophy,
       },
       {
         title: t("sidebar.menu.groups"),
@@ -115,6 +126,11 @@ export function AppSidebar() {
         exact: true,
       },
       { title: t("sidebar.menu.users"), url: "/dashboard/users", icon: Users },
+      {
+        title: t("sidebar.menu.ranking"),
+        url: "/dashboard/ranking",
+        icon: Trophy,
+      },
       {
         title: t("sidebar.menu.degrees"),
         url: "/dashboard/degrees",

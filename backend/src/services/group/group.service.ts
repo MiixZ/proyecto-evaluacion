@@ -47,6 +47,10 @@ export class GroupService {
     );
   }
 
+  async updateGroup(id: string, input: any) {
+    return await groupModel.update(id as UUID, input);
+  }
+
   async enrollMember(groupId: string, input: EnrollMemberInput) {
     const group = await groupModel.getById(groupId as UUID);
 
@@ -77,11 +81,11 @@ export class GroupService {
       await userModel.getById(userId as UUID);
     }
 
-    await groupModel.addMember(groupId as UUID, userId as UUID, input.role);
+    await groupModel.addMember(userId as UUID, groupId as UUID, input.role);
   }
 
   async removeMember(groupId: string, userId: string) {
-    await groupModel.removeMember(groupId as UUID, userId as UUID);
+    await groupModel.removeMember(userId as UUID, groupId as UUID);
   }
 
   async getGroupMembers(groupId: string, role?: string) {
@@ -348,14 +352,9 @@ export class GroupService {
     if (!student)
       throw new AppError('NOT_FOUND', 404, 'Estudiante no encontrado');
 
-    const newStatus =
-      student.status === UserStatus.ACTIVE
-        ? UserStatus.INACTIVE
-        : UserStatus.ACTIVE;
+    await groupModel.toggleMemberStatus(studentId, groupId);
 
-    await userModel.update(studentId, { status: newStatus });
-
-    return newStatus;
+    return 'Status actualizado';
   }
 }
 

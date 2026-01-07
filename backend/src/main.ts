@@ -5,6 +5,7 @@ import { initializeDatabase } from './config/database';
 import { logger } from './utils/logger';
 import {
   authMiddleware,
+  requirePasswordChangeMiddleware,
   requestLoggerMiddleware,
   errorHandlerMiddleware,
 } from './middleware/auth.middleware';
@@ -28,6 +29,7 @@ import routerDashboard from '@routes/dashboard/dashboard';
 import routerLanguages from '@routes/language/language';
 import routerHints from '@routes/hint/hint';
 import routerSubmissionErrors from '@routes/catalog/submission-error';
+import routerRanking from '@routes/ranking/ranking';
 
 const app = express();
 const PORT = config.port;
@@ -89,6 +91,9 @@ const apiV1 = express.Router();
 // Middleware de autenticación global para v1
 apiV1.use(authMiddleware);
 
+// Middleware de verificación de cambio de contraseña obligatorio
+apiV1.use(requirePasswordChangeMiddleware);
+
 apiV1.get('/me', (req: AuthRequest, res) => {
   res.json({
     success: true,
@@ -116,6 +121,7 @@ apiV1.use('/dashboard', routerDashboard);
 apiV1.use('/languages', routerLanguages);
 apiV1.use('/hints', routerHints);
 apiV1.use('/submission-errors', routerSubmissionErrors);
+apiV1.use('/ranking', routerRanking);
 
 // ==================== MANEJO DE ERRORES ====================
 

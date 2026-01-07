@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -13,6 +13,9 @@ import {
   Save,
   GraduationCap,
   Users,
+  Lock,
+  Camera,
+  Image as ImageIcon,
 } from "lucide-react";
 
 import { studentService as userService } from "@/services/student.service";
@@ -59,14 +62,32 @@ import { Badge } from "@/components/ui/data/badge";
 import { Separator } from "@/components/ui/layout/separator";
 import { Alert, AlertDescription } from "@/components/ui/feedback/alert";
 import { ScrollArea } from "@/components/ui/layout/scroll-area";
+
 import { UpdateProfilePayload } from "@/types/user.type";
 import { ProfileFormValues, getProfileSchema } from "@/schemas/profile.schema";
+import {
+  ChangePasswordFormValues,
+  getChangePasswordSchema,
+} from "@/schemas/change-password.schema";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/overlay/dialog";
 
 export default function ProfilePage() {
   const { t, i18n } = useTranslation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { refreshUser } = useAuth();
+
+  const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
+  const [isImageDialogOpen, setIsImageDialogOpen] = useState(false);
+  const [imageUrl, setImageUrl] = useState("");
 
   const {
     data: user,
@@ -88,6 +109,15 @@ export default function ProfilePage() {
     },
   });
 
+  const passwordForm = useForm<ChangePasswordFormValues>({
+    resolver: zodResolver(getChangePasswordSchema(t)),
+    defaultValues: {
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    },
+  });
+
   useEffect(() => {
     if (user) {
       form.reset({
@@ -97,6 +127,7 @@ export default function ProfilePage() {
         bio: user.bio || "",
         preferredLanguage: (user.preferredLanguage as "es" | "en") || "es",
       });
+      setImageUrl(user.profileImageUrl || "");
     }
   }, [user, form]);
 
@@ -135,8 +166,83 @@ export default function ProfilePage() {
     },
   });
 
+  const changePasswordMutation = useMutation({
+    mutationFn: (data: ChangePasswordFormValues) =>
+      userService.changePassword(
+        data.currentPassword,
+        data.newPassword,
+        data.confirmPassword
+      ),
+    onSuccess: () => {
+      toast({
+        title:
+          t("profile_page.password.success_title") || "Contraseña actualizada",
+        description:
+          t("profile_page.password.success_desc") ||
+          "Tu contraseña ha sido actualizada correctamente",
+      });
+      setIsPasswordDialogOpen(false);
+      passwordForm.reset();
+    },
+    onError: (error) => {
+      const errorMessage = parseBackendError(
+        error,
+        t("profile_page.password.error_desc") ||
+          "Error al cambiar la contraseña"
+      );
+      const validationErrors = extractValidationErrors(error);
+
+      if (validationErrors) {
+        applyValidationErrors(validationErrors, passwordForm.setError);
+      }
+
+      toast({
+        title: t("profile_page.password.error_title") || "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateImageMutation = useMutation({
+    mutationFn: (imageUrl: string | null) =>
+      userService.updateProfileImage(imageUrl),
+    onSuccess: (updatedUser) => {
+      queryClient.setQueryData(["userProfile"], updatedUser);
+      if (refreshUser) refreshUser();
+
+      toast({
+        title: t("profile_page.image.success_title") || "Imagen actualizada",
+        description:
+          t("profile_page.image.success_desc") ||
+          "Tu imagen de perfil ha sido actualizada",
+      });
+      setIsImageDialogOpen(false);
+    },
+    onError: (error) => {
+      const errorMessage = parseBackendError(
+        error,
+        t("profile_page.image.error_desc") || "Error al actualizar la imagen"
+      );
+
+      toast({
+        title: t("profile_page.image.error_title") || "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    },
+  });
+
   const onSubmit = (values: ProfileFormValues) => {
     updateMutation.mutate(values);
+  };
+
+  const onPasswordSubmit = (values: ChangePasswordFormValues) => {
+    changePasswordMutation.mutate(values);
+  };
+
+  const onImageSubmit = () => {
+    updateImageMutation.mutate(imageUrl || null);
   };
 
   if (isLoading) {
@@ -175,13 +281,83 @@ export default function ProfilePage() {
           {/* Tarjeta de Usuario */}
           <Card>
             <CardHeader className="text-center pb-2">
-              <div className="mx-auto mb-4">
+              <div className="mx-auto mb-4 relative group">
                 <Avatar className="h-24 w-24 border-2 border-border">
                   <AvatarImage src={user.profileImageUrl} />
                   <AvatarFallback className="text-2xl bg-muted">
                     {initials}
                   </AvatarFallback>
                 </Avatar>
+                <Dialog
+                  open={isImageDialogOpen}
+                  onOpenChange={setIsImageDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button
+                      size="icon"
+                      variant="secondary"
+                      className="absolute bottom-0 right-0 h-8 w-8 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Camera className="h-4 w-4" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>
+                        {t("profile_page.image.dialog_title") ||
+                          "Actualizar imagen de perfil"}
+                      </DialogTitle>
+                      <DialogDescription>
+                        {t("profile_page.image.dialog_desc") ||
+                          "Ingresa la URL de tu nueva imagen de perfil"}
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">
+                          {t("profile_page.image.url_label") || "URL de imagen"}
+                        </label>
+                        <div className="relative">
+                          <ImageIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            placeholder="https://ejemplo.com/imagen.jpg"
+                            value={imageUrl}
+                            onChange={(e) => setImageUrl(e.target.value)}
+                            className="pl-9"
+                          />
+                        </div>
+                      </div>
+                      {imageUrl && (
+                        <div className="flex justify-center">
+                          <Avatar className="h-24 w-24 border-2 border-border">
+                            <AvatarImage src={imageUrl} />
+                            <AvatarFallback>{initials}</AvatarFallback>
+                          </Avatar>
+                        </div>
+                      )}
+                    </div>
+                    <DialogFooter>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setIsImageDialogOpen(false);
+                          setImageUrl(user.profileImageUrl || "");
+                        }}>
+                        {t("common.cancel") || "Cancelar"}
+                      </Button>
+                      <Button
+                        onClick={onImageSubmit}
+                        disabled={updateImageMutation.isPending}>
+                        {updateImageMutation.isPending ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            {t("common.saving") || "Guardando..."}
+                          </>
+                        ) : (
+                          <>{t("common.save") || "Guardar"}</>
+                        )}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
               </div>
               <CardTitle>
                 {user.firstName} {user.lastName}
@@ -194,6 +370,109 @@ export default function ProfilePage() {
               </div>
             </CardHeader>
             <CardContent>
+              <Separator className="my-4" />
+              <div className="space-y-2">
+                <Dialog
+                  open={isPasswordDialogOpen}
+                  onOpenChange={setIsPasswordDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" className="w-full" size="sm">
+                      <Lock className="mr-2 h-4 w-4" />
+                      {t("profile_page.password.change_button") ||
+                        "Cambiar contraseña"}
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>
+                        {t("profile_page.password.dialog_title") ||
+                          "Cambiar contraseña"}
+                      </DialogTitle>
+                      <DialogDescription>
+                        {t("profile_page.password.dialog_desc") ||
+                          "Ingresa tu contraseña actual y la nueva contraseña"}
+                      </DialogDescription>
+                    </DialogHeader>
+                    <Form {...passwordForm}>
+                      <form
+                        onSubmit={passwordForm.handleSubmit(onPasswordSubmit)}
+                        className="space-y-4">
+                        <FormField
+                          control={passwordForm.control}
+                          name="currentPassword"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>
+                                {t("profile_page.password.current") ||
+                                  "Contraseña actual"}
+                              </FormLabel>
+                              <FormControl>
+                                <Input type="password" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={passwordForm.control}
+                          name="newPassword"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>
+                                {t("profile_page.password.new") ||
+                                  "Nueva contraseña"}
+                              </FormLabel>
+                              <FormControl>
+                                <Input type="password" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={passwordForm.control}
+                          name="confirmPassword"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>
+                                {t("profile_page.password.confirm") ||
+                                  "Confirmar contraseña"}
+                              </FormLabel>
+                              <FormControl>
+                                <Input type="password" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <DialogFooter>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => {
+                              setIsPasswordDialogOpen(false);
+                              passwordForm.reset();
+                            }}>
+                            {t("common.cancel") || "Cancelar"}
+                          </Button>
+                          <Button
+                            type="submit"
+                            disabled={changePasswordMutation.isPending}>
+                            {changePasswordMutation.isPending ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                {t("common.saving") || "Guardando..."}
+                              </>
+                            ) : (
+                              <>{t("common.save") || "Guardar"}</>
+                            )}
+                          </Button>
+                        </DialogFooter>
+                      </form>
+                    </Form>
+                  </DialogContent>
+                </Dialog>
+              </div>
               <Separator className="my-4" />
               <div className="text-xs text-muted-foreground text-center">
                 {t("profile_page.user_card.id_label")}:{" "}

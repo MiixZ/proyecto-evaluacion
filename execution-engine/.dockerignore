@@ -12,3 +12,4 @@ coverage
 .idea
 *.test.ts
 *.spec.ts
+sandboxes

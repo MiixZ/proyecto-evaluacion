@@ -61,6 +61,48 @@ export class SubmissionController {
 
     return ApiResponse.success(res, result);
   });
+
+  /**
+   * Archiva una entrega (soft delete)
+   * Solo para profesores y administradores
+   */
+  archiveSubmission = catchAsync(async (req: AuthRequest, res: Response) => {
+    const submissionId = req.params.id as UUID;
+
+    await submissionService.archiveSubmission(
+      submissionId,
+      req.user!.id as UUID,
+      req.user!.role
+    );
+
+    return ApiResponse.success(
+      res,
+      { archived: true },
+      200,
+      'Entrega archivada correctamente'
+    );
+  });
+
+  /**
+   * Restaura una entrega archivada
+   * Solo para profesores y administradores
+   */
+  restoreSubmission = catchAsync(async (req: AuthRequest, res: Response) => {
+    const submissionId = req.params.id as UUID;
+
+    await submissionService.restoreSubmission(
+      submissionId,
+      req.user!.id as UUID,
+      req.user!.role
+    );
+
+    return ApiResponse.success(
+      res,
+      { restored: true },
+      200,
+      'Entrega restaurada correctamente'
+    );
+  });
 }
 
 export const submissionController = new SubmissionController();
