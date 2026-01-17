@@ -10,6 +10,7 @@ const createTestCaseInputSchema = z.object({
   memoryLimitMb: z.number().int().positive().default(256),
   hintText: z.string().optional().nullable(),
   hintPenaltyPercent: z.number().int().min(0).max(100).default(0),
+  availableFrom: z.coerce.date().optional().nullable(),
 });
 
 const createExecutionLimitInputSchema = z.object({
@@ -31,6 +32,7 @@ export const createExerciseSchema = z.object({
   points: z.number().int().positive().default(10),
   efficiencyOrder: z.nativeEnum(EfficiencyOrder).default(EfficiencyOrder.ANY),
   deadline: z.coerce.date().optional().nullable(),
+  lateDeadline: z.coerce.date().optional().nullable(),
   lateSubmissionPenaltyPercent: z.number().int().min(0).max(100).default(0),
   maxAttempts: z.number().int().positive().default(10),
   testCases: z

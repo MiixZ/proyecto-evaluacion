@@ -20,6 +20,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/layout/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/overlay/dialog";
 import { Code2, Mail, Lock, CheckCircle2, AlertCircle } from "lucide-react";
 import {
   Alert,
@@ -41,6 +49,7 @@ const Login = () => {
   const { toast } = useToast();
   const [serverError, setServerError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
 
   const features = [
     t("landing.login_features.evaluation"),
@@ -193,11 +202,12 @@ const Login = () => {
                       <FormItem>
                         <div className="flex items-center justify-between">
                           <FormLabel>{t("auth.login.password")}</FormLabel>
-                          <Link
-                            to="/forgot-password"
+                          <button
+                            type="button"
+                            onClick={() => setForgotPasswordOpen(true)}
                             className="text-xs font-medium text-primary hover:text-primary/80 transition-colors">
                             {t("auth.login.forgot_password")}
-                          </Link>
+                          </button>
                         </div>
                         <div className="relative group">
                           <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors z-10" />
@@ -264,6 +274,24 @@ const Login = () => {
           </p>
         </div>
       </div>
+      {/* Modal de recuperación de contraseña */}
+      <Dialog open={forgotPasswordOpen} onOpenChange={setForgotPasswordOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {t("auth.login.forgot_password_modal_title")}
+            </DialogTitle>
+            <DialogDescription>
+              {t("auth.login.forgot_password_modal_desc")}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button onClick={() => setForgotPasswordOpen(false)}>
+              {t("auth.login.forgot_password_modal_close")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

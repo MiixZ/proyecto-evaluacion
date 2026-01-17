@@ -31,6 +31,7 @@ export class DashboardModel {
         COALESCE(sub_stats.best_score, 0) as best_score,
         sub_stats.last_attempt,
         e.difficulty,
+        e.points,
         e.deadline
       FROM users u
       JOIN user_groups ug ON u.id = ug.user_id
@@ -174,13 +175,27 @@ export class DashboardModel {
         u.last_name,
         u.email,
         u.profile_image_url,
-        COUNT(DISTINCT CASE WHEN s.verdict = 'accepted' AND s.archived = FALSE THEN s.exercise_id END) as exercises_completed,
-        COALESCE(AVG(CASE WHEN s.archived = FALSE THEN s.score END), 0) as avg_score,
-        MAX(CASE WHEN s.archived = FALSE THEN s.created_at END) as last_access,
+        COUNT(DISTINCT CASE WHEN dt.is_accepted = 1 THEN dt.exercise_id END) as exercises_completed,
+        COALESCE(AVG(dt.max_score), 0) as avg_score,
+        MAX(dt.last_attempt) as last_access,
         ug.status
       FROM users u
       JOIN user_groups ug ON u.id = ug.user_id
-      LEFT JOIN submissions s ON u.id = s.student_id
+      JOIN \`groups\` g ON ug.group_id = g.id
+      
+      LEFT JOIN (
+          SELECT 
+              s.student_id, 
+              s.course_id,
+              s.exercise_id,
+              MAX(s.score) as max_score,
+              MAX(s.created_at) as last_attempt,
+              MAX(CASE WHEN s.verdict = 'accepted' THEN 1 ELSE 0 END) as is_accepted
+          FROM submissions s
+          WHERE s.archived = FALSE
+          GROUP BY s.student_id, s.course_id, s.exercise_id
+      ) dt ON u.id = dt.student_id AND dt.course_id = g.course_id
+      
       WHERE ug.group_id = ? AND ug.role = 'student'
       GROUP BY u.id, ug.status
       ORDER BY u.last_name ASC
@@ -991,6 +1006,52 @@ export class DashboardModel {
       averageScore: Number(row.averageScore),
       submissionCount: Number(row.submissionCount),
     }));
+  }
+
+  async getStudentLoginStreak(studentId: UUID): Promise<number> {
+    const query = `
+      SELECT DISTINCT DATE(created_at) as login_date
+      FROM audit_logs
+      WHERE user_id = ? AND action = 'LOGIN'
+      ORDER BY login_date DESC
+      LIMIT 60
+    `;
+    const [rows] = await getPool().execute<any[]>(query, [studentId]);
+
+    if (rows.length === 0) return 0;
+
+    const dates = rows.map((r) => {
+      const d = new Date(r.login_date);
+      return d.toISOString().split('T')[0];
+    });
+
+    const today = new Date().toISOString().split('T')[0];
+    const yesterdayDate = new Date();
+    yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+    const yesterday = yesterdayDate.toISOString().split('T')[0];
+
+    let currentCheckDate: Date;
+    if (dates.includes(today)) {
+      currentCheckDate = new Date(today);
+    } else if (dates.includes(yesterday)) {
+      currentCheckDate = new Date(yesterday);
+    } else {
+      return 0;
+    }
+
+    let streak = 0;
+
+    while (true) {
+      const checkStr = currentCheckDate.toISOString().split('T')[0];
+      if (dates.includes(checkStr)) {
+        streak++;
+        currentCheckDate.setDate(currentCheckDate.getDate() - 1);
+      } else {
+        break;
+      }
+    }
+
+    return streak;
   }
 }
 

@@ -22,6 +22,7 @@ export interface ExerciseEntity extends Timestamps {
   points: number;
   efficiencyOrder: EfficiencyOrder;
   deadline?: Date | null;
+  lateDeadline?: Date | null;
   lateSubmissionPenaltyPercent: number;
   maxAttempts: number;
   createdAt: Date;
@@ -42,6 +43,7 @@ export interface ExerciseDTO {
   points: number;
   maxAttempts: number;
   deadline?: Date | null;
+  lateDeadline?: Date | null;
 }
 
 /**

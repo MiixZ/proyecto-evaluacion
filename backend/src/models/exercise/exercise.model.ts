@@ -24,9 +24,9 @@ export class ExerciseModel {
         INSERT INTO exercises (
           id, syllabus_id, title, description, difficulty, language,
           template_code, is_published, created_by, order_index, points,
-          efficiency_order, deadline, late_submission_penalty_percent, max_attempts,
+          efficiency_order, deadline, late_deadline, late_submission_penalty_percent, max_attempts,
           created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
       `;
 
       const exerciseValues = [
@@ -43,6 +43,7 @@ export class ExerciseModel {
         input.points,
         input.efficiencyOrder ?? EfficiencyOrder.ANY,
         input.deadline ?? null,
+        input.lateDeadline ?? null,
         input.lateSubmissionPenaltyPercent ?? 0,
         input.maxAttempts ?? 10,
       ];
@@ -72,7 +73,7 @@ export class ExerciseModel {
           INSERT INTO test_cases (
             id, exercise_id, input, expected_output, is_hidden, order_index,
             time_limit_seconds, memory_limit_mb, efficiency_order,
-            hint_text, hint_penalty_percent, created_at, updated_at
+            hint_text, hint_penalty_percent, available_from, created_at, updated_at
           ) VALUES ?
         `;
 
@@ -88,6 +89,7 @@ export class ExerciseModel {
           input.efficiencyOrder,
           tc.hintText || null,
           tc.hintPenaltyPercent,
+          tc.availableFrom || null,
           new Date(),
           new Date(),
         ]);
@@ -127,7 +129,7 @@ export class ExerciseModel {
         UPDATE exercises SET
           syllabus_id = ?, title = ?, description = ?, difficulty = ?, 
           language = ?, template_code = ?, points = ?, max_attempts = ?,
-          late_submission_penalty_percent = ?, deadline = ?, is_published = ?,
+          late_submission_penalty_percent = ?, deadline = ?, late_deadline = ?, is_published = ?,
           updated_at = NOW()
         WHERE id = ?
       `;
@@ -143,6 +145,7 @@ export class ExerciseModel {
         input.maxAttempts ?? 10,
         input.lateSubmissionPenaltyPercent ?? 0,
         input.deadline ?? null,
+        input.lateDeadline ?? null,
         false,
         exerciseId,
       ]);
@@ -175,7 +178,7 @@ export class ExerciseModel {
           INSERT INTO test_cases (
             id, exercise_id, input, expected_output, is_hidden, order_index,
             time_limit_seconds, memory_limit_mb, efficiency_order,
-            hint_text, hint_penalty_percent, created_at, updated_at
+            hint_text, hint_penalty_percent, available_from, created_at, updated_at
           ) VALUES ?
         `;
 
@@ -191,6 +194,7 @@ export class ExerciseModel {
           input.efficiencyOrder,
           tc.hintText || null,
           tc.hintPenaltyPercent,
+          tc.availableFrom || null,
           new Date(),
           new Date(),
         ]);

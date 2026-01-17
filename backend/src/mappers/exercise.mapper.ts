@@ -39,6 +39,7 @@ class ExerciseMapper extends BaseMapper<
       points: row.points,
       efficiencyOrder: row.efficiency_order as EfficiencyOrder,
       deadline: row.deadline ? new Date(row.deadline) : null,
+      lateDeadline: row.late_deadline ? new Date(row.late_deadline) : null,
       lateSubmissionPenaltyPercent: row.late_submission_penalty_percent,
       maxAttempts: row.max_attempts,
       createdAt: new Date(row.created_at),
@@ -58,6 +59,7 @@ class ExerciseMapper extends BaseMapper<
       points: entity.points,
       maxAttempts: entity.maxAttempts,
       deadline: entity.deadline,
+      lateDeadline: entity.lateDeadline,
     };
   }
 
@@ -79,6 +81,7 @@ class ExerciseMapper extends BaseMapper<
       memoryLimitMb: row.memory_limit_mb,
       hintText: row.hint_text,
       hintPenaltyPercent: row.hint_penalty_percent,
+      availableFrom: row.available_from ? new Date(row.available_from) : null,
     };
   }
 

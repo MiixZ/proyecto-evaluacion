@@ -16,6 +16,7 @@ export interface StudentProgressRow extends RowDataPacket {
   best_score: number;
   last_attempt: Date | null;
   difficulty: string;
+  points: number;
   deadline: Date | null;
 }
 

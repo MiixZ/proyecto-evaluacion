@@ -10,6 +10,7 @@ export interface TestCaseEntity {
   memoryLimitMb: number;
   hintText?: string | null;
   hintPenaltyPercent?: number;
+  availableFrom?: Date | null;
 }
 
 export interface ExecutionLimitEntity {

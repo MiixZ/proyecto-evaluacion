@@ -8,6 +8,7 @@ router.use(authMiddleware);
 
 router.get('/my-progress', dashboardController.getMyProgress);
 router.get('/student/charts', dashboardController.getStudentCharts);
+router.get('/student/streak', dashboardController.getLoginStreak);
 
 router.get('/teacher/overview', dashboardController.getTeacherOverview);
 router.get('/teacher/charts', dashboardController.getTeacherCharts);

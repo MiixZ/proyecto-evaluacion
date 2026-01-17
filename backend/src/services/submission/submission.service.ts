@@ -116,6 +116,13 @@ export class SubmissionService {
       }
     }
 
+    const now = new Date();
+    if (exercise.lateDeadline && now > exercise.lateDeadline) {
+      throw new ForbiddenError(
+        'El plazo de entrega tardía ha expirado. No se admiten más envíos.'
+      );
+    }
+
     if (exercise.language !== input.language) {
       throw new ValidationError(
         `Este ejercicio espera soluciones en ${exercise.language}, pero recibiste ${input.language}`
@@ -124,11 +131,14 @@ export class SubmissionService {
 
     await languageService.validateLanguageSupport(input.language);
 
-    const testCases = await exerciseModel.getTestCases(exercise.id);
+    const allTestCases = await exerciseModel.getTestCases(exercise.id);
+    const testCases = allTestCases.filter(
+      (tc) => !tc.availableFrom || now >= tc.availableFrom
+    );
 
     if (!testCases || testCases.length === 0) {
       throw new ValidationError(
-        'Este ejercicio no tiene casos de prueba configurados. Contacta con el profesor.'
+        'Este ejercicio no tiene casos de prueba disponibles actualmente.'
       );
     }
 
@@ -147,7 +157,7 @@ export class SubmissionService {
       userId,
       exercise.id
     );
-    const now = new Date();
+    // now declarada previamente para validar lateDeadline
     const isLate = exercise.deadline ? now > exercise.deadline : false;
 
     await submissionModel.create({
@@ -212,7 +222,7 @@ export class SubmissionService {
       throw new Error('Error interno al comunicar con el motor de ejecución.');
     }
 
-    let finalScore = execResult.score;
+    let finalScore = Math.round((execResult.score / 100) * exercise.points);
 
     const hintsPenalty = await hintUsageModel.getTotalPenaltyForExercise(
       userId,

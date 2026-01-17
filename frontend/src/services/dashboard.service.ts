@@ -28,9 +28,8 @@ export const dashboardService = {
       ? `/v1/dashboard/teacher/overview?groupId=${groupId}`
       : "/v1/dashboard/teacher/overview";
 
-    const { data } = await api.get<ApiResponse<ProfessorDashboardResponse>>(
-      url
-    );
+    const { data } =
+      await api.get<ApiResponse<ProfessorDashboardResponse>>(url);
 
     return data.data;
   },
@@ -124,5 +123,11 @@ export const dashboardService = {
     });
 
     return data.data;
+  },
+  getStudentStreak: async (): Promise<number> => {
+    const { data } = await api.get<ApiResponse<{ streak: number }>>(
+      "/v1/dashboard/student/streak"
+    );
+    return data.data.streak;
   },
 };
