@@ -52,7 +52,20 @@ async function initializeApp(): Promise<void> {
 
 app.use(
   cors({
-    origin: config.cors.origin,
+    origin: (origin, callback) => {
+      const allowedOrigins = [
+        config.cors.origin,
+        'https://codeeval.miixzify.es'
+      ].flat();
+      
+      if (!origin) return callback(null, true);
+      
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
     credentials: true,
   })
 );

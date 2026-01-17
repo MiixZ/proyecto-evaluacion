@@ -17,10 +17,10 @@ export const DOCKER_CONFIG = {
 
   // Image names
   sandboxImages: {
-    python: "evaluacion-sandbox-python:latest",
-    java: "evaluacion-sandbox-java:latest",
-    javascript: "evaluacion-sandbox-js:latest",
-    cpp: "evaluacion-sandbox-cpp:latest",
+    python: "codeeval-sandbox-python:latest",
+    java: "codeeval-sandbox-java:latest",
+    javascript: "codeeval-sandbox-javascript:latest",
+    cpp: "codeeval-sandbox-cpp:latest",
   },
 };
 

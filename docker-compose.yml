@@ -1,5 +1,48 @@
 services:
   # ============================================================
+  # Sandbox Images (solo construyen las imágenes)
+  # ============================================================
+  sandbox-python:
+    build:
+      context: ./execution-engine/sandboxes/python
+      dockerfile: Dockerfile
+    image: codeeval-sandbox-python:latest
+    container_name: codeeval-sandbox-python-builder
+    command: echo "Python sandbox image built successfully"
+    restart: "no"
+    profiles: ["build-sandboxes"]
+
+  sandbox-java:
+    build:
+      context: ./execution-engine/sandboxes/java
+      dockerfile: Dockerfile
+    image: codeeval-sandbox-java:latest
+    container_name: codeeval-sandbox-java-builder
+    command: echo "Java sandbox image built successfully"
+    restart: "no"
+    profiles: ["build-sandboxes"]
+
+  sandbox-javascript:
+    build:
+      context: ./execution-engine/sandboxes/javascript
+      dockerfile: Dockerfile
+    image: codeeval-sandbox-javascript:latest
+    container_name: codeeval-sandbox-javascript-builder
+    command: echo "JavaScript sandbox image built successfully"
+    restart: "no"
+    profiles: ["build-sandboxes"]
+
+  sandbox-cpp:
+    build:
+      context: ./execution-engine/sandboxes/cpp
+      dockerfile: Dockerfile
+    image: codeeval-sandbox-cpp:latest
+    container_name: codeeval-sandbox-cpp-builder
+    command: echo "C++ sandbox image built successfully"
+    restart: "no"
+    profiles: ["build-sandboxes"]
+
+  # ============================================================
   # MySQL Database
   # ============================================================
   mysql:
@@ -25,7 +68,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
-      start_period: 40s
+      start_period: 180s
     command:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci
@@ -81,6 +124,7 @@ services:
         condition: service_healthy
     networks:
       - codeeval-net
+      - codeeval-ext-net
     volumes:
       - ./backend/src:/app/src
 
@@ -119,7 +163,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: http://localhost:${BACKEND_PORT:-4000}/api
+        VITE_API_URL: https://codeeval.miixzify.es/api
     container_name: codeeval-frontend
     ports:
       - "8081:80"
@@ -127,11 +171,13 @@ services:
       - backend
     networks:
       - codeeval-net
+      - codeeval-ext-net
 
 networks:
   codeeval-net:
     driver: bridge
-
+  codeeval-ext-net:
+    driver: bridge
 volumes:
   mysql_data:
     driver: local
