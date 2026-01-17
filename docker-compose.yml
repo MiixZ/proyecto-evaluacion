@@ -64,11 +64,11 @@ services:
     networks:
       - codeeval-net
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: ["CMD-SHELL", "mysql -u${MYSQL_USER} -p${MYSQL_PASSWORD} -e 'SELECT 1' ${MYSQL_DATABASE}"]
       interval: 10s
       timeout: 5s
-      retries: 10
-      start_period: 180s
+      retries: 20
+      start_period: 240s
     command:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci
