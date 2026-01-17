@@ -26,6 +26,7 @@ export interface GroupStudentDTO {
 
 export interface StudentDashboardProgress {
   bestScore: number;
+  points: number;
   lastAttempt: any;
   difficulty: string;
   exerciseId: UUID;

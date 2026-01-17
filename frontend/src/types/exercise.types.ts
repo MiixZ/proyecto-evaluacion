@@ -11,6 +11,7 @@ export interface Exercise {
   points: number;
   maxAttempts: number;
   deadline?: string;
+  lateDeadline?: string;
   lateSubmissionPenaltyPercent: number;
   isPublished: boolean;
   createdBy: string;
@@ -25,6 +26,7 @@ export interface Exercise {
     memoryLimitMb: number;
     hintText: string;
     hintPenaltyPercent: number;
+    availableFrom?: string;
   }>;
   limits?: {
     timeLimitSeconds: number;

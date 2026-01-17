@@ -42,6 +42,16 @@ import {
 import { dashboardService } from "@/services/dashboard.service";
 import { languageService } from "@/services/language.service";
 
+// Helper for timezone handling
+const toLocalISOString = (dateStr?: string | Date) => {
+  if (!dateStr) return "";
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return "";
+  const offsetMs = date.getTimezoneOffset() * 60000;
+  const localDate = new Date(date.getTime() - offsetMs);
+  return localDate.toISOString().slice(0, 16);
+};
+
 type TestCaseForm = {
   id: string;
   input: string;
@@ -51,6 +61,7 @@ type TestCaseForm = {
   memoryLimitMb: number;
   hintText: string;
   hintPenaltyPercent: number;
+  availableFrom: string;
 };
 
 export default function CreateExercise() {
@@ -74,6 +85,7 @@ export default function CreateExercise() {
   const [points, setPoints] = useState(10);
   const [maxAttempts, setMaxAttempts] = useState(10);
   const [deadline, setDeadline] = useState("");
+  const [lateDeadline, setLateDeadline] = useState("");
   const [latePenalty, setLatePenalty] = useState(0);
   const [templateCode, setTemplateCode] = useState("");
 
@@ -93,6 +105,7 @@ export default function CreateExercise() {
       memoryLimitMb: 128,
       hintText: "",
       hintPenaltyPercent: 0,
+      availableFrom: "",
     },
   ]);
 
@@ -123,7 +136,6 @@ export default function CreateExercise() {
 
   useEffect(() => {
     if (exerciseData && groups.length > 0) {
-      // A. Mapeo de campos básicos
       setTitle(exerciseData.title);
       setDescription(exerciseData.description);
       setDifficulty(exerciseData.difficulty);
@@ -132,10 +144,12 @@ export default function CreateExercise() {
       setMaxAttempts(exerciseData.maxAttempts);
       setLatePenalty(exerciseData.lateSubmissionPenaltyPercent);
       if (exerciseData.deadline) {
-        setDeadline(new Date(exerciseData.deadline).toISOString().slice(0, 16));
+        setDeadline(toLocalISOString(exerciseData.deadline));
+      }
+      if (exerciseData.lateDeadline) {
+        setLateDeadline(toLocalISOString(exerciseData.lateDeadline));
       }
       setTemplateCode(exerciseData.templateCode || "");
-      // setIsPublished(exerciseData.isPublished); // Si decides volver a poner el switch
 
       const matchedGroup = groups.find(
         (g) => g.courseId === exerciseData.courseId
@@ -146,10 +160,6 @@ export default function CreateExercise() {
         setSyllabusId(exerciseData.syllabusId);
       }
 
-      // C. Mapeo de Casos de Prueba
-      // El backend necesita devolver los test cases en getById.
-      // Si no lo hace actualmente, añade:
-      // `exerciseData.testCases = await exerciseModel.getTestCases(id)` en el backend.
       if (exerciseData.testCases && exerciseData.testCases.length > 0) {
         setTestCases(
           exerciseData.testCases.map((tc: any) => ({
@@ -161,6 +171,7 @@ export default function CreateExercise() {
             memoryLimitMb: tc.memoryLimitMb || 128,
             hintText: tc.hintText || "",
             hintPenaltyPercent: tc.hintPenaltyPercent || 0,
+            availableFrom: toLocalISOString(tc.availableFrom),
           }))
         );
       }
@@ -179,10 +190,29 @@ export default function CreateExercise() {
 
   const saveMutation = useMutation({
     mutationFn: (payload: CreateExercisePayload) => {
+      // Convert local dates back to ISO strings (UTC) for the backend
+      // new Date(localString) creates a Date object using browser's timezone
+      // .toISOString() converts that moment to UTC
+      const finalPayload = {
+        ...payload,
+        deadline: payload.deadline
+          ? new Date(payload.deadline).toISOString()
+          : undefined,
+        lateDeadline: payload.lateDeadline
+          ? new Date(payload.lateDeadline).toISOString()
+          : undefined,
+        testCases: payload.testCases.map((tc) => ({
+          ...tc,
+          availableFrom: tc.availableFrom
+            ? new Date(tc.availableFrom).toISOString()
+            : undefined,
+        })),
+      };
+
       if (isEditMode) {
-        return exerciseService.update(exerciseId!, payload);
+        return exerciseService.update(exerciseId!, finalPayload);
       }
-      return exerciseService.create(payload);
+      return exerciseService.create(finalPayload);
     },
     onSuccess: () => {
       toast({
@@ -211,11 +241,12 @@ export default function CreateExercise() {
         id: crypto.randomUUID(),
         input: "",
         expectedOutput: "",
-        isHidden: false,
+        isHidden: true,
         timeLimitSeconds: 2,
         memoryLimitMb: 128,
         hintText: "",
         hintPenaltyPercent: 0,
+        availableFrom: "",
       },
     ]);
   };
@@ -248,6 +279,8 @@ export default function CreateExercise() {
       return;
     }
 
+    // Payload uses state values directly (which are local ISO strings for dates)
+    // The mutationFn handles the conversion to UTC
     const payload: CreateExercisePayload = {
       syllabusId,
       title,
@@ -258,8 +291,13 @@ export default function CreateExercise() {
       points,
       maxAttempts,
       lateSubmissionPenaltyPercent: latePenalty,
-      deadline: deadline ? new Date(deadline).toISOString() : undefined,
-      testCases: testCases.map(({ id, ...rest }) => rest),
+      deadline: deadline || undefined,
+      lateDeadline: lateDeadline || undefined,
+      testCases: testCases.map(({ id, ...rest }) => ({
+        ...rest,
+        // Ensure empty strings are treated as checkable undefined
+        availableFrom: rest.availableFrom || undefined,
+      })),
     };
 
     saveMutation.mutate(payload);
@@ -275,7 +313,6 @@ export default function CreateExercise() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 pb-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <Button variant="ghost" onClick={() => navigate(-1)}>
@@ -306,7 +343,6 @@ export default function CreateExercise() {
       <form
         onSubmit={handleSubmit}
         className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Detalles principales */}
         <div className="lg:col-span-2 space-y-6">
           <Card>
             <CardHeader>
@@ -318,7 +354,6 @@ export default function CreateExercise() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* SELECTOR DE CURSO/ASIGNATURA */}
               <div className="space-y-2">
                 <Label>{t("professor.create_exercise.subject_group")}</Label>
                 <Select
@@ -426,7 +461,6 @@ export default function CreateExercise() {
             </CardContent>
           </Card>
 
-          {/* Editor de Plantilla */}
           <Card>
             <CardHeader>
               <CardTitle>
@@ -472,7 +506,6 @@ export default function CreateExercise() {
             </CardContent>
           </Card>
 
-          {/* Casos de Prueba */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
@@ -603,11 +636,25 @@ export default function CreateExercise() {
                         }
                       />
                     </div>
+                    {/* Moved Available From here */}
+                    <div className="space-y-1 col-span-2 md:col-span-2">
+                      <Label className="text-xs">
+                        {t("professor.create_exercise.available_from_label")}
+                      </Label>
+                      <Input
+                        type="datetime-local"
+                        className="h-8 text-xs"
+                        value={tc.availableFrom}
+                        onChange={(e) =>
+                          updateTestCase(tc.id, "availableFrom", e.target.value)
+                        }
+                      />
+                    </div>
                   </div>
 
                   <div className="pt-2 border-t mt-2">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="md:col-span-2 space-y-1">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                      <div className="md:col-span-3 space-y-1">
                         <Label className="text-xs flex items-center gap-1">
                           <HelpCircle className="h-3 w-3" />{" "}
                           {t("professor.create_exercise.hint_label")}
@@ -648,7 +695,6 @@ export default function CreateExercise() {
           </Card>
         </div>
 
-        {/* COLUMNA DERECHA: Configuración */}
         <div className="space-y-6">
           <Card>
             <CardHeader>
@@ -683,6 +729,17 @@ export default function CreateExercise() {
                   type="datetime-local"
                   value={deadline}
                   onChange={(e) => setDeadline(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>
+                  {t("professor.create_exercise.late_deadline_label")}
+                </Label>
+                <Input
+                  type="datetime-local"
+                  value={lateDeadline}
+                  onChange={(e) => setLateDeadline(e.target.value)}
                 />
               </div>
 

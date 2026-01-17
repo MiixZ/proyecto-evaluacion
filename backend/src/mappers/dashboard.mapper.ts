@@ -37,6 +37,7 @@ export const dashboardMapper = {
       bestScore: row.best_score,
       lastAttempt: row.last_attempt ? new Date(row.last_attempt) : null,
       difficulty: row.difficulty,
+      points: row.points,
       deadline: row.deadline ? new Date(row.deadline) : null,
     };
   },
@@ -95,12 +96,20 @@ export const dashboardMapper = {
     };
   },
 
-  toGroupStudentDTO(row: GroupStudentRow): GroupStudentDTO {
+  toGroupStudentDTO(
+    row: GroupStudentRow,
+    totalExercises: number
+  ): GroupStudentDTO {
     let status: 'active' | 'inactive' | 'risk' = 'active';
+
+    // Evitar división por cero
+    const safeTotal = totalExercises > 0 ? totalExercises : 1;
+    const progress = Math.min(100, (row.exercises_completed / safeTotal) * 100);
 
     if (row.status === 'inactive' || row.status === 'suspended') {
       status = 'inactive';
-    } else if (row.avg_score < 5 && row.exercises_completed > 0) {
+    } else if (row.avg_score < 50 && row.exercises_completed > 0) {
+      // Ajustado umbral de riesgo a 50 (sobre 100) ya que avg_score ahora será 0-100
       status = 'risk';
     }
 
@@ -109,7 +118,7 @@ export const dashboardMapper = {
       name: `${row.first_name} ${row.last_name}`,
       email: row.email,
       avatarUrl: row.profile_image_url,
-      progress: Math.min(100, (row.exercises_completed / 10) * 100),
+      progress: Number(progress.toFixed(1)),
       averageScore: Number(row.avg_score),
       lastActive: row.last_access
         ? new Date(row.last_access).toISOString()

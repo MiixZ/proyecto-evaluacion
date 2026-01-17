@@ -9,7 +9,6 @@ import {
   BookOpen,
   Target,
   Loader2,
-  AlertCircle,
 } from "lucide-react";
 
 import { StatCard } from "@/components/ui/data/stat-card";
@@ -26,13 +25,10 @@ import {
 } from "@/components/ui/layout/card";
 import { Progress } from "@/components/ui/feedback/progress";
 import { Button } from "@/components/ui/forms/button";
-import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
-} from "@/components/ui/feedback/alert";
 import { studentService } from "@/services/student.service";
 import { studentDashboardService } from "@/services/dashboard.student.service";
+import { dashboardService } from "@/services/dashboard.service";
+
 import { useAuth } from "@/hooks/use-auth";
 import { StudentSubmissionsByDayChart } from "@/components/student/charts/SubmissionsByDayChart";
 import { SuccessRateByDifficultyChart } from "@/components/student/charts/SuccessRateByDifficultyChart";
@@ -57,6 +53,11 @@ export default function StudentDashboard() {
     queryFn: studentDashboardService.getChartsData,
   });
 
+  const { data: streak = 0 } = useQuery({
+    queryKey: ["studentStreak"],
+    queryFn: dashboardService.getStudentStreak,
+  });
+
   const totalExercises = progressData?.length || 0;
   const completedExercises =
     progressData?.filter((p) => p.isCompleted).length || 0;
@@ -66,22 +67,26 @@ export default function StudentDashboard() {
   const averageScore =
     attemptedExercises.length > 0
       ? Math.round(
-          attemptedExercises.reduce(
-            (acc, curr) => acc + (curr.bestScore || 0),
-            0
-          ) / attemptedExercises.length
+          attemptedExercises.reduce((acc, curr) => {
+            const maxPoints = curr.points || 1; // Evitar división por cero
+            const percentage = ((curr.bestScore || 0) / maxPoints) * 100;
+            return acc + percentage;
+          }, 0) / attemptedExercises.length
         )
       : 0;
 
   const subjectsMap =
-    progressData?.reduce((acc, curr) => {
-      if (!acc[curr.subjectName]) {
-        acc[curr.subjectName] = { total: 0, completed: 0 };
-      }
-      acc[curr.subjectName].total += 1;
-      if (curr.isCompleted) acc[curr.subjectName].completed += 1;
-      return acc;
-    }, {} as Record<string, { total: number; completed: number }>) || {};
+    progressData?.reduce(
+      (acc, curr) => {
+        if (!acc[curr.subjectName]) {
+          acc[curr.subjectName] = { total: 0, completed: 0 };
+        }
+        acc[curr.subjectName].total += 1;
+        if (curr.isCompleted) acc[curr.subjectName].completed += 1;
+        return acc;
+      },
+      {} as Record<string, { total: number; completed: number }>
+    ) || {};
 
   const subjectProgress = Object.entries(subjectsMap).map(([name, stats]) => ({
     name,
@@ -173,7 +178,7 @@ export default function StudentDashboard() {
         />
         <StatCard
           title={t("dashboard.stats.streak")}
-          value={t("dashboard.stats.streakValue")}
+          value={`${streak} ${t("common.days", { count: streak })}`}
           description={t("dashboard.stats.keepGoing")}
           icon={<TrendingUp className="h-5 w-5" />}
         />

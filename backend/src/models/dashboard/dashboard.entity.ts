@@ -15,6 +15,7 @@ export interface StudentProgressDTO {
   bestScore: number;
   lastAttempt: Date | null;
   difficulty: string;
+  points: number;
   deadline: Date | null;
 }
 

@@ -377,9 +377,9 @@ export class UserModel {
     role: string
   ): Promise<void> {
     const query = `
-      INSERT INTO user_groups (user_id, group_id, role, enrolled_at)
-      VALUES (?, ?, ?, NOW())
-      ON DUPLICATE KEY UPDATE role = VALUES(role)
+      INSERT INTO user_groups (user_id, group_id, role, status, enrolled_at)
+      VALUES (?, ?, ?, 'active', NOW())
+      ON DUPLICATE KEY UPDATE role = VALUES(role), status = 'active'
     `;
 
     await this.getPool().execute(query, [userId, groupId, role]);

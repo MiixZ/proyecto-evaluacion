@@ -23,6 +23,7 @@ export interface CreateExercisePayload {
   points: number;
   maxAttempts: number;
   deadline?: string;
+  lateDeadline?: string;
   lateSubmissionPenaltyPercent: number;
   testCases: {
     input: string;
@@ -32,6 +33,7 @@ export interface CreateExercisePayload {
     memoryLimitMb: number;
     hintText?: string;
     hintPenaltyPercent?: number;
+    availableFrom?: string;
   }[];
 }
 

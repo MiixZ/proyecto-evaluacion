@@ -4,6 +4,7 @@ import {
   ExecutionRequest,
   ExecutionResult,
   Verdict,
+  TestCase,
 } from "../types/execution.types";
 
 /**
@@ -74,6 +75,14 @@ export class ExecutionManager {
 
       const score = Math.round((passedTests / request.testCases.length) * 100);
 
+      if (
+        verdict === Verdict.ACCEPTED &&
+        this.isHardcodedSolution(request.code, request.testCases)
+      ) {
+        verdict = Verdict.HARDCODED_SOLUTION;
+        console.log(`Solución rechazada: se detectó hardcoding de respuestas`);
+      }
+
       console.log(
         `Ejecución completada: ${passedTests}/${request.testCases.length} tests passed`
       );
@@ -82,7 +91,7 @@ export class ExecutionManager {
       return {
         submissionId: request.submissionId,
         verdict,
-        score,
+        score: verdict === Verdict.HARDCODED_SOLUTION ? 0 : score,
         testResults,
         executionTime: Date.now() - startTime,
         memoryUsed: 0,
@@ -115,5 +124,44 @@ export class ExecutionManager {
     }
 
     return images.python;
+  }
+
+  /**
+   * Detecta si una solución parece estar hardcodeada buscando los outputs esperados
+   * directamente en el código fuente.
+   */
+  private isHardcodedSolution(code: string, testCases: TestCase[]): boolean {
+    if (!code || testCases.length === 0) return false;
+
+    const normalizedCode = code.toLowerCase().replace(/\s+/g, " ");
+    let foundOutputs = 0;
+    let validTestCases = 0;
+
+    for (const tc of testCases) {
+      const output = tc.expectedOutput.trim().toLowerCase();
+
+      if (
+        ["0", "1", "-1", "true", "false", "yes", "no", "[]", "{}", ""].includes(
+          output
+        ) ||
+        output.length < 2
+      ) {
+        continue;
+      }
+
+      validTestCases++;
+
+      if (normalizedCode.includes(output)) {
+        foundOutputs++;
+      }
+    }
+
+    if (validTestCases === 0) return false;
+
+    if (foundOutputs > 0 && foundOutputs / validTestCases >= 0.5) {
+      return true;
+    }
+
+    return false;
   }
 }

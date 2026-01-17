@@ -40,16 +40,6 @@ export class AuthService {
       );
     }
 
-    // Validar que el usuario tenga asignaturas activas (excepto administradores)
-    if (user.role !== 'admin') {
-      const enrollments = await userModel.getEnrollments(user.id);
-      if (enrollments.length === 0) {
-        throw new AuthenticationError(
-          'No tienes asignaturas activas asignadas. Contacta con el administrador.'
-        );
-      }
-    }
-
     const token = generateToken(user.id, user.email, user.role);
 
     await auditService.log(

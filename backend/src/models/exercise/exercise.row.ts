@@ -14,6 +14,7 @@ export interface ExerciseRow extends RowDataPacket {
   points: number;
   efficiency_order: string;
   deadline: Date | null;
+  late_deadline: Date | null;
   late_submission_penalty_percent: number;
   max_attempts: number;
   created_at: Date;
@@ -32,6 +33,7 @@ export interface TestCaseRow extends RowDataPacket {
   efficiency_order: string;
   hint_text: string | null;
   hint_penalty_percent: number;
+  available_from: Date | null;
   created_at: Date;
   updated_at: Date;
 }

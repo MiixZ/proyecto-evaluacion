@@ -23,6 +23,7 @@ interface ExerciseDetailDTO extends ExerciseDTO {
     memoryLimitMb: number;
     hintText: string;
     hintPenaltyPercent: number;
+    availableFrom?: Date | null;
   }>;
   limits?: {
     timeLimitSeconds: number;
@@ -112,6 +113,7 @@ export class ExerciseService {
         memoryLimitMb: tc.memoryLimitMb,
         hintText: tc.hintText || '',
         hintPenaltyPercent: tc.hintPenaltyPercent || 0,
+        availableFrom: tc.availableFrom || null,
       })),
       limits: limits
         ? {
@@ -246,7 +248,7 @@ export class ExerciseService {
         `SELECT 
           id, syllabus_id, title, description, difficulty, language, 
           template_code, points, max_attempts, late_submission_penalty_percent, 
-          deadline 
+          deadline, late_deadline
          FROM exercises WHERE id = ?`,
         [exerciseId]
       );
@@ -265,8 +267,8 @@ export class ExerciseService {
         INSERT INTO exercises (
           id, syllabus_id, title, description, difficulty, language, 
           template_code, points, max_attempts, late_submission_penalty_percent, 
-          deadline, is_published, created_by, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, FALSE, ?, NOW(), NOW())
+          deadline, late_deadline, is_published, created_by, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, FALSE, ?, NOW(), NOW())
       `,
         [
           newId,
@@ -280,6 +282,7 @@ export class ExerciseService {
           source.max_attempts,
           source.late_submission_penalty_percent,
           source.deadline,
+          source.late_deadline,
           teacherId,
         ]
       );
@@ -296,8 +299,8 @@ export class ExerciseService {
           INSERT INTO test_cases (
             id, exercise_id, input, expected_output, is_hidden, 
             order_index, time_limit_seconds, memory_limit_mb, 
-            hint_text, hint_penalty_percent, created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+            hint_text, hint_penalty_percent, available_from, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
         `,
           [
             newTcId,
@@ -310,6 +313,7 @@ export class ExerciseService {
             tc.memory_limit_mb,
             tc.hint_text,
             tc.hint_penalty_percent,
+            tc.available_from,
           ]
         );
       }

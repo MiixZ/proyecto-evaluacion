@@ -24,6 +24,13 @@ export class DashboardController {
     );
   });
 
+  getLoginStreak = catchAsync(async (req: AuthRequest, res: Response) => {
+    const userId = req.user!.id;
+    const streak = await dashboardModel.getStudentLoginStreak(userId as UUID);
+
+    return ApiResponse.success(res, { streak });
+  });
+
   getAcademicYears = catchAsync(async (_req: AuthRequest, res: Response) => {
     const years = await dashboardService.getAcademicYears();
 
@@ -67,7 +74,12 @@ export class DashboardController {
       groups: allGroups.map(dashboardMapper.toGroupStatsDTO),
       activeGroup: {
         info: dashboardMapper.toGroupStatsDTO(activeGroupInfo),
-        students: students.map(dashboardMapper.toGroupStudentDTO),
+        students: students.map((s) =>
+          dashboardMapper.toGroupStudentDTO(
+            s,
+            Number(activeGroupInfo.exercise_count || 0)
+          )
+        ),
         recentActivity: recentActivityData.items.map(
           dashboardMapper.toRecentActivityDTO
         ),
