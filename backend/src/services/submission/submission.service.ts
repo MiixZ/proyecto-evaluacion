@@ -261,7 +261,10 @@ export class SubmissionService {
             id: uuidv4() as UUID,
             submissionId,
             testCaseId: tr.testCaseId as UUID,
-            status: tr.status,
+            status:
+              tr.status === 'timeout'
+                ? 'error'
+                : (tr.status as 'passed' | 'failed' | 'error'),
             actualOutput: tr.actualOutput,
             errorId,
             executionTimeMs: tr.executionTime,
