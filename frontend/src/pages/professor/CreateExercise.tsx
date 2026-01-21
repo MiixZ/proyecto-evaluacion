@@ -10,6 +10,7 @@ import {
   Plus,
   Trash2,
   HelpCircle,
+  Code,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/forms/button";
@@ -56,6 +57,7 @@ type TestCaseForm = {
   id: string;
   input: string;
   expectedOutput: string;
+  runnerCode: string;
   isHidden: boolean;
   timeLimitSeconds: number;
   memoryLimitMb: number;
@@ -73,7 +75,7 @@ export default function CreateExercise() {
   const initialGroupId = localStorage.getItem("professorLastGroupId");
 
   const [selectedGroupId, setSelectedGroupId] = useState<string>(
-    initialGroupId || ""
+    initialGroupId || "",
   );
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -88,6 +90,7 @@ export default function CreateExercise() {
   const [lateDeadline, setLateDeadline] = useState("");
   const [latePenalty, setLatePenalty] = useState(0);
   const [templateCode, setTemplateCode] = useState("");
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
 
   const { data: exerciseData, isLoading: isLoadingExercise } = useQuery({
     queryKey: ["exercise", exerciseId],
@@ -100,7 +103,8 @@ export default function CreateExercise() {
       id: crypto.randomUUID(),
       input: "",
       expectedOutput: "",
-      isHidden: false,
+      runnerCode: "",
+      isHidden: true,
       timeLimitSeconds: 2,
       memoryLimitMb: 128,
       hintText: "",
@@ -123,7 +127,7 @@ export default function CreateExercise() {
 
   const groups = useMemo(
     () => dashboardData?.groups || [],
-    [dashboardData?.groups]
+    [dashboardData?.groups],
   );
 
   const selectedGroup = groups.find((g) => g.groupId === selectedGroupId);
@@ -152,7 +156,7 @@ export default function CreateExercise() {
       setTemplateCode(exerciseData.templateCode || "");
 
       const matchedGroup = groups.find(
-        (g) => g.courseId === exerciseData.courseId
+        (g) => g.courseId === exerciseData.courseId,
       );
 
       if (matchedGroup) {
@@ -166,15 +170,18 @@ export default function CreateExercise() {
             id: tc.id || crypto.randomUUID(),
             input: tc.input,
             expectedOutput: tc.expectedOutput,
+            runnerCode: tc.runnerCode || "",
             isHidden: tc.isHidden,
             timeLimitSeconds: tc.timeLimitSeconds || 2,
             memoryLimitMb: tc.memoryLimitMb || 128,
             hintText: tc.hintText || "",
             hintPenaltyPercent: tc.hintPenaltyPercent || 0,
             availableFrom: toLocalISOString(tc.availableFrom),
-          }))
+          })),
         );
       }
+
+      setIsDataLoaded(true);
     }
   }, [exerciseData, groups]);
 
@@ -241,6 +248,7 @@ export default function CreateExercise() {
         id: crypto.randomUUID(),
         input: "",
         expectedOutput: "",
+        runnerCode: "",
         isHidden: true,
         timeLimitSeconds: 2,
         memoryLimitMb: 128,
@@ -260,10 +268,10 @@ export default function CreateExercise() {
   const updateTestCase = (
     id: string,
     field: keyof TestCaseForm,
-    value: any
+    value: any,
   ) => {
     setTestCases(
-      testCases.map((tc) => (tc.id === id ? { ...tc, [field]: value } : tc))
+      testCases.map((tc) => (tc.id === id ? { ...tc, [field]: value } : tc)),
     );
   };
 
@@ -295,6 +303,7 @@ export default function CreateExercise() {
       lateDeadline: lateDeadline || undefined,
       testCases: testCases.map(({ id, ...rest }) => ({
         ...rest,
+        runnerCode: rest.runnerCode || undefined,
         // Ensure empty strings are treated as checkable undefined
         availableFrom: rest.availableFrom || undefined,
       })),
@@ -362,7 +371,7 @@ export default function CreateExercise() {
                   <SelectTrigger>
                     <SelectValue
                       placeholder={t(
-                        "professor.create_exercise.select_subject"
+                        "professor.create_exercise.select_subject",
                       )}
                     />
                   </SelectTrigger>
@@ -400,7 +409,7 @@ export default function CreateExercise() {
                   id="description"
                   className="min-h-[150px] font-mono text-sm"
                   placeholder={t(
-                    "professor.create_exercise.description_placeholder"
+                    "professor.create_exercise.description_placeholder",
                   )}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
@@ -494,8 +503,13 @@ export default function CreateExercise() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="border rounded-md overflow-hidden h-[300px]">
+              <div className="border rounded-md overflow-hidden h-[600px] custom-scrollbar">
                 <CodeEditor
+                  key={
+                    isDataLoaded
+                      ? `template-loaded-${language}`
+                      : `template-${language}`
+                  }
                   language={language}
                   initialCode={templateCode}
                   onChange={(val) => setTemplateCode(val || "")}
@@ -576,7 +590,7 @@ export default function CreateExercise() {
                           updateTestCase(tc.id, "input", e.target.value)
                         }
                         placeholder={t(
-                          "professor.create_exercise.input_placeholder"
+                          "professor.create_exercise.input_placeholder",
                         )}
                       />
                     </div>
@@ -591,14 +605,36 @@ export default function CreateExercise() {
                           updateTestCase(
                             tc.id,
                             "expectedOutput",
-                            e.target.value
+                            e.target.value,
                           )
                         }
                         placeholder={t(
-                          "professor.create_exercise.output_placeholder"
+                          "professor.create_exercise.output_placeholder",
                         )}
                       />
                     </div>
+                  </div>
+
+                  {/* Runner Code Section */}
+                  <div className="space-y-2 pt-2">
+                    <Label className="text-xs flex items-center gap-1">
+                      <Code className="h-3 w-3" />{" "}
+                      {t("professor.create_exercise.runner_code_label")}
+                    </Label>
+                    <div className="border rounded-md overflow-hidden max-h-[250px] overflow-y-auto">
+                      <CodeEditor
+                        initialCode={tc.runnerCode || ""}
+                        onChange={(code) =>
+                          updateTestCase(tc.id, "runnerCode", code)
+                        }
+                        language={language}
+                        showSubmitButton={false}
+                        readOnly={false}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {t("professor.create_exercise.runner_code_help")}
+                    </p>
                   </div>
 
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-2">
@@ -614,7 +650,7 @@ export default function CreateExercise() {
                           updateTestCase(
                             tc.id,
                             "timeLimitSeconds",
-                            Number(e.target.value)
+                            Number(e.target.value),
                           )
                         }
                       />
@@ -631,7 +667,7 @@ export default function CreateExercise() {
                           updateTestCase(
                             tc.id,
                             "memoryLimitMb",
-                            Number(e.target.value)
+                            Number(e.target.value),
                           )
                         }
                       />
@@ -661,7 +697,7 @@ export default function CreateExercise() {
                         </Label>
                         <Input
                           placeholder={t(
-                            "professor.create_exercise.hint_placeholder"
+                            "professor.create_exercise.hint_placeholder",
                           )}
                           className="h-8 text-sm"
                           value={tc.hintText}
@@ -682,7 +718,7 @@ export default function CreateExercise() {
                             updateTestCase(
                               tc.id,
                               "hintPenaltyPercent",
-                              Number(e.target.value)
+                              Number(e.target.value),
                             )
                           }
                         />

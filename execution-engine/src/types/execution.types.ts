@@ -13,6 +13,7 @@ export interface TestCase {
   id: string;
   input: string;
   expectedOutput: string;
+  runnerCode?: string;
   timeLimit: number;
   memoryLimit: number;
   isHidden: boolean;

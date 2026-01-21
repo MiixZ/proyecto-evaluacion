@@ -18,6 +18,7 @@ interface ExerciseDetailDTO extends ExerciseDTO {
     id: UUID;
     input: string;
     expectedOutput: string;
+    runnerCode?: string | null;
     isHidden: boolean;
     timeLimitSeconds: number;
     memoryLimitMb: number;
@@ -108,6 +109,7 @@ export class ExerciseService {
         id: tc.id,
         input: tc.input,
         expectedOutput: tc.expectedOutput,
+        runnerCode: tc.runnerCode || null,
         isHidden: tc.isHidden,
         timeLimitSeconds: tc.timeLimitSeconds,
         memoryLimitMb: tc.memoryLimitMb,
@@ -297,16 +299,17 @@ export class ExerciseService {
         await connection.execute(
           `
           INSERT INTO test_cases (
-            id, exercise_id, input, expected_output, is_hidden, 
+            id, exercise_id, input, expected_output, runner_code, is_hidden, 
             order_index, time_limit_seconds, memory_limit_mb, 
             hint_text, hint_penalty_percent, available_from, created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
         `,
           [
             newTcId,
             newId,
             tc.input,
             tc.expected_output,
+            tc.runner_code || null,
             tc.is_hidden,
             tc.order_index,
             tc.time_limit_seconds,

@@ -5,6 +5,7 @@ export interface TestCaseEntity {
   exerciseId: UUID;
   input: string;
   expectedOutput: string;
+  runnerCode?: string | null;
   isHidden: boolean;
   timeLimitSeconds: number;
   memoryLimitMb: number;

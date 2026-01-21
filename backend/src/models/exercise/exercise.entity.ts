@@ -44,12 +44,13 @@ export interface ExerciseDTO {
   maxAttempts: number;
   deadline?: Date | null;
   lateDeadline?: Date | null;
+  templateCode?: string | null;
+  lateSubmissionPenaltyPercent: number;
 }
 
 /**
  * DTO para vista de estudiante (sin plantilla)
  */
 export interface ExerciseStudentDTO extends ExerciseDTO {
-  templateCode?: string | null;
   createdBy?: string;
 }

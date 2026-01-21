@@ -71,7 +71,7 @@ export class ExerciseModel {
       if (input.testCases && input.testCases.length > 0) {
         const testCaseQuery = `
           INSERT INTO test_cases (
-            id, exercise_id, input, expected_output, is_hidden, order_index,
+            id, exercise_id, input, expected_output, runner_code, is_hidden, order_index,
             time_limit_seconds, memory_limit_mb, efficiency_order,
             hint_text, hint_penalty_percent, available_from, created_at, updated_at
           ) VALUES ?
@@ -82,6 +82,7 @@ export class ExerciseModel {
           exerciseId,
           tc.input,
           tc.expectedOutput,
+          tc.runnerCode || null,
           tc.isHidden,
           index + 1,
           tc.timeLimitSeconds,
@@ -176,7 +177,7 @@ export class ExerciseModel {
       if (input.testCases && input.testCases.length > 0) {
         const testCaseQuery = `
           INSERT INTO test_cases (
-            id, exercise_id, input, expected_output, is_hidden, order_index,
+            id, exercise_id, input, expected_output, runner_code, is_hidden, order_index,
             time_limit_seconds, memory_limit_mb, efficiency_order,
             hint_text, hint_penalty_percent, available_from, created_at, updated_at
           ) VALUES ?
@@ -187,6 +188,7 @@ export class ExerciseModel {
           exerciseId,
           tc.input,
           tc.expectedOutput,
+          tc.runnerCode || null,
           tc.isHidden,
           index + 1,
           tc.timeLimitSeconds,

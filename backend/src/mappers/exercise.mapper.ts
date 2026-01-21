@@ -60,13 +60,14 @@ class ExerciseMapper extends BaseMapper<
       maxAttempts: entity.maxAttempts,
       deadline: entity.deadline,
       lateDeadline: entity.lateDeadline,
+      templateCode: entity.templateCode,
+      lateSubmissionPenaltyPercent: entity.lateSubmissionPenaltyPercent,
     };
   }
 
   toStudentDTO(entity: ExerciseEntity): ExerciseStudentDTO {
     return {
       ...this.toDTO(entity),
-      templateCode: entity.templateCode,
     };
   }
 
@@ -76,6 +77,7 @@ class ExerciseMapper extends BaseMapper<
       exerciseId: row.exercise_id as UUID,
       input: row.input,
       expectedOutput: row.expected_output,
+      runnerCode: row.runner_code,
       isHidden: Boolean(row.is_hidden),
       timeLimitSeconds: row.time_limit_seconds,
       memoryLimitMb: row.memory_limit_mb,

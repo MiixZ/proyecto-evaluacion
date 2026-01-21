@@ -93,7 +93,7 @@ export default function ExerciseView() {
         const fallbackLanguage = availableLanguages[0]?.code || "python";
         setCurrentCode(
           exercise.templateCode ||
-            `# Write your solution in ${exercise.language || fallbackLanguage}`
+            `# Write your solution in ${exercise.language || fallbackLanguage}`,
         );
       }
       return;
@@ -359,7 +359,7 @@ export default function ExerciseView() {
                         Mostrando feedback para el envío del{" "}
                         <span className="font-medium text-foreground">
                           {new Date(
-                            submissionResult.createdAt
+                            submissionResult.createdAt,
                           ).toLocaleString()}
                         </span>
                       </div>
@@ -385,7 +385,7 @@ export default function ExerciseView() {
 
         {/* COLUMNA DERECHA: EDITOR Y RESULTADOS */}
         <div className="space-y-4 flex flex-col h-full">
-          <div className="flex-1 min-h-[400px]">
+          <div className="h-[600px]">
             <CodeEditor
               key={currentCode ? `loaded-${currentCode.length}` : "default"}
               initialCode={currentCode}
