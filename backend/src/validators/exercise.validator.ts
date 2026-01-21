@@ -3,8 +3,9 @@ import { languageCodeSchema, uuidSchema } from './common.validator';
 import { DifficultyLevel, EfficiencyOrder } from '@CustomTypes/common.types';
 
 const createTestCaseInputSchema = z.object({
-  input: z.string().min(1, 'El input es requerido'),
+  input: z.string(),
   expectedOutput: z.string().min(1, 'El output esperado es requerido'),
+  runnerCode: z.string().optional().nullable(),
   isHidden: z.boolean().default(false),
   timeLimitSeconds: z.number().int().positive().default(5),
   memoryLimitMb: z.number().int().positive().default(256),

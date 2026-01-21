@@ -7,15 +7,14 @@ import { TFunction } from "i18next";
 export const getTestCaseSchema = (t: TFunction) => {
   return z.object({
     id: z.string().optional(),
-    input: z
-      .string()
-      .min(1, t("professor.create_exercise.validation.input_required")),
+    input: z.string(),
     expectedOutput: z
       .string()
       .min(
         1,
-        t("professor.create_exercise.validation.expected_output_required")
+        t("professor.create_exercise.validation.expected_output_required"),
       ),
+    runnerCode: z.string().optional(),
     isHidden: z.boolean().default(false),
     timeLimitSeconds: z.number().int().positive().min(1).max(60).default(2),
     memoryLimitMb: z.number().int().positive().min(64).max(1024).default(128),

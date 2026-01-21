@@ -28,6 +28,7 @@ export interface CreateExercisePayload {
   testCases: {
     input: string;
     expectedOutput: string;
+    runnerCode?: string;
     isHidden: boolean;
     timeLimitSeconds: number;
     memoryLimitMb: number;
@@ -67,7 +68,7 @@ export const exerciseService = {
   getAll: async (
     page: number = 1,
     limit: number = 20,
-    search?: string
+    search?: string,
   ): Promise<PaginatedResponse<ExerciseListItem>> => {
     const params = new URLSearchParams({
       page: page.toString(),
@@ -87,7 +88,7 @@ export const exerciseService = {
   create: async (payload: CreateExercisePayload): Promise<Exercise> => {
     const { data } = await api.post<ApiResponse<Exercise>>(
       "v1/exercises",
-      payload
+      payload,
     );
     return data.data;
   },
@@ -103,7 +104,7 @@ export const exerciseService = {
   }): Promise<SubmissionResponse> => {
     const { data } = await api.post<ApiResponse<SubmissionResponse>>(
       "v1/submissions",
-      payload
+      payload,
     );
     return data.data;
   },
@@ -116,7 +117,7 @@ export const exerciseService = {
       "v1/submissions",
       {
         params: { exerciseId },
-      }
+      },
     );
     return data.data || [];
   },
@@ -126,17 +127,17 @@ export const exerciseService = {
    */
   requestHint: async (
     submissionId: string,
-    testCaseId: string
+    testCaseId: string,
   ): Promise<HintResponse> => {
     const { data } = await api.post<ApiResponse<HintResponse>>(
-      `v1/hints/${submissionId}/test-case/${testCaseId}`
+      `v1/hints/${submissionId}/test-case/${testCaseId}`,
     );
     return data.data;
   },
 
   getMyExercises: async (): Promise<ExerciseListItem[]> => {
     const { data } = await api.get<ApiResponse<ExerciseListItem[]>>(
-      "v1/exercises/professor/mine"
+      "v1/exercises/professor/mine",
     );
 
     return data.data;
@@ -152,11 +153,11 @@ export const exerciseService = {
 
   update: async (
     id: string,
-    payload: CreateExercisePayload
+    payload: CreateExercisePayload,
   ): Promise<Exercise> => {
     const { data } = await api.put<ApiResponse<Exercise>>(
       `v1/exercises/${id}`,
-      payload
+      payload,
     );
 
     return data.data;

@@ -197,6 +197,7 @@ export class SubmissionService {
         id: tc.id,
         input: tc.input,
         expectedOutput: tc.expectedOutput,
+        runnerCode: tc.runnerCode || undefined,
         timeLimit: tc.timeLimitSeconds,
         memoryLimit: tc.memoryLimitMb,
         isHidden: tc.isHidden,

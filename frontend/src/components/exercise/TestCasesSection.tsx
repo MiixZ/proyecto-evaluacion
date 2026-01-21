@@ -1,6 +1,6 @@
 import { UseFormReturn, useFieldArray } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Code } from "lucide-react";
 import { Button } from "@/components/ui/forms/button";
 import { Input } from "@/components/ui/forms/input";
 import { Label } from "@/components/ui/forms/label";
@@ -21,6 +21,7 @@ import {
   FormMessage,
 } from "@/components/ui/forms/form";
 import { CreateExerciseFormValues } from "@/schemas/exercise.schema";
+import { CodeEditor } from "@/components/code/CodeEditor";
 
 interface TestCasesSectionProps {
   form: UseFormReturn<CreateExerciseFormValues>;
@@ -37,7 +38,8 @@ export function TestCasesSection({ form }: TestCasesSectionProps) {
     append({
       input: "",
       expectedOutput: "",
-      isHidden: false,
+      runnerCode: "",
+      isHidden: true,
       timeLimitSeconds: 2,
       memoryLimitMb: 128,
       hintText: "",
@@ -120,7 +122,7 @@ export function TestCasesSection({ form }: TestCasesSectionProps) {
                     <FormControl>
                       <Textarea
                         placeholder={t(
-                          "professor.create_exercise.input_placeholder"
+                          "professor.create_exercise.input_placeholder",
                         )}
                         className="font-mono text-sm"
                         {...field}
@@ -143,12 +145,41 @@ export function TestCasesSection({ form }: TestCasesSectionProps) {
                     <FormControl>
                       <Textarea
                         placeholder={t(
-                          "professor.create_exercise.output_placeholder"
+                          "professor.create_exercise.output_placeholder",
                         )}
                         className="font-mono text-sm"
                         {...field}
                       />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Runner Code */}
+              <FormField
+                control={form.control}
+                name={`testCases.${index}.runnerCode`}
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-1">
+                      <Code className="h-3 w-3" />
+                      {t("professor.create_exercise.runner_code_label")}
+                    </FormLabel>
+                    <FormControl>
+                      <div className="border rounded-md overflow-hidden max-h-[250px] overflow-y-auto custom-scrollbar">
+                        <CodeEditor
+                          initialCode={field.value || ""}
+                          onChange={field.onChange}
+                          language={form.watch("language") || "python"}
+                          showSubmitButton={false}
+                          readOnly={false}
+                        />
+                      </div>
+                    </FormControl>
+                    <p className="text-xs text-muted-foreground">
+                      {t("professor.create_exercise.runner_code_help")}
+                    </p>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -241,7 +272,7 @@ export function TestCasesSection({ form }: TestCasesSectionProps) {
                     <FormControl>
                       <Input
                         placeholder={t(
-                          "professor.create_exercise.hint_placeholder"
+                          "professor.create_exercise.hint_placeholder",
                         )}
                         {...field}
                       />

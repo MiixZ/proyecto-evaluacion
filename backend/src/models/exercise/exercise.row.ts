@@ -26,6 +26,7 @@ export interface TestCaseRow extends RowDataPacket {
   exercise_id: string;
   input: string;
   expected_output: string;
+  runner_code: string | null;
   is_hidden: number;
   order_index: number | null;
   time_limit_seconds: number;

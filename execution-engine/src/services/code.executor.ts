@@ -11,6 +11,8 @@ export class CodeExecutor {
   private readonly SHARED_VOLUME =
     process.env.SANDBOX_VOLUME_NAME || "evaluacion-shared-vol";
 
+  private readonly STUDENT_CODE_MARKER = "{{STUDENT_CODE}}";
+
   private readonly SANDBOX_MOUNT_POINT = "/sandbox_drive";
 
   async executeCode(
@@ -18,7 +20,7 @@ export class CodeExecutor {
     code: string,
     testCase: TestCase,
     language: string,
-    executionId: string
+    executionId: string,
   ): Promise<TestResult> {
     const startTime = Date.now();
     const executionDir = path.join(this.INTERNAL_DIR, executionId);
@@ -29,11 +31,26 @@ export class CodeExecutor {
 
       const codeFilename = this.getCodeFilename(language);
 
-      await fs.writeFile(path.join(executionDir, codeFilename), code, "utf-8");
+      let finalCode = code;
+      if (
+        testCase.runnerCode &&
+        testCase.runnerCode.includes(this.STUDENT_CODE_MARKER)
+      ) {
+        finalCode = testCase.runnerCode.replace(this.STUDENT_CODE_MARKER, code);
+        console.log(
+          `  📦 Usando runner_code con sustitución de código del estudiante`,
+        );
+      }
+
+      await fs.writeFile(
+        path.join(executionDir, codeFilename),
+        finalCode,
+        "utf-8",
+      );
       await fs.writeFile(
         path.join(executionDir, "input.txt"),
         testCase.input,
-        "utf-8"
+        "utf-8",
       );
 
       await fs.chmod(path.join(executionDir, codeFilename), 0o777);
@@ -48,7 +65,7 @@ export class CodeExecutor {
         command,
         executionId,
         testCase.timeLimit * 1000,
-        testCase.memoryLimit
+        testCase.memoryLimit,
       );
 
       const executionTime = Date.now() - startTime;
@@ -104,11 +121,11 @@ export class CodeExecutor {
     command: string[],
     executionId: string,
     timeoutMs: number,
-    memoryLimitMb: number
+    memoryLimitMb: number,
   ): Promise<string> {
     const sandboxWorkDir = path.posix.join(
       this.SANDBOX_MOUNT_POINT,
-      executionId
+      executionId,
     );
 
     // Configuración del contenedor

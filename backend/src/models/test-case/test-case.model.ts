@@ -11,6 +11,7 @@ export class TestCaseModel {
     const pool = getPool();
     const query = `
       SELECT id, input, expected_output as expectedOutput, 
+             runner_code as runnerCode,
              time_limit_seconds as timeLimit, memory_limit_mb as memoryLimit,
              is_hidden as isHidden
       FROM test_cases 

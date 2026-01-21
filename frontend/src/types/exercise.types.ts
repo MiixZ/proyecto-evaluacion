@@ -21,6 +21,7 @@ export interface Exercise {
     id: string;
     input: string;
     expectedOutput: string;
+    runnerCode?: string;
     isHidden: boolean;
     timeLimitSeconds: number;
     memoryLimitMb: number;
