@@ -40,6 +40,8 @@ export interface SubmissionDetailDTO {
   memoryUsedMb?: number;
   createdAt: string;
   testResults: TestResultDTO[];
+  compilationError?: string;
+  runtimeError?: string;
   // Campos de archivo
   archived: boolean;
   deletedAt?: string;

@@ -14,3 +14,11 @@ export interface PlagiarismRow extends RowDataPacket {
   notes: string | null;
   created_at: Date;
 }
+
+export interface PlagiarismPatternRow extends RowDataPacket {
+  other_student_id: string;
+  first_name: string;
+  last_name: string;
+  match_count: number;
+  avg_similarity: number;
+}

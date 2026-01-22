@@ -25,6 +25,13 @@ import {
   SelectValue,
 } from "@/components/ui/forms/select";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/overlay/dialog";
+import {
   Card,
   CardContent,
   CardDescription,
@@ -34,6 +41,7 @@ import {
 import { Checkbox } from "@/components/ui/forms/checkbox";
 import { toast } from "@/hooks/use-toast";
 import { CodeEditor } from "@/components/code/CodeEditor";
+import { CommonFilesManager } from "@/components/professor/CommonFilesManager";
 
 import { syllabusService } from "@/services/syllabus.service";
 import {
@@ -42,6 +50,7 @@ import {
 } from "@/services/exercise.service";
 import { dashboardService } from "@/services/dashboard.service";
 import { languageService } from "@/services/language.service";
+import { CommonFile } from "@/services/common-files.service";
 
 // Helper for timezone handling
 const toLocalISOString = (dateStr?: string | Date) => {
@@ -91,6 +100,9 @@ export default function CreateExercise() {
   const [latePenalty, setLatePenalty] = useState(0);
   const [templateCode, setTemplateCode] = useState("");
   const [isDataLoaded, setIsDataLoaded] = useState(false);
+  const [commonFiles, setCommonFiles] = useState<CommonFile[]>([]);
+  const [isSyllabusFilesDialogOpen, setIsSyllabusFilesDialogOpen] =
+    useState(false);
 
   const { data: exerciseData, isLoading: isLoadingExercise } = useQuery({
     queryKey: ["exercise", exerciseId],
@@ -105,7 +117,7 @@ export default function CreateExercise() {
       expectedOutput: "",
       runnerCode: "",
       isHidden: true,
-      timeLimitSeconds: 2,
+      timeLimitSeconds: 10,
       memoryLimitMb: 128,
       hintText: "",
       hintPenaltyPercent: 0,
@@ -156,11 +168,16 @@ export default function CreateExercise() {
       setTemplateCode(exerciseData.templateCode || "");
 
       const matchedGroup = groups.find(
-        (g) => g.courseId === exerciseData.courseId,
+        (g) =>
+          g.courseId.toLowerCase() === exerciseData.courseId?.toLowerCase(),
       );
 
       if (matchedGroup) {
         setSelectedGroupId(matchedGroup.groupId);
+        // Force update syllabus with a small timeout to ensure options are loaded or handled
+        setTimeout(() => setSyllabusId(exerciseData.syllabusId), 0);
+      } else {
+        // Fallback: If no group matches (weird), keep syllabusId to avoid clearing it
         setSyllabusId(exerciseData.syllabusId);
       }
 
@@ -172,7 +189,7 @@ export default function CreateExercise() {
             expectedOutput: tc.expectedOutput,
             runnerCode: tc.runnerCode || "",
             isHidden: tc.isHidden,
-            timeLimitSeconds: tc.timeLimitSeconds || 2,
+            timeLimitSeconds: tc.timeLimitSeconds || 10,
             memoryLimitMb: tc.memoryLimitMb || 128,
             hintText: tc.hintText || "",
             hintPenaltyPercent: tc.hintPenaltyPercent || 0,
@@ -186,8 +203,12 @@ export default function CreateExercise() {
   }, [exerciseData, groups]);
 
   useEffect(() => {
-    setSyllabusId("");
-  }, [selectedGroupId]);
+    // Only clear syllabusId when group changes AND we're not in edit mode
+    // In edit mode, the syllabusId is set by the exerciseData loading effect
+    if (!isEditMode) {
+      setSyllabusId("");
+    }
+  }, [selectedGroupId, isEditMode]);
 
   useEffect(() => {
     if (!selectedGroupId && groups.length > 0) {
@@ -250,7 +271,7 @@ export default function CreateExercise() {
         expectedOutput: "",
         runnerCode: "",
         isHidden: true,
-        timeLimitSeconds: 2,
+        timeLimitSeconds: 10,
         memoryLimitMb: 128,
         hintText: "",
         hintPenaltyPercent: 0,
@@ -296,17 +317,31 @@ export default function CreateExercise() {
       difficulty,
       language,
       templateCode: templateCode || undefined,
-      points,
-      maxAttempts,
-      lateSubmissionPenaltyPercent: latePenalty,
+      points: parseInt(points.toString()),
+      maxAttempts: parseInt(maxAttempts.toString()),
+      lateSubmissionPenaltyPercent: parseInt(latePenalty.toString()),
       deadline: deadline || undefined,
       lateDeadline: lateDeadline || undefined,
       testCases: testCases.map(({ id, ...rest }) => ({
         ...rest,
         runnerCode: rest.runnerCode || undefined,
+        timeLimitSeconds: parseFloat(rest.timeLimitSeconds.toString()),
+        memoryLimitMb: parseInt(rest.memoryLimitMb.toString()),
+        hintText: rest.hintText || undefined,
+        hintPenaltyPercent: rest.hintPenaltyPercent
+          ? parseInt(rest.hintPenaltyPercent.toString())
+          : undefined,
         // Ensure empty strings are treated as checkable undefined
         availableFrom: rest.availableFrom || undefined,
       })),
+      commonFiles: isEditMode
+        ? undefined
+        : commonFiles.map((f) => ({
+            filename: f.filename,
+            content: f.content,
+            fileType: f.fileType,
+            description: f.description,
+          })),
     };
 
     saveMutation.mutate(payload);
@@ -348,6 +383,32 @@ export default function CreateExercise() {
           {t("professor.create_exercise.save")}
         </Button>
       </div>
+
+      <Dialog
+        open={isSyllabusFilesDialogOpen}
+        onOpenChange={setIsSyllabusFilesDialogOpen}>
+        <DialogContent className="max-w-4xl h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>
+              {t(
+                "professor.create_exercise.syllabus_files_title",
+                "Archivos comunes del temario",
+              )}
+            </DialogTitle>
+            <DialogDescription>
+              {t(
+                "professor.create_exercise.syllabus_files_desc",
+                "Estos archivos estarán disponibles para TODOS los ejercicios de este temario.",
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 min-h-0 overflow-y-auto py-2">
+            {syllabusId && (
+              <CommonFilesManager syllabusId={syllabusId} disabled={false} />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <form
         onSubmit={handleSubmit}
@@ -420,27 +481,41 @@ export default function CreateExercise() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>{t("professor.create_exercise.syllabus_label")}</Label>
-                  <Select
-                    value={syllabusId}
-                    onValueChange={setSyllabusId}
-                    disabled={!selectedGroupId || isLoadingSyllabi}>
-                    <SelectTrigger>
-                      <SelectValue
-                        placeholder={
-                          isLoadingSyllabi
-                            ? t("professor.create_exercise.loading")
-                            : t("professor.create_exercise.select_syllabus")
-                        }
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {syllabi?.map((s) => (
-                        <SelectItem key={s.id} value={s.id}>
-                          {s.title} ({s.contentType})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="flex gap-2">
+                    <Select
+                      value={syllabusId}
+                      onValueChange={setSyllabusId}
+                      disabled={!selectedGroupId || isLoadingSyllabi}>
+                      <SelectTrigger className="flex-1">
+                        <SelectValue
+                          placeholder={
+                            isLoadingSyllabi
+                              ? t("professor.create_exercise.loading")
+                              : t("professor.create_exercise.select_syllabus")
+                          }
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {syllabi?.map((s) => (
+                          <SelectItem key={s.id} value={s.id}>
+                            {s.title} ({s.contentType})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      disabled={!syllabusId}
+                      onClick={() => setIsSyllabusFilesDialogOpen(true)}
+                      title={t(
+                        "professor.create_exercise.manage_syllabus_files",
+                        "Gestionar archivos del temario",
+                      )}>
+                      <Code className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
 
                 <div className="space-y-2">
@@ -519,6 +594,16 @@ export default function CreateExercise() {
               </div>
             </CardContent>
           </Card>
+
+          {/* ARCHIVOS COMUNES */}
+          {(!isEditMode || (isEditMode && exerciseId)) && (
+            <CommonFilesManager
+              exerciseId={exerciseId}
+              disabled={saveMutation.isPending}
+              files={isEditMode ? undefined : commonFiles}
+              onChange={isEditMode ? undefined : setCommonFiles}
+            />
+          )}
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
@@ -621,7 +706,7 @@ export default function CreateExercise() {
                       <Code className="h-3 w-3" />{" "}
                       {t("professor.create_exercise.runner_code_label")}
                     </Label>
-                    <div className="border rounded-md overflow-hidden max-h-[250px] overflow-y-auto">
+                    <div className="border rounded-md overflow-hidden">
                       <CodeEditor
                         initialCode={tc.runnerCode || ""}
                         onChange={(code) =>
@@ -630,6 +715,7 @@ export default function CreateExercise() {
                         language={language}
                         showSubmitButton={false}
                         readOnly={false}
+                        minHeight="200px"
                       />
                     </div>
                     <p className="text-xs text-muted-foreground">

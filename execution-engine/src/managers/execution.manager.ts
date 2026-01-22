@@ -25,7 +25,7 @@ export class ExecutionManager {
    */
   async executeExercise(request: ExecutionRequest): Promise<ExecutionResult> {
     console.log(
-      `\nIniciando ejecución: ${request.id} (Ejercicio: ${request.exerciseId})`
+      `\nIniciando ejecución: ${request.id} (Ejercicio: ${request.exerciseId})`,
     );
 
     const startTime = Date.now();
@@ -47,7 +47,8 @@ export class ExecutionManager {
           request.code,
           testCase,
           request.language,
-          `${request.id}-${testCase.id}`
+          `${request.id}-${testCase.id}`,
+          request.commonFiles,
         );
 
         testResults.push(testResult);
@@ -61,7 +62,7 @@ export class ExecutionManager {
         } else if (testResult.status === "error") {
           verdict = Verdict.RUNTIME_ERROR;
           console.log(
-            `Test ${testCase.id}: ERROR - ${testResult.errorMessage}`
+            `Test ${testCase.id}: ERROR - ${testResult.errorMessage}`,
           );
         } else if (testResult.status === "failed") {
           if (verdict === Verdict.ACCEPTED) {
@@ -84,7 +85,7 @@ export class ExecutionManager {
       }
 
       console.log(
-        `Ejecución completada: ${passedTests}/${request.testCases.length} tests passed`
+        `Ejecución completada: ${passedTests}/${request.testCases.length} tests passed`,
       );
       console.log(`Veredicto: ${verdict} (${score} puntos)`);
 
@@ -142,7 +143,7 @@ export class ExecutionManager {
 
       if (
         ["0", "1", "-1", "true", "false", "yes", "no", "[]", "{}", ""].includes(
-          output
+          output,
         ) ||
         output.length < 2
       ) {

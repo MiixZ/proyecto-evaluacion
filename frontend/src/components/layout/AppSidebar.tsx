@@ -108,11 +108,6 @@ export function AppSidebar() {
         icon: ListTree,
       },
       {
-        title: t("sidebar.menu.create_exercise"),
-        url: "/dashboard/create",
-        icon: BookOpen,
-      },
-      {
         title: t("sidebar.menu.my_exercises"),
         url: "/dashboard/manage-exercises",
         icon: FileCode,

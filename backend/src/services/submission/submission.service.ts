@@ -26,6 +26,7 @@ import { auditService } from '@services/audit/audit.service';
 import { languageService } from '@services/language/language.service';
 import { submissionErrorService } from '@services/catalog/submission-error.service';
 import { plagiarismService } from '@services/plagiarism/plagiarism.service';
+import { commonFilesModel } from '@models/common-files/common-files.model';
 import { hintUsageModel } from '@models/hint/hint-usage.model';
 
 /**
@@ -187,6 +188,28 @@ export class SubmissionService {
       (err) => logger.error('Error en chequeo automático de plagio', err)
     );
 
+    // Fetch common files for exercise and syllabus
+    const exerciseFiles = await commonFilesModel.getExerciseFiles(exercise.id);
+    const syllabusFiles = await commonFilesModel.getSyllabusFiles(
+      exercise.syllabusId
+    );
+
+    // Combine files (exercise files take precedence if conflict)
+    const allCommonFiles = [
+      ...syllabusFiles.map((f) => ({
+        filename: f.filename,
+        content: f.content,
+      })),
+      ...exerciseFiles.map((f) => ({
+        filename: f.filename,
+        content: f.content,
+      })),
+    ];
+    // Filter duplicates by filename, keeping the last one (exercise file overrides syllabus)
+    const uniqueCommonFiles = Array.from(
+      new Map(allCommonFiles.map((file) => [file.filename, file])).values()
+    );
+
     const execRequest: ExecutionRequest = {
       id: uuidv4(),
       submissionId,
@@ -203,6 +226,7 @@ export class SubmissionService {
         isHidden: tc.isHidden,
       })),
       limits: executionLimits,
+      commonFiles: uniqueCommonFiles,
       createdAt: new Date(),
     };
 
@@ -245,9 +269,7 @@ export class SubmissionService {
         execResult.testResults.map(async (tr) => {
           const limitTime = executionLimits.timeLimitSeconds;
           const limitMem = executionLimits.memoryLimitMb;
-
           let errorId: UUID | null = null;
-
           if (tr.status === 'timeout') {
             errorId = await submissionErrorService.getErrorIdByType('timeout');
           } else if (tr.status === 'error') {
@@ -257,7 +279,6 @@ export class SubmissionService {
             errorId =
               await submissionErrorService.getErrorIdByType('system_error');
           }
-
           return {
             id: uuidv4() as UUID,
             submissionId,
@@ -279,6 +300,10 @@ export class SubmissionService {
           };
         })
       );
+
+    logger.info(
+      `DEBUG: Processing submission ${submissionId}. Engine returned ${execResult.testResults.length} results. Mapped ${submissionTestResults.length} results.`
+    );
 
     const finalVerdict = this.mapEngineVerdict(execResult.verdict);
 

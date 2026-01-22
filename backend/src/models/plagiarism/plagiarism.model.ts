@@ -1,7 +1,7 @@
 import { getPool } from '@config/database';
 import { v4 as uuidv4 } from 'uuid';
 import { PlagiarismEntity } from './plagiarism.entity';
-import { PlagiarismRow } from './plagiarism.row';
+import { PlagiarismRow, PlagiarismPatternRow } from './plagiarism.row';
 import { plagiarismMapper } from '@mappers/plagiarism.mapper';
 import {
   CreatePlagiarismCheckInput,
@@ -127,6 +127,50 @@ export class PlagiarismModel {
       hasMore: offset + limit < total,
       totalPages: Math.ceil(total / limit),
     };
+  }
+
+  /**
+   * Encuentra patrones de plagio recurrentes para un estudiante
+   * detectando con quién coincide frecuentemente
+   */
+  async findStudentPatterns(studentId: UUID): Promise<
+    Array<{
+      otherStudentId: string;
+      studentName: string;
+      matchCount: number;
+      avgSimilarity: number;
+    }>
+  > {
+    const query = `
+      SELECT 
+        u.id as other_student_id,
+        u.first_name,
+        u.last_name,
+        COUNT(*) as match_count,
+        AVG(pc.similarity_percent) as avg_similarity
+      FROM plagiarism_checks pc
+      JOIN submissions s1 ON pc.submission_id = s1.id
+      JOIN submissions s2 ON pc.compared_with_submission_id = s2.id
+      JOIN users u ON (CASE WHEN s1.student_id = ? THEN s2.student_id ELSE s1.student_id END) = u.id
+      WHERE (s1.student_id = ? OR s2.student_id = ?)
+        AND pc.similarity_percent > 70
+      GROUP BY u.id
+      ORDER BY match_count DESC, avg_similarity DESC
+      LIMIT 10
+    `;
+
+    const [rows] = await getPool().execute<PlagiarismPatternRow[]>(query, [
+      studentId,
+      studentId,
+      studentId,
+    ]);
+
+    return rows.map((row) => ({
+      otherStudentId: row.other_student_id,
+      studentName: `${row.first_name} ${row.last_name}`,
+      matchCount: Number(row.match_count),
+      avgSimilarity: Number(row.avg_similarity),
+    }));
   }
 }
 

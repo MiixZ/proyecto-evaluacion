@@ -63,7 +63,7 @@ export default function SubmissionDetails() {
     setOpenTestCases((prev) =>
       prev.includes(testId)
         ? prev.filter((id) => id !== testId)
-        : [...prev, testId]
+        : [...prev, testId],
     );
   };
 
@@ -266,8 +266,8 @@ export default function SubmissionDetails() {
                 {submission.language === "python"
                   ? "py"
                   : submission.language === "javascript"
-                  ? "js"
-                  : "txt"}
+                    ? "js"
+                    : "txt"}
               </span>
             </div>
           </CardHeader>
@@ -352,6 +352,25 @@ export default function SubmissionDetails() {
               {/* PANEL DE FEEDBACK (Componente Nuevo) */}
               <FeedbackPanel submissionId={submission.id} />
 
+              {/* COMPILATION ERROR DISPLAY */}
+              {submission.verdict === "compilation_error" && (
+                <Alert
+                  variant="destructive"
+                  className="border-red-300 bg-red-50">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle className="text-red-800">
+                    {t("submission_detail.compilation_error")}
+                  </AlertTitle>
+                  <AlertDescription>
+                    <pre className="mt-2 p-3 bg-red-100 rounded text-xs font-mono text-red-900 whitespace-pre-wrap overflow-x-auto max-h-[300px] overflow-y-auto custom-scrollbar">
+                      {submission.compilationError ||
+                        submission.testResults?.[0]?.errorMessage ||
+                        t("submission_detail.compilation_error_generic")}
+                    </pre>
+                  </AlertDescription>
+                </Alert>
+              )}
+
               {/* RESULTADOS DE LOS TESTS */}
               <Card className="border-muted">
                 <CardHeader className="py-3 px-4 border-b">
@@ -362,7 +381,7 @@ export default function SubmissionDetails() {
                     <Badge variant="secondary" className="text-xs">
                       {
                         submission.testResults.filter(
-                          (t) => t.status === "passed"
+                          (t) => t.status === "passed",
                         ).length
                       }{" "}
                       / {submission.testResults.length}
@@ -372,7 +391,7 @@ export default function SubmissionDetails() {
                 <div className="divide-y divide-border">
                   {submission.testResults.map((test, index) => {
                     const isOpen = openTestCases.includes(
-                      test.id || `test-${index}`
+                      test.id || `test-${index}`,
                     );
                     const testId = test.id || `test-${index}`;
 
@@ -386,8 +405,8 @@ export default function SubmissionDetails() {
                             test.status === "failed" || test.status === "error"
                               ? "bg-red-50/30"
                               : test.status === "passed"
-                              ? "bg-green-50/20"
-                              : "hover:bg-muted/30"
+                                ? "bg-green-50/20"
+                                : "hover:bg-muted/30"
                           }`}>
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
@@ -448,24 +467,26 @@ export default function SubmissionDetails() {
                                     </code>
                                   </div>
                                 )}
-                                <div className="flex gap-2">
+                                <div className="flex flex-col gap-2 w-full">
                                   <span
-                                    className={`w-16 shrink-0 ${
+                                    className={`shrink-0 ${
                                       test.status === "passed"
                                         ? "text-green-600"
                                         : "text-red-600"
                                     }`}>
                                     {t("submission_detail.obtained")}
                                   </span>
-                                  <code
-                                    className={`px-1 rounded flex-1 truncate ${
-                                      test.status === "passed"
-                                        ? "bg-green-50 text-green-700"
-                                        : "bg-red-50 text-red-700"
-                                    }`}>
-                                    {test.actualOutput ||
-                                      t("submission_detail.empty")}
-                                  </code>
+                                  {test.status === "passed" ? (
+                                    <code className="bg-green-50 text-green-700 px-2 py-1 rounded truncate block w-full">
+                                      {test.actualOutput ||
+                                        t("submission_detail.empty")}
+                                    </code>
+                                  ) : (
+                                    <pre className="bg-red-50 text-red-800 p-3 rounded text-xs font-mono whitespace-pre-wrap overflow-x-auto max-h-[300px] border border-red-100">
+                                      {test.actualOutput ||
+                                        t("submission_detail.empty")}
+                                    </pre>
+                                  )}
                                 </div>
                               </div>
                             </div>

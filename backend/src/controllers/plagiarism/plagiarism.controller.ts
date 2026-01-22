@@ -98,6 +98,17 @@ export class PlagiarismController {
       items: plagiarismMapper.toDTOList(result.items),
     });
   });
+
+  getPatterns = catchAsync(async (req: AuthRequest, res: Response) => {
+    if (req.user?.role === UserRole.STUDENT) {
+      throw new AppError('FORBIDDEN', 403, 'No autorizado');
+    }
+
+    const { studentId } = req.params;
+    const result = await plagiarismService.findStudentPatterns(studentId);
+
+    return ApiResponse.success(res, result);
+  });
 }
 
 export const plagiarismController = new PlagiarismController();
