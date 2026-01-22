@@ -28,7 +28,8 @@ interface CodeEditorProps {
   isSubmitting?: boolean;
   onChange?: (code: string) => void;
   showSubmitButton?: boolean;
-  lockLanguage?: boolean; // Bloquear cambio de lenguaje
+  lockLanguage?: boolean;
+  minHeight?: string;
 }
 
 const defaultCode = `# Escribe tu solución aquí
@@ -49,6 +50,7 @@ export const CodeEditor = ({
   onChange,
   showSubmitButton = true,
   lockLanguage = false,
+  minHeight = "400px",
 }: CodeEditorProps) => {
   const { t } = useTranslation();
   const [code, setCode] = useState(initialCode);
@@ -232,7 +234,9 @@ export const CodeEditor = ({
       </div>
 
       {/* Editor Area usando CodeMirror */}
-      <div className="flex-1 relative min-h-[400px] overflow-hidden bg-[#1e1e1e]">
+      <div
+        className="flex-1 relative overflow-hidden bg-[#1e1e1e]"
+        style={{ minHeight }}>
         <CodeMirror
           value={code}
           height="100%"
@@ -255,7 +259,7 @@ export const CodeEditor = ({
             autocompletion: true,
             highlightActiveLine: true,
           }}
-          className="h-full text-sm font-mono"
+          className="h-full text-sm font-mono code-editor-scrollbar"
         />
       </div>
 

@@ -40,6 +40,19 @@ export const createExerciseSchema = z.object({
     .array(createTestCaseInputSchema)
     .min(1, 'Debe haber al menos un caso de prueba'),
   limits: createExecutionLimitInputSchema.optional(),
+  commonFiles: z
+    .array(
+      z.object({
+        filename: z.string().min(1),
+        content: z.string(),
+        fileType: z
+          .enum(['source', 'data', 'config', 'header'])
+          .optional()
+          .default('source'),
+        description: z.string().optional(),
+      })
+    )
+    .optional(),
 });
 
 export const createExerciseRequest = z.object({

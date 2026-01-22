@@ -1415,12 +1415,12 @@
       "course_migration": "Migración de Cursos",
       "course_viewer": "Ver Cursos",
       "create_exercise": "Crear Ejercicio",
-      "dashboard": "Dashboard",
+      "dashboard": "Panel",
       "degrees": "Titulaciones",
       "exercises": "Ejercicios",
       "exercises_admin": "Ejercicios",
       "groups": "Gestión de Grupos",
-      "manage_syllabi": "Gestionar Temarios",
+      "manage_syllabi": "Gestión de temas",
       "my_exercises": "Mis Ejercicios",
       "professor_panel": "Panel Docente",
       "progress": "Mi Progreso",
@@ -1507,7 +1507,9 @@
     "test_cases": "Casos de Prueba",
     "test_number": "Test #{{number}}",
     "time": "Tiempo",
-    "title": "Detalle de Entrega"
+    "title": "Detalle de Entrega",
+    "compilation_error": "Error de Compilación",
+    "compilation_error_generic": "El código no pudo compilarse. Revisa la sintaxis y los errores indicados."
   },
   "submissions_page": {
     "actions": {

@@ -13,6 +13,7 @@ import {
   GripVertical,
   ChevronUp,
   ChevronDown,
+  FileCode,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -57,6 +58,7 @@ import {
 import { dashboardService } from "@/services/dashboard.service";
 import { syllabusService, SyllabusDTO } from "@/services/syllabus.service";
 import { toast } from "sonner";
+import { CommonFilesManager } from "@/components/professor/CommonFilesManager";
 
 export default function ManageSyllabi() {
   const { t } = useTranslation();
@@ -65,11 +67,15 @@ export default function ManageSyllabi() {
 
   const initialGroupId = localStorage.getItem("professorLastGroupId");
   const [selectedGroupId, setSelectedGroupId] = useState<string>(
-    initialGroupId || ""
+    initialGroupId || "",
   );
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+
   const [selectedSyllabusId, setSelectedSyllabusId] = useState<string>("");
+  const [managingFilesSyllabusId, setManagingFilesSyllabusId] = useState<
+    string | null
+  >(null);
 
   // Create form state
   const [newSyllabus, setNewSyllabus] = useState({
@@ -85,7 +91,7 @@ export default function ManageSyllabi() {
 
   const groups = useMemo(
     () => dashboardData?.groups || [],
-    [dashboardData?.groups]
+    [dashboardData?.groups],
   );
 
   const selectedGroup = groups.find((g) => g.groupId === selectedGroupId);
@@ -107,7 +113,7 @@ export default function ManageSyllabi() {
       toast.success(
         data.isPublic
           ? t("professor.syllabi.visibility_public")
-          : t("professor.syllabi.visibility_hidden")
+          : t("professor.syllabi.visibility_hidden"),
       );
       queryClient.invalidateQueries({
         queryKey: ["syllabi", selectedGroup?.courseId],
@@ -116,7 +122,7 @@ export default function ManageSyllabi() {
     },
     onError: (error: any) => {
       toast.error(
-        error.response?.data?.message || t("professor.syllabi.error_toggle")
+        error.response?.data?.message || t("professor.syllabi.error_toggle"),
       );
     },
   });
@@ -134,7 +140,7 @@ export default function ManageSyllabi() {
     },
     onError: (error: any) => {
       toast.error(
-        error.response?.data?.message || t("professor.syllabi.create_error")
+        error.response?.data?.message || t("professor.syllabi.create_error"),
       );
     },
   });
@@ -152,7 +158,7 @@ export default function ManageSyllabi() {
     },
     onError: (error: any) => {
       toast.error(
-        error.response?.data?.message || t("professor.syllabi.delete_error")
+        error.response?.data?.message || t("professor.syllabi.delete_error"),
       );
     },
   });
@@ -215,7 +221,7 @@ export default function ManageSyllabi() {
       refetch();
     } catch (error: any) {
       toast.error(
-        error.response?.data?.message || t("professor.syllabi.reorder_error")
+        error.response?.data?.message || t("professor.syllabi.reorder_error"),
       );
     } finally {
       setReordering(false);
@@ -242,7 +248,7 @@ export default function ManageSyllabi() {
       refetch();
     } catch (error: any) {
       toast.error(
-        error.response?.data?.message || t("professor.syllabi.reorder_error")
+        error.response?.data?.message || t("professor.syllabi.reorder_error"),
       );
     } finally {
       setReordering(false);
@@ -391,7 +397,7 @@ export default function ManageSyllabi() {
                           {t(
                             `professor.syllabi.type_${
                               syllabus.contentType || "module"
-                            }`
+                            }`,
                           )}
                         </Badge>
                       </div>
@@ -430,6 +436,17 @@ export default function ManageSyllabi() {
                           disabled={toggleVisibilityMutation.isPending}
                         />
                       </div>
+
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setManagingFilesSyllabusId(syllabus.id)}
+                        title={t(
+                          "professor.syllabi.manage_files",
+                          "Gestionar Archivos Comunes",
+                        )}>
+                        <FileCode className="h-4 w-4" />
+                      </Button>
 
                       {/* Delete button (only if no exercises) */}
                       {syllabus.exercisesCount === 0 && (
@@ -489,7 +506,7 @@ export default function ManageSyllabi() {
                   })
                 }
                 placeholder={t(
-                  "professor.syllabi.field_description_placeholder"
+                  "professor.syllabi.field_description_placeholder",
                 )}
                 rows={3}
               />
@@ -540,6 +557,36 @@ export default function ManageSyllabi() {
               )}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Manage Files Dialog */}
+      <Dialog
+        open={!!managingFilesSyllabusId}
+        onOpenChange={(open) => !open && setManagingFilesSyllabusId(null)}>
+        <DialogContent className="max-w-4xl h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>
+              {t(
+                "professor.syllabi.files_title",
+                "Archivos Comunes del Temario",
+              )}
+            </DialogTitle>
+            <DialogDescription>
+              {t(
+                "professor.syllabi.files_desc",
+                "Archivos compartidos por todos los ejercicios de este temario",
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 min-h-0 overflow-y-auto py-2">
+            {managingFilesSyllabusId && (
+              <CommonFilesManager
+                syllabusId={managingFilesSyllabusId}
+                disabled={false}
+              />
+            )}
+          </div>
         </DialogContent>
       </Dialog>
 

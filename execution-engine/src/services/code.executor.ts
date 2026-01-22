@@ -21,6 +21,7 @@ export class CodeExecutor {
     testCase: TestCase,
     language: string,
     executionId: string,
+    commonFiles: Array<{ filename: string; content: string }> = [],
   ): Promise<TestResult> {
     const startTime = Date.now();
     const executionDir = path.join(this.INTERNAL_DIR, executionId);
@@ -52,6 +53,13 @@ export class CodeExecutor {
         testCase.input,
         "utf-8",
       );
+
+      // Write common files
+      for (const file of commonFiles) {
+        const filePath = path.join(executionDir, file.filename);
+        await fs.writeFile(filePath, file.content, "utf-8");
+        await fs.chmod(filePath, 0o777);
+      }
 
       await fs.chmod(path.join(executionDir, codeFilename), 0o777);
       await fs.chmod(path.join(executionDir, "input.txt"), 0o777);
@@ -234,13 +242,13 @@ export class CodeExecutor {
 
   private getExecutionCommand(language: string, filename: string): string[] {
     const commands: Record<string, string[]> = {
-      python: ["sh", "-c", `cat input.txt | python3 ${filename}`],
-      java: ["sh", "-c", `javac ${filename} && cat input.txt | java Solution`],
-      javascript: ["sh", "-c", `cat input.txt | node ${filename}`],
+      python: ["sh", "-c", `python3 ${filename} < input.txt`],
+      java: ["sh", "-c", `javac ${filename} && java Solution < input.txt`],
+      javascript: ["sh", "-c", `node ${filename} < input.txt`],
       cpp: [
         "sh",
         "-c",
-        `g++ -o solution ${filename} && cat input.txt | ./solution`,
+        `g++ -o solution ${filename} && ./solution < input.txt`,
       ],
     };
 

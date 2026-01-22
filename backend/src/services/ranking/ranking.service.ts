@@ -13,15 +13,32 @@ export class RankingService {
     subjectId?: UUID,
     groupId?: UUID
   ): Promise<RankingResponseDTO> {
-    // Obtener estudiantes del ranking
-    const students = await rankingModel.getRanking(subjectId, groupId);
+    let effectiveGroupId = groupId;
 
-    // Mapear estudiantes con su posición en el ranking
+    if (userRole === 'student') {
+      const filterInfo = await rankingModel.getFilterOptions(userId);
+      const userGroupIds = filterInfo.map((f) => f.group_id);
+
+      if (!groupId) {
+        effectiveGroupId = userGroupIds[0] as UUID;
+      } else if (!userGroupIds.includes(groupId)) {
+        effectiveGroupId = userGroupIds[0] as UUID;
+      }
+    } else if (userRole === 'teacher') {
+      const teacherGroups = await rankingModel.getFilterOptions(userId);
+      const teacherGroupIds = teacherGroups.map((f) => f.group_id);
+
+      if (groupId && !teacherGroupIds.includes(groupId)) {
+        effectiveGroupId = teacherGroupIds[0] as UUID;
+      }
+    }
+
+    const students = await rankingModel.getRanking(subjectId, effectiveGroupId);
+
     const rankedStudents = students.map((student, index) =>
       rankingMapper.toStudentDTO(student, index + 1)
     );
 
-    // Obtener información del profesor si hay un filtro de asignatura
     let teacher = null;
     if (subjectId) {
       const teacherRow = await rankingModel.getSubjectTeacher(subjectId);
@@ -30,7 +47,6 @@ export class RankingService {
       }
     }
 
-    // Obtener opciones de filtro según el rol
     const filters = await this.getFilterOptions(userId, userRole);
 
     return {
@@ -44,18 +60,16 @@ export class RankingService {
     userId: UUID,
     userRole: UserRole
   ): Promise<RankingFilterDTO> {
-    if (userRole === 'admin' || userRole === 'teacher') {
-      // Admin y profesores ven todas las asignaturas y grupos
+    if (userRole === 'admin') {
       const subjects = await rankingModel.getAllSubjects();
       return {
         subjects: subjects.map((s) => ({
           id: s.subject_id as UUID,
           name: s.subject_name,
         })),
-        groups: [], // Se cargan dinámicamente por asignatura
+        groups: [],
       };
     } else {
-      // Estudiantes solo ven sus propias asignaturas y grupos
       const filterInfo = await rankingModel.getFilterOptions(userId);
 
       const subjectsMap = new Map<string, string>();

@@ -15,12 +15,21 @@ import {
   CardTitle,
 } from "@/components/ui/layout/card";
 import { Button } from "@/components/ui/forms/button";
-import { Plus, Loader2, Pencil, Search, Filter } from "lucide-react";
+import {
+  Plus,
+  Loader2,
+  Pencil,
+  Search,
+  Filter,
+  Code,
+  FileCode,
+} from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/overlay/dialog";
 import { Input } from "@/components/ui/forms/input";
 import { Label } from "@/components/ui/forms/label";
@@ -35,6 +44,7 @@ import { Badge } from "@/components/ui/data/badge";
 import { DataTable, ColumnDef } from "@/components/ui/data/data-table";
 import { Switch } from "@/components/ui/forms/switch";
 import { toast } from "sonner";
+import { CommonFilesManager } from "@/components/professor/CommonFilesManager";
 
 const SyllabusForm = ({
   defaultValues,
@@ -70,7 +80,7 @@ const SyllabusForm = ({
         onSubmit({
           ...data,
           orderIndex: Number(data.orderIndex),
-        })
+        }),
       )}
       className="space-y-4">
       <div className="space-y-2">
@@ -156,6 +166,9 @@ export default function SyllabusManagement() {
   const { t } = useTranslation();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Syllabus | null>(null);
+  const [managingFilesSyllabusId, setManagingFilesSyllabusId] = useState<
+    string | null
+  >(null);
 
   const [selectedCourseFilter, setSelectedCourseFilter] =
     useState<string>("all");
@@ -187,7 +200,7 @@ export default function SyllabusManagement() {
           action: editingItem
             ? t("admin.syllabus.updated")
             : t("admin.syllabus.created"),
-        })
+        }),
       );
       closeDialog();
     },
@@ -269,12 +282,24 @@ export default function SyllabusManagement() {
       headerClassName: "text-right",
       className: "text-right",
       render: (item) => (
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => openEditDialog(item)}>
-          <Pencil className="h-4 w-4" />
-        </Button>
+        <div className="flex items-center justify-end gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => openEditDialog(item)}>
+            <Pencil className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setManagingFilesSyllabusId(item.id)}
+            title={t(
+              "admin.syllabus.manage_files",
+              "Gestionar Archivos Comunes",
+            )}>
+            <FileCode className="h-4 w-4" />
+          </Button>
+        </div>
       ),
     },
   ];
@@ -329,6 +354,32 @@ export default function SyllabusManagement() {
             onSubmit={(data) => saveMutation.mutate(data)}
             isPending={saveMutation.isPending}
           />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={!!managingFilesSyllabusId}
+        onOpenChange={(open) => !open && setManagingFilesSyllabusId(null)}>
+        <DialogContent className="max-w-4xl h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>
+              {t("admin.syllabus.files_title", "Archivos Comunes del Temario")}
+            </DialogTitle>
+            <DialogDescription>
+              {t(
+                "admin.syllabus.files_desc",
+                "Archivos compartidos por todos los ejercicios de este temario",
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 min-h-0 overflow-y-auto py-2">
+            {managingFilesSyllabusId && (
+              <CommonFilesManager
+                syllabusId={managingFilesSyllabusId}
+                disabled={false}
+              />
+            )}
+          </div>
         </DialogContent>
       </Dialog>
 

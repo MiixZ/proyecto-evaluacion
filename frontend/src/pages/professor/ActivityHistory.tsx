@@ -14,6 +14,9 @@ import {
   FileCode,
   FileJson,
   X,
+  Download,
+  ChevronDown,
+  FileSpreadsheet,
 } from "lucide-react";
 import { format } from "date-fns";
 import { es, enUS } from "date-fns/locale";
@@ -69,6 +72,27 @@ export default function ActivityHistory() {
   });
 
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExportActivity = async (format: "json" | "csv") => {
+    if (!groupId) return;
+    try {
+      setIsExporting(true);
+      await exportService.downloadGroupStatistics(
+        groupId,
+        `activity_${groupId}`,
+        format,
+      );
+      toast.success(
+        t("activity_history.export_success", "Exportación completada"),
+      );
+    } catch (error) {
+      console.error(error);
+      toast.error(t("activity_history.export_error", "Error al exportar"));
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const { data: rawData, isLoading } = useQuery({
     queryKey: ["groupActivity", groupId, page, limit, sorting, studentIdParam],
@@ -79,13 +103,12 @@ export default function ActivityHistory() {
         limit,
         sorting.column,
         sorting.direction,
-        undefined, // No filtramos en el servidor
-        studentIdParam || undefined
+        undefined,
+        studentIdParam || undefined,
       ),
     enabled: !!groupId,
   });
 
-  // Filtrar client-side por veredicto
   const data = rawData
     ? {
         ...rawData,
@@ -93,16 +116,18 @@ export default function ActivityHistory() {
           filterVerdict === "all"
             ? rawData.items
             : filterVerdict === "accepted"
-            ? rawData.items.filter((item: any) => item.verdict === "accepted")
-            : rawData.items.filter((item: any) => item.verdict !== "accepted"),
+              ? rawData.items.filter((item: any) => item.verdict === "accepted")
+              : rawData.items.filter(
+                  (item: any) => item.verdict !== "accepted",
+                ),
         total:
           filterVerdict === "all"
             ? rawData.total
             : filterVerdict === "accepted"
-            ? rawData.items.filter((item: any) => item.verdict === "accepted")
-                .length
-            : rawData.items.filter((item: any) => item.verdict !== "accepted")
-                .length,
+              ? rawData.items.filter((item: any) => item.verdict === "accepted")
+                  .length
+              : rawData.items.filter((item: any) => item.verdict !== "accepted")
+                  .length,
       }
     : undefined;
 
@@ -113,7 +138,7 @@ export default function ActivityHistory() {
 
   const handleDownload = async (
     submissionId: string,
-    format: "zip" | "json"
+    format: "zip" | "json",
   ) => {
     try {
       setDownloadingId(submissionId);
@@ -132,7 +157,7 @@ export default function ActivityHistory() {
     const newParams = new URLSearchParams(searchParams);
     newParams.delete("studentId");
     setSearchParams(newParams);
-    setPage(1); // Resetear a página 1 al quitar filtro
+    setPage(1);
   };
 
   const getStatusBadge = (verdict: string) => {
@@ -282,6 +307,29 @@ export default function ActivityHistory() {
             })}
           </p>
         </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" disabled={isExporting || isLoading}>
+              {isExporting ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Download className="mr-2 h-4 w-4" />
+              )}
+              {t("activity_history.export_button", "Exportar")}
+              <ChevronDown className="ml-2 h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => handleExportActivity("csv")}>
+              <FileSpreadsheet className="mr-2 h-4 w-4" />
+              {t("activity_history.export_csv", "Exportar CSV")}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleExportActivity("json")}>
+              <FileJson className="mr-2 h-4 w-4" />
+              {t("activity_history.export_json", "Exportar JSON")}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* BANNER DE FILTRO ACTIVO */}
@@ -294,7 +342,7 @@ export default function ActivityHistory() {
             <span className="text-xs opacity-90">
               {t(
                 "activity_history.filter_student_only_simple",
-                "Mostrando solo actividad de un estudiante"
+                "Mostrando solo actividad de un estudiante",
               )}
             </span>
           </div>
@@ -332,7 +380,7 @@ export default function ActivityHistory() {
                 <SelectValue
                   placeholder={t(
                     "activity_history.filter_verdict",
-                    "Veredicto"
+                    "Veredicto",
                   )}
                 />
               </SelectTrigger>

@@ -91,6 +91,26 @@
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     @apply bg-muted-foreground/40;
   }
+
+  /* Scrollbar oscuro para editores de código */
+  .code-editor-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  .code-editor-scrollbar::-webkit-scrollbar-track {
+    background: rgba(30, 30, 30, 0.5);
+    border-radius: 4px;
+  }
+  .code-editor-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(100, 100, 100, 0.6);
+    border-radius: 4px;
+  }
+  .code-editor-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(140, 140, 140, 0.8);
+  }
+  .code-editor-scrollbar::-webkit-scrollbar-corner {
+    background: rgba(30, 30, 30, 0.5);
+  }
 }
 
 html {

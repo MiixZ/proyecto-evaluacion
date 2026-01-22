@@ -1357,12 +1357,12 @@
       "course_migration": "Course Migration",
       "course_viewer": "View Courses",
       "create_exercise": "Create Exercise",
-      "dashboard": "Dashboard",
+      "dashboard": "Panel",
       "degrees": "Degrees",
       "exercises": "Exercises",
       "exercises_admin": "Exercises",
       "groups": "Group Management",
-      "manage_syllabi": "Manage Syllabi",
+      "manage_syllabi": "Topic Management",
       "my_exercises": "My Exercises",
       "professor_panel": "Professor Panel",
       "progress": "My Progress",
@@ -1437,7 +1437,9 @@
     "test_cases": "Test Cases",
     "test_number": "Test #{{number}}",
     "time": "Time",
-    "title": "Submission Detail"
+    "title": "Submission Detail",
+    "compilation_error": "Compilation Error",
+    "compilation_error_generic": "The code could not be compiled. Please review the syntax and indicated errors."
   },
   "submissions_page": {
     "actions": {

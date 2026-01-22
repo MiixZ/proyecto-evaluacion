@@ -5,6 +5,10 @@ export interface ExecutionRequest {
   code: string;
   language: string;
   testCases: TestCase[];
+  commonFiles?: Array<{
+    filename: string;
+    content: string;
+  }>;
   limits: ExecutionLimits;
   createdAt: Date;
 }

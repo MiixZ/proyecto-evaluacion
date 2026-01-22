@@ -30,6 +30,7 @@ import routerLanguages from '@routes/language/language';
 import routerHints from '@routes/hint/hint';
 import routerSubmissionErrors from '@routes/catalog/submission-error';
 import routerRanking from '@routes/ranking/ranking';
+import routerCommonFiles from '@routes/v1/common-files.routes';
 
 const app = express();
 const PORT = config.port;
@@ -122,6 +123,7 @@ apiV1.use('/languages', routerLanguages);
 apiV1.use('/hints', routerHints);
 apiV1.use('/submission-errors', routerSubmissionErrors);
 apiV1.use('/ranking', routerRanking);
+apiV1.use('/common-files', routerCommonFiles);
 
 // ==================== MANEJO DE ERRORES ====================
 

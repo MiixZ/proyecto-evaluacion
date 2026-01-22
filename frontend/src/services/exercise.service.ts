@@ -36,6 +36,12 @@ export interface CreateExercisePayload {
     hintPenaltyPercent?: number;
     availableFrom?: string;
   }[];
+  commonFiles?: {
+    filename: string;
+    content: string;
+    fileType: "source" | "data" | "config" | "header";
+    description?: string;
+  }[];
 }
 
 export interface ExerciseListItem {

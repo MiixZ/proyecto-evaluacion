@@ -223,12 +223,17 @@ export class ExportService {
             lastName: s.last_name,
             email: s.email,
             status: s.status,
-            completedExercises: s.completed_exercises,
-            totalExercises: s.total_exercises,
-            progressPercentage: s.progress_percentage,
-            averageScore: s.average_score,
-            totalSubmissions: s.total_submissions,
-            lastActivity: s.last_activity,
+            completedExercises: s.exercises_completed ?? 0,
+            totalExercises: groupDetails.total_exercises ?? 0,
+            progressPercentage:
+              groupDetails.total_exercises > 0
+                ? Math.round(
+                    (s.exercises_completed / groupDetails.total_exercises) * 100
+                  )
+                : 0,
+            averageScore: s.avg_score ?? 0,
+            totalSubmissions: '-',
+            lastActivity: s.last_access || null,
           })),
           recentActivity: recentActivity.items.map((a) => ({
             studentId: a.student_id,
@@ -287,18 +292,24 @@ export class ExportService {
 
       const rows = students
         .map((s) => {
+          const progressPercent =
+            groupDetails.total_exercises > 0
+              ? Math.round(
+                  (s.exercises_completed / groupDetails.total_exercises) * 100
+                )
+              : 0;
           const fields = [
             s.student_id,
             s.first_name,
             s.last_name,
             s.email,
             s.status,
-            s.completed_exercises,
-            s.total_exercises,
-            s.progress_percentage,
-            s.average_score,
-            s.total_submissions,
-            s.last_activity || '',
+            s.exercises_completed ?? 0,
+            groupDetails.total_exercises ?? 0,
+            progressPercent,
+            s.avg_score ?? 0,
+            '-', // totalSubmissions not available per-student
+            s.last_access || '',
           ];
           return fields.map(escapeCsvField).join(',');
         })

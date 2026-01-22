@@ -12,6 +12,7 @@ import { syllabusModel } from '@models/syllabus/syllabus.model';
 import { auditService } from '@services/audit/audit.service';
 import { languageService } from '@services/language/language.service';
 import { getPool } from '@config/database';
+import { commonFilesModel } from '@models/common-files/common-files.model';
 
 interface ExerciseDetailDTO extends ExerciseDTO {
   testCases?: Array<{
@@ -71,6 +72,12 @@ export class ExerciseService {
       { title: exercise.title, syllabusId: exercise.syllabusId },
       teacherId
     );
+
+    if (input.commonFiles && input.commonFiles.length > 0) {
+      for (const file of input.commonFiles) {
+        await commonFilesModel.createExerciseFile(exercise.id, file);
+      }
+    }
 
     return exerciseMapper.toDTO(exercise);
   }
