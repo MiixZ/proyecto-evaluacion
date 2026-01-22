@@ -17,12 +17,27 @@ export class RankingService {
 
     if (userRole === 'student') {
       const filterInfo = await rankingModel.getFilterOptions(userId);
-      const userGroupIds = filterInfo.map((f) => f.group_id);
 
-      if (!groupId) {
-        effectiveGroupId = userGroupIds[0] as UUID;
-      } else if (!userGroupIds.includes(groupId)) {
-        effectiveGroupId = userGroupIds[0] as UUID;
+      if (subjectId) {
+        // If subject is selected, ensure we use a group FROM THIS SUBJECT
+        const groupsInSubject = filterInfo.filter(
+          (f) => f.subject_id === subjectId
+        );
+        const groupIdsInSubject = groupsInSubject.map((f) => f.group_id);
+
+        if (groupId && groupIdsInSubject.includes(groupId)) {
+          effectiveGroupId = groupId;
+        } else if (groupIdsInSubject.length > 0) {
+          // Default to first group of THIS subject
+          effectiveGroupId = groupIdsInSubject[0] as UUID;
+        }
+      } else {
+        // No subject selected, fallback to any group
+        const userGroupIds = filterInfo.map((f) => f.group_id);
+
+        if (!groupId || !userGroupIds.includes(groupId)) {
+          effectiveGroupId = userGroupIds[0] as UUID;
+        }
       }
     } else if (userRole === 'teacher') {
       const teacherGroups = await rankingModel.getFilterOptions(userId);
