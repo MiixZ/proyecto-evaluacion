@@ -236,7 +236,7 @@ export class ExerciseModel {
       LIMIT ? OFFSET ?
     `;
 
-    const [rows] = await getPool().execute<ExerciseRow[]>(query, [
+    const [rows] = await getPool().query<ExerciseRow[]>(query, [
       ...params,
       limit,
       offset,
@@ -252,6 +252,19 @@ export class ExerciseModel {
       hasMore: offset + limit < total,
       totalPages: Math.ceil(total / limit),
     };
+  }
+
+  async listByCourse(courseId: UUID): Promise<ExerciseEntity[]> {
+    const query = `
+      SELECT e.* 
+      FROM exercises e
+      JOIN syllabi s ON e.syllabus_id = s.id
+      WHERE s.course_id = ?
+      ORDER BY s.order_index ASC, e.order_index ASC
+    `;
+
+    const [rows] = await getPool().execute<ExerciseRow[]>(query, [courseId]);
+    return rows.map((row) => exerciseMapper.toEntity(row));
   }
 
   async listAll(

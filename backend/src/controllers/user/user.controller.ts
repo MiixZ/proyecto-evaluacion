@@ -236,6 +236,21 @@ export class UserController {
     }
   }
 
+  adminResetPassword = catchAsync(async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+
+    this.validateAdmin(req);
+
+    const result = await userService.resetPasswordByAdmin(id, req.user!.id);
+
+    return ApiResponse.success(
+      res,
+      result,
+      200,
+      'Contraseña restablecida correctamente'
+    );
+  });
+
   private validateAuthenticated(req: AuthRequest): string {
     const userId = req.user?.id;
     if (!userId) {

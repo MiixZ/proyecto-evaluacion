@@ -63,6 +63,12 @@ router.patch(
   userController.updateProfileImage
 );
 
+router.post(
+  '/:id/reset-password',
+  authMiddleware,
+  userController.adminResetPassword
+);
+
 router.post('/:id/groups', authMiddleware, userController.assignGroup);
 
 router.patch(

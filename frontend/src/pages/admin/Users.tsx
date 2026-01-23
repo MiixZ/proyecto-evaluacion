@@ -159,7 +159,7 @@ const AssignGroupDialog = ({
     onError: (error: any) => {
       const errorMessage = parseBackendError(
         error,
-        t("admin.users.assign_error")
+        t("admin.users.assign_error"),
       );
       toast({
         title: t("common.error"),
@@ -277,10 +277,12 @@ const UserTable = ({
   role,
   groupId,
   filtersRequired = false,
+  onPasswordReset,
 }: {
   role: UserRole;
   groupId?: string;
   filtersRequired?: boolean;
+  onPasswordReset: (email: string, tempPass: string) => void;
 }) => {
   const { toast } = useToast();
   const { t } = useTranslation();
@@ -322,7 +324,7 @@ const UserTable = ({
     onError: (error: any) => {
       const errorMessage = parseBackendError(
         error,
-        t("admin.users.status_error")
+        t("admin.users.status_error"),
       );
       toast({
         title: t("common.error"),
@@ -342,7 +344,7 @@ const UserTable = ({
     onError: (error: any) => {
       const errorMessage = parseBackendError(
         error,
-        t("admin.users.role_error")
+        t("admin.users.role_error"),
       );
       toast({
         title: t("common.error"),
@@ -361,7 +363,7 @@ const UserTable = ({
     onError: (error: any) => {
       const errorMessage = parseBackendError(
         error,
-        t("admin.users.delete_error")
+        t("admin.users.delete_error"),
       );
       toast({
         title: t("common.error"),
@@ -578,6 +580,50 @@ const UserTable = ({
 
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
+                            className="text-orange-600"
+                            onClick={() => {
+                              if (
+                                confirm(
+                                  t(
+                                    "admin.users.reset_password_confirm",
+                                    "Are you sure? This will generate a new temporary password.",
+                                  ),
+                                )
+                              ) {
+                                userService
+                                  .adminResetPassword(user.id)
+                                  .then((data) => {
+                                    onPasswordReset(
+                                      user.email,
+                                      data.temporaryPassword,
+                                    );
+                                    toast({
+                                      title: t(
+                                        "admin.users.password_reset_success",
+                                        "Password reset successfully",
+                                      ),
+                                    });
+                                  })
+                                  .catch((error) => {
+                                    toast({
+                                      title: t("common.error"),
+                                      description:
+                                        error.message ||
+                                        t(
+                                          "admin.users.reset_error",
+                                          "Error resetting password",
+                                        ),
+                                      variant: "destructive",
+                                    });
+                                  });
+                              }
+                            }}>
+                            <AlertCircle className="mr-2 h-4 w-4" />{" "}
+                            {t("admin.users.reset_password", "Reset Password")}
+                          </DropdownMenuItem>
+
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
                             className="text-destructive"
                             onClick={() => {
                               if (confirm(t("admin.users.delete_confirm")))
@@ -629,7 +675,7 @@ const UsersPage = () => {
   const queryClient = useQueryClient();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [temporaryPassword, setTemporaryPassword] = useState<string | null>(
-    null
+    null,
   );
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
   const [createdUserEmail, setCreatedUserEmail] = useState("");
@@ -678,6 +724,36 @@ const UsersPage = () => {
     enabled: !!selectedSubject && !!selectedYear,
   });
 
+  // Auto-select most recent year
+  useEffect(() => {
+    if (!selectedYear && years.length > 0) {
+      // Sort descending to get the most recent year
+      const sortedYears = [...years].sort().reverse();
+      setSelectedYear(sortedYears[0]);
+    }
+  }, [years, selectedYear]);
+
+  // Auto-select first degree
+  useEffect(() => {
+    if (!selectedDegree && degrees.length > 0) {
+      setSelectedDegree(degrees[0].id);
+    }
+  }, [degrees, selectedDegree]);
+
+  // Auto-select first subject
+  useEffect(() => {
+    if (!selectedSubject && subjects.length > 0) {
+      setSelectedSubject(subjects[0].id);
+    }
+  }, [subjects, selectedSubject]);
+
+  // Auto-select first group
+  useEffect(() => {
+    if (!selectedGroup && groups.length > 0) {
+      setSelectedGroup(groups[0].id);
+    }
+  }, [groups, selectedGroup]);
+
   const createMutation = useMutation({
     mutationFn: userService.create,
     onSuccess: (data) => {
@@ -703,7 +779,7 @@ const UsersPage = () => {
     onError: (error: any) => {
       const errorMessage = parseBackendError(
         error,
-        t("admin.users.create_error")
+        t("admin.users.create_error"),
       );
       const validationErrors = extractValidationErrors(error);
 
@@ -970,6 +1046,11 @@ const UsersPage = () => {
                 role="student"
                 groupId={selectedGroup}
                 filtersRequired={true}
+                onPasswordReset={(email, pass) => {
+                  setCreatedUserEmail(email);
+                  setTemporaryPassword(pass);
+                  setShowPasswordDialog(true);
+                }}
               />
             </CardContent>
           </Card>
@@ -984,7 +1065,14 @@ const UsersPage = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <UserTable role="teacher" />
+              <UserTable
+                role="teacher"
+                onPasswordReset={(email, pass) => {
+                  setCreatedUserEmail(email);
+                  setTemporaryPassword(pass);
+                  setShowPasswordDialog(true);
+                }}
+              />
             </CardContent>
           </Card>
         </TabsContent>
@@ -996,7 +1084,14 @@ const UsersPage = () => {
               <CardDescription>{t("admin.users.admins_desc")}</CardDescription>
             </CardHeader>
             <CardContent>
-              <UserTable role="admin" />
+              <UserTable
+                role="admin"
+                onPasswordReset={(email, pass) => {
+                  setCreatedUserEmail(email);
+                  setTemporaryPassword(pass);
+                  setShowPasswordDialog(true);
+                }}
+              />
             </CardContent>
           </Card>
         </TabsContent>
@@ -1010,13 +1105,13 @@ const UsersPage = () => {
               <Shield className="h-5 w-5 text-green-600" />
               {t(
                 "admin.users.temporary_password_title",
-                "Usuario creado exitosamente"
+                "Usuario creado exitosamente",
               )}
             </DialogTitle>
             <DialogDescription>
               {t(
                 "admin.users.temporary_password_desc",
-                "Guarda esta contraseña temporal, no se volverá a mostrar"
+                "Guarda esta contraseña temporal, no se volverá a mostrar",
               )}
             </DialogDescription>
           </DialogHeader>
@@ -1060,11 +1155,11 @@ const UsersPage = () => {
                       toast({
                         title: t(
                           "admin.users.password_copied",
-                          "Contraseña copiada"
+                          "Contraseña copiada",
                         ),
                         description: t(
                           "admin.users.password_copied_desc",
-                          "Compártela de forma segura con el usuario"
+                          "Compártela de forma segura con el usuario",
                         ),
                       });
                     }
@@ -1084,7 +1179,7 @@ const UsersPage = () => {
                   <p className="text-yellow-800 dark:text-yellow-200">
                     {t(
                       "admin.users.password_warning",
-                      "El usuario deberá cambiar esta contraseña en su primer inicio de sesión. Esta contraseña no se volverá a mostrar."
+                      "El usuario deberá cambiar esta contraseña en su primer inicio de sesión. Esta contraseña no se volverá a mostrar.",
                     )}
                   </p>
                 </div>

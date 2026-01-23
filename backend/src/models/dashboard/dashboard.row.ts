@@ -75,6 +75,7 @@ export interface GroupStudentRow extends RowDataPacket {
   avg_score: number;
   last_access: Date;
   status: string;
+  total_submissions?: number;
 }
 
 export interface RecentActivityRow extends RowDataPacket {

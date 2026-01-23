@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -17,6 +17,8 @@ import {
   Download,
   ChevronDown,
   FileSpreadsheet,
+  FileArchive,
+  Search,
 } from "lucide-react";
 import { format } from "date-fns";
 import { es, enUS } from "date-fns/locale";
@@ -36,7 +38,9 @@ import {
   ColumnDef,
   SortState,
 } from "@/components/ui/data/server-data-table";
+import { Input } from "@/components/ui/forms/input";
 import { dashboardService } from "@/services/dashboard.service";
+import { syllabusService } from "@/services/syllabus.service";
 import { exportService } from "@/services/export.service";
 import {
   Select,
@@ -71,6 +75,35 @@ export default function ActivityHistory() {
     direction: "DESC",
   });
 
+  const [selectedSyllabusId, setSelectedSyllabusId] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+      setPage(1);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Fetch Professor Groups for filtering
+  const { data: dashboardData } = useQuery({
+    queryKey: ["professorStats"],
+    queryFn: () => dashboardService.getProfessorStats(),
+  });
+
+  const groups = dashboardData?.groups || [];
+  const selectedGroup = groups.find((g) => g.groupId === groupId);
+
+  // Fetch Syllabi for the current group's course
+  const { data: syllabi = [] } = useQuery({
+    queryKey: ["syllabi", selectedGroup?.courseId],
+    queryFn: () => syllabusService.getByCourse(selectedGroup!.courseId),
+    enabled: !!selectedGroup?.courseId,
+  });
+
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [isExporting, setIsExporting] = useState(false);
 
@@ -94,8 +127,35 @@ export default function ActivityHistory() {
     }
   };
 
+  const handleExportSubmissionsZip = async () => {
+    if (!groupId) return;
+    try {
+      setIsExporting(true);
+      await exportService.downloadSubmissionsZip(groupId, {
+        studentIds: studentIdParam ? [studentIdParam] : undefined,
+      });
+      toast.success(
+        t("activity_history.export_success", "Exportación completada"),
+      );
+    } catch (error) {
+      console.error(error);
+      toast.error(t("activity_history.export_error", "Error al exportar"));
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const { data: rawData, isLoading } = useQuery({
-    queryKey: ["groupActivity", groupId, page, limit, sorting, studentIdParam],
+    queryKey: [
+      "groupActivity",
+      groupId,
+      page,
+      limit,
+      sorting,
+      studentIdParam,
+      selectedSyllabusId,
+      debouncedSearch,
+    ],
     queryFn: () =>
       dashboardService.getGroupActivity(
         groupId!,
@@ -105,6 +165,8 @@ export default function ActivityHistory() {
         sorting.direction,
         undefined,
         studentIdParam || undefined,
+        selectedSyllabusId,
+        debouncedSearch,
       ),
     enabled: !!groupId,
   });
@@ -174,6 +236,12 @@ export default function ActivityHistory() {
         return (
           <Badge variant="destructive">
             {t("activity_history.status.error")}
+          </Badge>
+        );
+      case "hardcoded_solution":
+        return (
+          <Badge className="bg-orange-500/15 text-orange-700 hover:bg-orange-500/25 border-orange-200 shadow-none">
+            {t("submissions_page.verdict.hardcoded_solution")}
           </Badge>
         );
       case "time_limit_exceeded":
@@ -328,6 +396,10 @@ export default function ActivityHistory() {
               <FileJson className="mr-2 h-4 w-4" />
               {t("activity_history.export_json", "Exportar JSON")}
             </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleExportSubmissionsZip()}>
+              <FileArchive className="mr-2 h-4 w-4" />
+              {t("activity_history.export_zip", "Exportar Entregas (ZIP)")}
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
@@ -399,6 +471,74 @@ export default function ActivityHistory() {
           </div>
         </CardHeader>
         <CardContent>
+          <div className="flex flex-col md:flex-row gap-4 mb-6">
+            {/* Group Selector */}
+            <div className="w-full md:w-[250px]">
+              <Select
+                value={groupId}
+                onValueChange={(val) => navigate(`/groups/${val}/activity`)}>
+                <SelectTrigger>
+                  <SelectValue
+                    placeholder={t(
+                      "activity_history.select_group",
+                      "Seleccionar grupo",
+                    )}
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {groups.map((g) => (
+                    <SelectItem key={g.groupId} value={g.groupId}>
+                      {g.subjectName} ({g.groupName})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Syllabus Filter */}
+            <div className="w-full md:w-[250px]">
+              <Select
+                value={selectedSyllabusId}
+                onValueChange={(val) => {
+                  setSelectedSyllabusId(val);
+                  setPage(1);
+                }}>
+                <SelectTrigger>
+                  <SelectValue
+                    placeholder={t(
+                      "activity_history.filter_syllabus",
+                      "Filtrar por tema",
+                    )}
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">
+                    {t("common.all_topics", "Todos los temas")}
+                  </SelectItem>
+                  {syllabi.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Search */}
+            <div className="flex-1 relative">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder={t(
+                  "activity_history.search_placeholder",
+                  "Buscar estudiante...",
+                )}
+                className="pl-9"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+          </div>
+
           <ServerDataTable<any>
             data={data?.items || []}
             columns={activityColumns}

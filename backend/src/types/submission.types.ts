@@ -60,4 +60,5 @@ export enum Veredict {
   TIME_LIMIT_EXCEEDED = 'time_limit_exceeded',
   MEMORY_LIMIT_EXCEEDED = 'memory_limit_exceeded',
   SYSTEM_ERROR = 'system_error',
+  HARDCODED_SOLUTION = 'hardcoded_solution',
 }

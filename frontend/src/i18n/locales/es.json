@@ -6,7 +6,7 @@
       "degrees": "Titulaciones",
       "groups": "Grupos",
       "subjects": "Asignaturas",
-      "syllabi": "Temarios"
+      "syllabi": "Temas"
     },
     "title": "Gestión Académica"
   },
@@ -92,7 +92,7 @@
       "detail": {
         "academicYear": "Año Académico",
         "content": "Contenido del Curso",
-        "contentDescription": "Temarios y ejercicios organizados por módulos",
+        "contentDescription": "Temas y ejercicios organizados por módulos",
         "courseInfo": "Información del Curso",
         "description": "Descripción",
         "exercises": "Ejercicios",
@@ -103,7 +103,7 @@
         "notFound": "Curso no encontrado",
         "semester": "Semestre",
         "subtitle": "Información completa del curso y su contenido",
-        "syllabi": "Temarios",
+        "syllabi": "Temas",
         "title": "Detalle del Curso"
       },
       "edit": "Editar",
@@ -117,19 +117,19 @@
         "error": "Error al migrar el contenido",
         "exercises": "Ejercicios",
         "exercisesCount": "ejercicios",
-        "exercisesNote": "Los ejercicios se migrarán junto con los temarios seleccionados",
+        "exercisesNote": "Los ejercicios se migrarán junto con los temas seleccionados",
         "filterStatus": "Filtrar por estado",
         "filterYear": "Filtrar por año",
         "history": "Historial de Cursos",
         "historyDesc": "{{count}} cursos disponibles para migración",
         "includeExercises": "Incluir Ejercicios",
-        "includeSyllabi": "Incluir Temarios",
+        "includeSyllabi": "Incluir Temas",
         "migrateButton": "Migrar",
         "migrating": "Migrando...",
         "noCourses": "No se encontraron cursos para esta asignatura",
         "options": "Opciones de Migración",
         "search": "Buscar curso...",
-        "selectAllSyllabi": "Seleccionar todos los temarios",
+        "selectAllSyllabi": "Seleccionar todos los temas",
         "selectSubject": "Seleccionar Asignatura",
         "selectSubjectDesc": "Selecciona una asignatura para ver su historial de cursos",
         "selectSubjectPlaceholder": "Buscar asignatura...",
@@ -139,10 +139,10 @@
         "semesterLabel": "{{number}}º Semestre",
         "sourceCourse": "Curso Origen",
         "startMigration": "Iniciar Migración",
-        "subtitle": "Reutiliza temarios y ejercicios de cursos anteriores",
+        "subtitle": "Reutiliza temas y ejercicios de cursos anteriores",
         "success": "Contenido migrado correctamente",
-        "successMessage": "{{syllabi}} temarios y {{exercises}} ejercicios migrados correctamente",
-        "syllabi": "Temarios",
+        "successMessage": "{{syllabi}} temas y {{exercises}} ejercicios migrados correctamente",
+        "syllabi": "Temas",
         "table": {
           "academicYear": "Año Académico",
           "actions": "Acciones",
@@ -150,7 +150,7 @@
           "exercises": "Ejercicios",
           "semester": "Semestre",
           "status": "Estado",
-          "syllabi": "Temarios"
+          "syllabi": "Temas"
         },
         "title": "Migración de Contenido entre Cursos",
         "viewDetail": "Ver Detalle"
@@ -187,7 +187,7 @@
         "selectSubjectDesc": "Elige una asignatura para ver sus cursos disponibles",
         "selectSubjectPlaceholder": "Buscar asignatura...",
         "subtitle": "Explora el contenido detallado de los cursos",
-        "syllabi": "temarios",
+        "syllabi": "temas",
         "title": "Visualizador de Cursos"
       },
       "year": "Año"
@@ -368,7 +368,7 @@
       "select_course": "Selecciona un curso activo",
       "select_course_filter": "Selecciona un curso",
       "subtitle": "Estructura de contenidos para los cursos.",
-      "title": "Temarios y Módulos",
+      "title": "Temas y Módulos",
       "title_column": "Título",
       "topic": "Tema",
       "topic_saved": "Tema {{action}} correctamente",
@@ -459,7 +459,17 @@
         "invalid_user_id": "ID de usuario inválido",
         "last_name_required": "Los apellidos son obligatorios",
         "password_min": "La contraseña debe tener al menos 8 caracteres"
-      }
+      },
+      "reset_password": "Restablecer Contraseña",
+      "reset_password_confirm": "¿Estás seguro? Esto generará una nueva contraseña temporal y el usuario deberá cambiarla.",
+      "password_reset_success": "Contraseña restablecida correctamente",
+      "reset_error": "Error al restablecer la contraseña",
+      "temporary_password_title": "Contraseña Temporal Generada",
+      "temporary_password_desc": "Comparte esta contraseña con el usuario. Es válida para un único uso.",
+      "password_copied": "Contraseña copiada",
+      "password_copied_desc": "La contraseña se ha copiado al portapapeles",
+      "important": "Importante",
+      "password_warning": "El usuario deberá cambiar esta contraseña en su primer inicio de sesión."
     }
   },
   "app": {
@@ -1305,6 +1315,7 @@
   },
   "security": {
     "actions": {
+      "ADMIN_RESET_PASSWORD": "Reinicio de Contraseña por Admin",
       "ASSIGN_GROUP": "Asignar Grupo",
       "CLONE_EXERCISE": "Clonar Ejercicio",
       "CREATE": "Crear",
@@ -1332,6 +1343,7 @@
       "EVALUATE_SUBMISSION": "Evaluar Envío",
       "EXPORT": "Exportar",
       "EXPORT_SUBMISSIONS": "Exportar Envíos",
+      "FIRST_PASSWORD_CHANGE": "Primer Cambio de Contraseña",
       "LOGIN": "Iniciar sesión",
       "LOGOUT": "Cerrar sesión",
       "PLAGIARISM_DETECTED": "Plagio Detectado",
@@ -1546,6 +1558,7 @@
     "verdict": {
       "accepted": "Aceptado",
       "compilation_error": "Error de Compilación",
+      "hardcoded_solution": "Solución Hardcodeada",
       "pending": "Procesando",
       "runtime_error": "Error de Ejecución",
       "time_limit": "Tiempo Excedido",

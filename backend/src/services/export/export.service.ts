@@ -1,9 +1,11 @@
 import { exportModel } from '@models/export/export.model';
+import archiver from 'archiver';
 import { CreateExportInput } from '@validators/export.validator';
 import { UUID, UserRole } from '@CustomTypes/common.types';
 import { submissionModel } from '@models/submission/submission.model';
 import { dashboardModel } from '@models/dashboard/dashboard.model';
-import { ForbiddenError, NotFoundError } from '@utils/errors';
+import { ForbiddenError, NotFoundError, ValidationError } from '@utils/errors';
+import { exerciseModel } from '@models/exercise/exercise.model';
 import { ExportFormat } from '@models/export/export.entity';
 import { escapeCsvField } from '@utils/csv.parser';
 
@@ -207,15 +209,15 @@ export class ExportService {
           },
           groupDetails: {
             groupName: groupDetails.group_name,
-            courseName: groupDetails.course_name,
+            courseName: groupDetails.subject_name,
             subjectName: groupDetails.subject_name,
             academicYear: groupDetails.academic_year,
-            totalStudents: groupDetails.total_students,
-            activeStudents: groupDetails.active_students,
-            totalExercises: groupDetails.total_exercises,
-            completedExercises: groupDetails.completed_exercises,
-            averageProgress: groupDetails.average_progress,
-            averageScore: groupDetails.average_score,
+            totalStudents: groupDetails.student_count,
+            activeStudents: groupDetails.student_count,
+            totalExercises: groupDetails.exercise_count,
+            completedExercises: groupDetails.completion_percentage,
+            averageProgress: groupDetails.completion_percentage,
+            averageScore: groupDetails.avg_score,
           },
           students: students.map((s) => ({
             studentId: s.student_id,
@@ -224,15 +226,15 @@ export class ExportService {
             email: s.email,
             status: s.status,
             completedExercises: s.exercises_completed ?? 0,
-            totalExercises: groupDetails.total_exercises ?? 0,
+            totalExercises: groupDetails.exercise_count ?? 0,
             progressPercentage:
-              groupDetails.total_exercises > 0
+              groupDetails.exercise_count > 0
                 ? Math.round(
-                    (s.exercises_completed / groupDetails.total_exercises) * 100
+                    (s.exercises_completed / groupDetails.exercise_count) * 100
                   )
                 : 0,
             averageScore: s.avg_score ?? 0,
-            totalSubmissions: '-',
+            totalSubmissions: s.total_submissions ?? 0,
             lastActivity: s.last_access || null,
           })),
           recentActivity: recentActivity.items.map((a) => ({
@@ -293,9 +295,9 @@ export class ExportService {
       const rows = students
         .map((s) => {
           const progressPercent =
-            groupDetails.total_exercises > 0
+            groupDetails.exercise_count > 0
               ? Math.round(
-                  (s.exercises_completed / groupDetails.total_exercises) * 100
+                  (s.exercises_completed / groupDetails.exercise_count) * 100
                 )
               : 0;
           const fields = [
@@ -305,13 +307,13 @@ export class ExportService {
             s.email,
             s.status,
             s.exercises_completed ?? 0,
-            groupDetails.total_exercises ?? 0,
+            groupDetails.exercise_count ?? 0,
             progressPercent,
             s.avg_score ?? 0,
-            '-', // totalSubmissions not available per-student
-            s.last_access || '',
+            s.total_submissions ?? 0,
+            s.last_access ? new Date(s.last_access).toISOString() : '',
           ];
-          return fields.map(escapeCsvField).join(',');
+          return fields.map((f) => escapeCsvField(f)).join(',');
         })
         .join('\n');
 
@@ -324,6 +326,140 @@ export class ExportService {
       content,
       mimeType,
       filename: `group_statistics_${groupDetails.group_name}_${new Date().toISOString().split('T')[0]}.${extension}`,
+    };
+  }
+
+  /**
+   * Genera un archivo ZIP con las entregas de los estudiantes
+   * Estructura: StudentName/ExerciseName/File
+   */
+  async exportSubmissions(
+    groupId: UUID,
+    filters: { courseId?: UUID; syllabusId?: UUID; studentIds?: UUID[] },
+    userRole: UserRole
+  ): Promise<{ content: Buffer; mimeType: string; filename: string }> {
+    if (userRole === UserRole.STUDENT) {
+      throw new ForbiddenError('No autorizado para exportar entregas masivas');
+    }
+
+    let exercises: { id: UUID; title: string }[] = [];
+
+    if (filters.syllabusId) {
+      const result = await exerciseModel.listBySyllabus(
+        filters.syllabusId,
+        1,
+        1000
+      );
+      exercises = result.items;
+    } else {
+      let targetCourseId = filters.courseId;
+
+      if (!targetCourseId) {
+        const group = await dashboardModel.getGroupDetails(groupId);
+        if (group && group.course_id) {
+          targetCourseId = group.course_id as UUID;
+        }
+      }
+
+      if (targetCourseId) {
+        exercises = await exerciseModel.listByCourse(targetCourseId);
+      } else {
+        throw new ValidationError(
+          'Se requiere courseId o syllabusId, o un groupId válido'
+        );
+      }
+    }
+
+    if (exercises.length === 0) {
+      throw new NotFoundError(
+        'No se encontraron ejercicios en el contexto dado'
+      );
+    }
+
+    let students = await dashboardModel.getStudentsByGroup(groupId);
+
+    if (filters.studentIds && filters.studentIds.length > 0) {
+      students = students.filter((s) =>
+        filters.studentIds!.includes(s.student_id as UUID)
+      );
+    }
+
+    if (students.length === 0) {
+      throw new NotFoundError(
+        'No se encontraron estudiantes en el grupo seleccionado'
+      );
+    }
+
+    const submissions = await submissionModel.findForExport(
+      students.map((s) => s.student_id),
+      exercises.map((e) => e.id)
+    );
+
+    const archive = archiver('zip', { zlib: { level: 9 } });
+    const chunks: Buffer[] = [];
+
+    archive.on('data', (chunk) => chunks.push(chunk));
+
+    const promise = new Promise<Buffer>((resolve, reject) => {
+      archive.on('end', () => resolve(Buffer.concat(chunks)));
+      archive.on('error', reject);
+    });
+
+    const extMap: Record<string, string> = {
+      python: 'py',
+      javascript: 'js',
+      java: 'java',
+      cpp: 'cpp',
+      c: 'c',
+      go: 'go',
+      rust: 'rs',
+    };
+
+    for (const student of students) {
+      const studentName = `${student.last_name}_${student.first_name}`
+        .replace(/[^a-zA-Z0-9_\-\.]/g, '_')
+        .replace(/_+/g, '_');
+
+      for (const exercise of exercises) {
+        const exerciseSubmissions = submissions.filter(
+          (s) =>
+            s.studentId === student.student_id && s.exerciseId === exercise.id
+        );
+
+        const exerciseName = exercise.title
+          .replace(/[^a-zA-Z0-9_\-\.]/g, '_')
+          .replace(/_+/g, '_');
+
+        const path = `${studentName}/${exerciseName}/`;
+
+        if (exerciseSubmissions.length > 0) {
+          for (const sub of exerciseSubmissions) {
+            const ext = extMap[sub.language] || 'txt';
+
+            let filename = `attempt_${sub.attemptNumber}.${ext}`;
+            if (sub.language === 'java') {
+              filename = `attempt_${sub.attemptNumber}_Main.java`;
+            } else if (sub.language === 'python') {
+              filename = `attempt_${sub.attemptNumber}_main.py`;
+            } else {
+              filename = `attempt_${sub.attemptNumber}_main.${ext}`;
+            }
+
+            archive.append(sub.code, { name: path + filename });
+          }
+        } else {
+          archive.append(Buffer.alloc(0), { name: path + '.keep' });
+        }
+      }
+    }
+
+    await archive.finalize();
+    const content = await promise;
+
+    return {
+      content,
+      mimeType: 'application/zip',
+      filename: `submissions_export_${new Date().toISOString().split('T')[0]}.zip`,
     };
   }
 }

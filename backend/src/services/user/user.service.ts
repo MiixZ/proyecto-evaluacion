@@ -15,10 +15,7 @@ import { UserFilters } from './user.filter';
 import { emailService } from '@services/notification/email.service';
 import { userMapper } from '@mappers/user.mapper';
 import { auditService } from '@services/audit/audit.service';
-import {
-  AuthenticationError,
-  NotFoundError,
-} from '@utils/errors';
+import { AuthenticationError, NotFoundError } from '@utils/errors';
 import { generateTemporaryPassword } from '@utils/jwt.utils';
 import { logger } from '@utils/logger';
 
@@ -37,14 +34,22 @@ export class UserService {
     input: CreateUserInput,
     creatorId?: UUID
   ): Promise<CreateUserResponse> {
-    // Generar contraseña temporal segura (siempre)
+    const existingUser = await userModel.findByEmail(input.email);
+    if (existingUser) {
+      // If user exists, ensure we are not overwriting password.
+      // We might want to ensure role/status changes if needed, but for now just return the user.
+      // Warning: This effectively ignores the input password if provided for existing user.
+      return {
+        ...userMapper.toDTO(existingUser),
+        temporaryPassword: undefined,
+      };
+    }
+
     const temporaryPassword = generateTemporaryPassword();
     const password = input.password || temporaryPassword;
 
-    // El modelo ya gestiona reactivación si el usuario existe y está borrado lógicamente
     const newUser = await userModel.create(input, password);
 
-    // Intentar enviar email de bienvenida (no bloquear si falla)
     try {
       await emailService.sendWelcomeEmail(
         newUser.email,
@@ -74,7 +79,6 @@ export class UserService {
 
     const userDTO = userMapper.toDTO(newUser);
 
-    // Devolver contraseña temporal en respuesta (solo una vez)
     return {
       ...userDTO,
       temporaryPassword: password,
@@ -176,8 +180,15 @@ export class UserService {
     email: string,
     firstName: string,
     lastName: string
-  ): Promise<UserDTO> {
-    // El modelo ya gestiona reactivación si el usuario existe y está borrado lógicamente
+  ): Promise<UserDTO & { temporaryPassword?: string }> {
+    const existingUser = await userModel.findByEmail(email);
+    if (existingUser) {
+      return {
+        ...userMapper.toDTO(existingUser),
+        temporaryPassword: undefined,
+      };
+    }
+
     const password = generateTemporaryPassword();
     const newUser = await userModel.create(
       {
@@ -204,7 +215,6 @@ export class UserService {
       });
     }
 
-    // Devolver DTO y contraseña temporal
     return {
       ...userMapper.toDTO(newUser),
       temporaryPassword: password,
@@ -274,7 +284,6 @@ export class UserService {
     const newHash = await hashPassword(newPassword);
     await userModel.updatePassword(userId as UUID, newHash);
 
-    // Limpiar flag de cambio obligatorio si existe
     await userModel.update(userId as UUID, {
       mustChangePassword: false,
     });
@@ -315,7 +324,6 @@ export class UserService {
 
     await userModel.updatePassword(userId as UUID, newHash);
 
-    // Limpiar flag de cambio obligatorio
     await userModel.update(userId as UUID, {
       mustChangePassword: false,
     });
@@ -405,6 +413,40 @@ export class UserService {
 
   async getStudents(): Promise<UserEntity[]> {
     return await userModel.getStudents();
+  }
+  async resetPasswordByAdmin(
+    userId: string,
+    adminId: UUID
+  ): Promise<{ temporaryPassword: string }> {
+    const user = await userModel.getById(userId as UUID);
+    if (!user) throw new NotFoundError('Usuario no encontrado');
+
+    const temporaryPassword = generateTemporaryPassword();
+    const { hashPassword } = await import('@utils/jwt.utils');
+    const newHash = await hashPassword(temporaryPassword);
+
+    await userModel.updatePassword(userId as UUID, newHash);
+    await userModel.update(userId as UUID, { mustChangePassword: true });
+
+    try {
+      await emailService.sendWelcomeEmail(
+        user.email,
+        user.firstName,
+        temporaryPassword
+      );
+    } catch (error) {
+      logger.warn('No se pudo enviar email de reseteo', { email: user.email });
+    }
+
+    await auditService.log(
+      'ADMIN_RESET_PASSWORD',
+      'user',
+      userId as UUID,
+      { adminId },
+      adminId
+    );
+
+    return { temporaryPassword };
   }
 }
 

@@ -22,15 +22,16 @@ import { es, enUS } from "date-fns/locale";
 import { DataTable, ColumnDef } from "@/components/ui/data/data-table";
 
 interface Submission {
-  id: number;
+  id: string;
   createdAt: string;
   exerciseTitle: string;
   subjectName: string;
   language: string;
   verdict: string;
   score: number;
-  exerciseId: number;
-  courseId: number;
+  exerciseId: string;
+  courseId: string;
+  [key: string]: any;
 }
 
 export default function StudentSubmissionsPage() {
@@ -59,6 +60,13 @@ export default function StudentSubmissionsPage() {
       case "time_limit":
         return (
           <Badge className="bg-yellow-500/15 text-yellow-600 hover:bg-yellow-500/25 border-yellow-200">
+            <AlertTriangle className="mr-1 h-3 w-3" />
+            {t(`submissions_page.verdict.${verdict}`) || verdict}
+          </Badge>
+        );
+      case "hardcoded_solution":
+        return (
+          <Badge className="bg-orange-500/15 text-orange-600 hover:bg-orange-500/25 border-orange-200">
             <AlertTriangle className="mr-1 h-3 w-3" />
             {t(`submissions_page.verdict.${verdict}`) || verdict}
           </Badge>
@@ -153,10 +161,6 @@ export default function StudentSubmissionsPage() {
       className: "text-right",
     },
   ];
-  const resetFilters = () => {
-    setSearchTerm("");
-    setVerdictFilter("all");
-  };
 
   if (isLoading) {
     return (
