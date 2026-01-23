@@ -66,6 +66,8 @@ export const SubmissionHistory = ({
       case "time_limit":
       case "memory_limit":
         return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
+      case "hardcoded_solution":
+        return <AlertTriangle className="h-4 w-4 text-orange-500" />;
       default:
         return <XCircle className="h-4 w-4 text-red-500" />;
     }
@@ -95,7 +97,7 @@ export const SubmissionHistory = ({
                 "flex items-center gap-3 p-3 border rounded-lg bg-card hover:bg-accent/5 transition-colors",
                 selectedIds.includes(item.id)
                   ? "border-primary bg-accent/10"
-                  : ""
+                  : "",
               )}>
               <Checkbox
                 checked={selectedIds.includes(item.id)}
@@ -127,7 +129,7 @@ export const SubmissionHistory = ({
                   <div
                     className={cn(
                       "text-sm font-bold",
-                      item.score >= 10 ? "text-green-500" : ""
+                      item.score >= 10 ? "text-green-500" : "",
                     )}>
                     {t("exercise.history.score")}: {item.score}
                   </div>

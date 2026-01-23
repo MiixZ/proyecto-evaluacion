@@ -238,6 +238,12 @@ export default function ActivityHistory() {
             {t("activity_history.status.error")}
           </Badge>
         );
+      case "hardcoded_solution":
+        return (
+          <Badge className="bg-orange-500/15 text-orange-700 hover:bg-orange-500/25 border-orange-200 shadow-none">
+            {t("submissions_page.verdict.hardcoded_solution")}
+          </Badge>
+        );
       case "time_limit_exceeded":
       case "memory_limit_exceeded":
         return (

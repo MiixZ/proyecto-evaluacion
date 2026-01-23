@@ -1558,6 +1558,7 @@
     "verdict": {
       "accepted": "Aceptado",
       "compilation_error": "Error de Compilación",
+      "hardcoded_solution": "Solución Hardcodeada",
       "pending": "Procesando",
       "runtime_error": "Error de Ejecución",
       "time_limit": "Tiempo Excedido",

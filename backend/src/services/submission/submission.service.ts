@@ -169,7 +169,6 @@ export class SubmissionService {
       userId,
       exercise.id
     );
-    // now declarada previamente para validar lateDeadline
     const isLate = exercise.deadline ? now > exercise.deadline : false;
 
     await submissionModel.create({
@@ -199,13 +198,11 @@ export class SubmissionService {
       (err) => logger.error('Error en chequeo automático de plagio', err)
     );
 
-    // Fetch common files for exercise and syllabus
     const exerciseFiles = await commonFilesModel.getExerciseFiles(exercise.id);
     const syllabusFiles = await commonFilesModel.getSyllabusFiles(
       exercise.syllabusId
     );
 
-    // Combine files (exercise files take precedence if conflict)
     const allCommonFiles = [
       ...syllabusFiles.map((f) => ({
         filename: f.filename,
@@ -216,7 +213,6 @@ export class SubmissionService {
         content: f.content,
       })),
     ];
-    // Filter duplicates by filename, keeping the last one (exercise file overrides syllabus)
     const uniqueCommonFiles = Array.from(
       new Map(allCommonFiles.map((file) => [file.filename, file])).values()
     );
@@ -316,7 +312,46 @@ export class SubmissionService {
       `DEBUG: Processing submission ${submissionId}. Engine returned ${execResult.testResults.length} results. Mapped ${submissionTestResults.length} results.`
     );
 
-    const finalVerdict = this.mapEngineVerdict(execResult.verdict);
+    let finalVerdict = this.mapEngineVerdict(execResult.verdict);
+
+    if (execResult.compilationError) {
+      finalVerdict = SubmissionVerdict.COMPILATION_ERROR;
+      finalScore = 0;
+    }
+
+    if (finalVerdict === SubmissionVerdict.WRONG_ANSWER) {
+      const compilationErrorPatterns = [
+        /error:\s/i,
+        /\.cpp:\d+:\d+:\s*error/i,
+        /\.c:\d+:\d+:\s*error/i,
+        /\.java:\d+:\s*error/i,
+        /SyntaxError:/i,
+        /IndentationError:/i,
+        /NameError:/i,
+        /undefined reference to/i,
+        /cannot find symbol/i,
+        /compilation failed/i,
+      ];
+
+      const hasCompilationError = execResult.testResults.some((tr) =>
+        compilationErrorPatterns.some((pattern) =>
+          pattern.test(tr.actualOutput || '')
+        )
+      );
+
+      if (hasCompilationError) {
+        finalVerdict = SubmissionVerdict.COMPILATION_ERROR;
+        finalScore = 0;
+        logger.info(
+          `Detected compilation error via heuristic for submission ${submissionId}`
+        );
+      }
+    }
+
+    if (execResult.verdict === EngineVerdict.HARDCODED_SOLUTION) {
+      finalVerdict = SubmissionVerdict.RUNTIME_ERROR;
+      finalScore = 0;
+    }
 
     const updatedEntity = await submissionModel.updateResult(
       submissionId,
@@ -362,6 +397,7 @@ export class SubmissionService {
       [EngineVerdict.TIME_LIMIT_EXCEEDED]: SubmissionVerdict.TIME_LIMIT,
       [EngineVerdict.MEMORY_LIMIT_EXCEEDED]: SubmissionVerdict.MEMORY_LIMIT,
       [EngineVerdict.SYSTEM_ERROR]: SubmissionVerdict.RUNTIME_ERROR,
+      [EngineVerdict.HARDCODED_SOLUTION]: SubmissionVerdict.RUNTIME_ERROR,
     };
 
     return map[engineVerdict] || SubmissionVerdict.RUNTIME_ERROR;
