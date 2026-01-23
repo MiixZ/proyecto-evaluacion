@@ -498,6 +498,49 @@ export class SubmissionModel {
     );
     return rows.length > 0 && Boolean(rows[0].archived);
   }
+
+  /**
+   * Obtiene todas las entregas no archivadas para exportación masiva
+   * Filtrando por lista de estudiantes y lista de ejercicios
+   */
+  async findForExport(
+    studentIds: string[],
+    exerciseIds: string[]
+  ): Promise<
+    {
+      studentId: string;
+      exerciseId: string;
+      code: string;
+      language: string;
+      attemptNumber: number;
+    }[]
+  > {
+    if (studentIds.length === 0 || exerciseIds.length === 0) {
+      return [];
+    }
+
+    const query = `
+      SELECT student_id, exercise_id, code, language, attempt_number
+      FROM submissions
+      WHERE archived = FALSE
+        AND student_id IN (?)
+        AND exercise_id IN (?)
+      ORDER BY student_id, exercise_id, attempt_number DESC
+    `;
+
+    const [rows] = await getPool().query<RowDataPacket[]>(query, [
+      studentIds,
+      exerciseIds,
+    ]);
+
+    return rows.map((row) => ({
+      studentId: row.student_id,
+      exerciseId: row.exercise_id,
+      code: row.code,
+      language: row.language,
+      attemptNumber: row.attempt_number,
+    }));
+  }
 }
 
 export const submissionModel = new SubmissionModel();

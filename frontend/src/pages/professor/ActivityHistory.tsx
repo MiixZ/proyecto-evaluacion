@@ -17,6 +17,7 @@ import {
   Download,
   ChevronDown,
   FileSpreadsheet,
+  FileArchive,
 } from "lucide-react";
 import { format } from "date-fns";
 import { es, enUS } from "date-fns/locale";
@@ -83,6 +84,24 @@ export default function ActivityHistory() {
         `activity_${groupId}`,
         format,
       );
+      toast.success(
+        t("activity_history.export_success", "Exportación completada"),
+      );
+    } catch (error) {
+      console.error(error);
+      toast.error(t("activity_history.export_error", "Error al exportar"));
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleExportSubmissionsZip = async () => {
+    if (!groupId) return;
+    try {
+      setIsExporting(true);
+      await exportService.downloadSubmissionsZip(groupId, {
+        studentIds: studentIdParam ? [studentIdParam] : undefined,
+      });
       toast.success(
         t("activity_history.export_success", "Exportación completada"),
       );
@@ -327,6 +346,10 @@ export default function ActivityHistory() {
             <DropdownMenuItem onClick={() => handleExportActivity("json")}>
               <FileJson className="mr-2 h-4 w-4" />
               {t("activity_history.export_json", "Exportar JSON")}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleExportSubmissionsZip()}>
+              <FileArchive className="mr-2 h-4 w-4" />
+              {t("activity_history.export_zip", "Exportar Entregas (ZIP)")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

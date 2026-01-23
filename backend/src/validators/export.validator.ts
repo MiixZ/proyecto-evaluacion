@@ -21,4 +21,15 @@ export const listExportsRequest = z.object({
   }),
 });
 
+export const exportSubmissionsSchema = z.object({
+  groupId: uuidSchema,
+  courseId: uuidSchema.optional(),
+  syllabusId: uuidSchema.optional(),
+  studentIds: z.array(uuidSchema).optional(),
+});
+
+export const exportSubmissionsRequest = z.object({
+  body: exportSubmissionsSchema,
+});
+
 export type CreateExportInput = z.infer<typeof createExportSchema>;

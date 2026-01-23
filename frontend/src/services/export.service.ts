@@ -9,7 +9,7 @@ export const exportService = {
    */
   downloadSubmission: async (
     submissionId: string,
-    format: "zip" | "json" | "csv" = "zip"
+    format: "zip" | "json" | "csv" = "zip",
   ) => {
     try {
       const response = await api.post(
@@ -19,7 +19,7 @@ export const exportService = {
           format,
           purpose: "analysis",
         },
-        { responseType: "blob" }
+        { responseType: "blob" },
       );
 
       const url = window.URL.createObjectURL(new Blob([response.data]));
@@ -59,13 +59,13 @@ export const exportService = {
    */
   exportGroupStatistics: async (
     groupId: string,
-    format: "json" | "csv" = "json"
+    format: "json" | "csv" = "json",
   ): Promise<Blob> => {
     const response = await api.get(
       `/v1/exports/group/${groupId}/statistics?format=${format}`,
       {
         responseType: "blob",
-      }
+      },
     );
 
     return response.data;
@@ -80,7 +80,7 @@ export const exportService = {
   downloadGroupStatistics: async (
     groupId: string,
     groupName: string,
-    format: "json" | "csv" = "json"
+    format: "json" | "csv" = "json",
   ): Promise<void> => {
     try {
       const blob = await exportService.exportGroupStatistics(groupId, format);
@@ -99,6 +99,47 @@ export const exportService = {
       window.URL.revokeObjectURL(url);
     } catch (error) {
       console.error("Error downloading group statistics:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Descarga un archivo ZIP con las entregas de los estudiantes
+   */
+  downloadSubmissionsZip: async (
+    groupId: string,
+    filters: { studentIds?: string[]; syllabusId?: string; courseId?: string },
+  ) => {
+    try {
+      const response = await api.post(
+        "/v1/exports/submissions",
+        {
+          groupId,
+          ...filters,
+        },
+        { responseType: "blob" },
+      );
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+
+      const contentDisposition = response.headers["content-disposition"];
+      let fileName = `submissions-export.zip`;
+      if (contentDisposition) {
+        const fileNameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
+        if (fileNameMatch && fileNameMatch[1]) {
+          fileName = fileNameMatch[1];
+        }
+      }
+
+      link.setAttribute("download", fileName);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error downloading submissions zip", error);
       throw error;
     }
   },

@@ -14,6 +14,7 @@ import {
   ChevronUp,
   ChevronDown,
   FileCode,
+  Download,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -57,6 +58,7 @@ import {
 } from "@/components/ui/overlay/alert-dialog";
 import { dashboardService } from "@/services/dashboard.service";
 import { syllabusService, SyllabusDTO } from "@/services/syllabus.service";
+import { exportService } from "@/services/export.service";
 import { toast } from "sonner";
 import { CommonFilesManager } from "@/components/professor/CommonFilesManager";
 
@@ -71,6 +73,7 @@ export default function ManageSyllabi() {
   );
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   const [selectedSyllabusId, setSelectedSyllabusId] = useState<string>("");
   const [managingFilesSyllabusId, setManagingFilesSyllabusId] = useState<
@@ -188,6 +191,23 @@ export default function ManageSyllabi() {
       orderIndex: nextOrder,
       isPublic: false,
     });
+  };
+
+  const handleExportSyllabus = async (syllabusId: string) => {
+    if (!selectedGroupId) return;
+    try {
+      setIsExporting(true);
+      await exportService.downloadSubmissionsZip(selectedGroupId, {
+        syllabusId,
+      });
+      toast.success(
+        t("professor.syllabi.export_success", "Exportación iniciada"),
+      );
+    } catch (error) {
+      toast.error(t("professor.syllabi.export_error", "Error al exportar"));
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   const handleDeleteSyllabus = (syllabusId: string) => {
@@ -446,6 +466,18 @@ export default function ManageSyllabi() {
                           "Gestionar Archivos Comunes",
                         )}>
                         <FileCode className="h-4 w-4" />
+                      </Button>
+
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleExportSyllabus(syllabus.id)}
+                        disabled={isExporting}
+                        title={t(
+                          "professor.syllabi.export_zip",
+                          "Exportar Entregas",
+                        )}>
+                        <Download className="h-4 w-4" />
                       </Button>
 
                       {/* Delete button (only if no exercises) */}

@@ -17,9 +17,11 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@types/archiver": "^7.0.0",
     "@types/multer": "^2.0.0",
     "@types/nodemailer": "^7.0.4",
     "@types/string-similarity": "^4.0.2",
+    "archiver": "^7.0.1",
     "axios": "^1.6.2",
     "bcrypt": "^5.1.1",
     "cors": "^2.8.5",

@@ -85,6 +85,18 @@ export class ExportController {
       res.status(200).send(content);
     }
   );
+
+  exportSubmissions = catchAsync(async (req: AuthRequest, res: Response) => {
+    const { groupId, ...filters } = req.body;
+
+    const { content, mimeType, filename } =
+      await exportService.exportSubmissions(groupId, filters, req.user!.role);
+
+    res.setHeader('Content-Type', mimeType);
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+
+    res.status(200).send(content);
+  });
 }
 
 export const exportController = new ExportController();

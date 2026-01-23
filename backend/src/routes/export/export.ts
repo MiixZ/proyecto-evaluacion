@@ -6,16 +6,22 @@ import {
   createExportRequest,
   getExportRequest,
   listExportsRequest,
+  exportSubmissionsRequest,
 } from '@validators/export.validator';
 
 const router = Router();
 
 router.use(authMiddleware);
 
-// Ruta para exportar estadísticas completas de un grupo (debe ir ANTES de /:id)
 router.get(
   '/group/:groupId/statistics',
   exportController.exportGroupStatistics
+);
+
+router.post(
+  '/submissions',
+  validateRequest(exportSubmissionsRequest),
+  exportController.exportSubmissions
 );
 
 router.post('/', validateRequest(createExportRequest), exportController.create);
