@@ -236,7 +236,7 @@ export class ExerciseModel {
       LIMIT ? OFFSET ?
     `;
 
-    const [rows] = await getPool().execute<ExerciseRow[]>(query, [
+    const [rows] = await getPool().query<ExerciseRow[]>(query, [
       ...params,
       limit,
       offset,

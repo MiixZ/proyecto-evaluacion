@@ -285,11 +285,28 @@ export class SubmissionModel {
 
   async countAttempts(userId: string, exerciseId: string): Promise<number> {
     const [rows] = await getPool().query<RowDataPacket[]>(
-      'SELECT COUNT(*) as count FROM submissions WHERE student_id = ? AND exercise_id = ?',
+      'SELECT COUNT(*) as count FROM submissions WHERE student_id = ? AND exercise_id = ? AND archived = FALSE',
       [userId, exerciseId]
     );
 
     return rows[0].count;
+  }
+
+  async hasAcceptedSubmission(
+    userId: string,
+    exerciseId: string
+  ): Promise<boolean> {
+    const [rows] = await getPool().query<RowDataPacket[]>(
+      `SELECT 1 FROM submissions 
+       WHERE student_id = ? 
+         AND exercise_id = ? 
+         AND verdict = 'accepted' 
+         AND archived = FALSE 
+       LIMIT 1`,
+      [userId, exerciseId]
+    );
+
+    return rows.length > 0;
   }
 
   async getNextAttemptNumber(

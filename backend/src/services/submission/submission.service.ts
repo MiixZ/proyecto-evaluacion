@@ -105,6 +105,17 @@ export class SubmissionService {
       throw new ValidationError('El ejercicio no está disponible o no existe.');
     }
 
+    const hasAccepted = await submissionModel.hasAcceptedSubmission(
+      userId,
+      exercise.id
+    );
+
+    if (hasAccepted) {
+      throw new ForbiddenError(
+        'Ya has completado este ejercicio exitosamente. No se permiten más envíos.'
+      );
+    }
+
     if (exercise.maxAttempts > 0) {
       const attemptsCount = await submissionModel.countAttempts(
         userId,
@@ -314,7 +325,6 @@ export class SubmissionService {
       submissionTestResults
     );
 
-    // Cargar los test results con input/expectedOutput para la respuesta
     const testResultsWithDetails =
       await submissionModel.getTestResultsWithDetails(
         submissionId,
