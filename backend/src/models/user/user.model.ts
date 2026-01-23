@@ -27,7 +27,6 @@ export class UserModel {
     plainPassword?: string,
     connection?: PoolConnection
   ): Promise<UserEntity> {
-    // Buscar usuario por email, aunque esté borrado lógicamente
     const db = connection || this.getPool();
     const [rows] = await db.execute<UserRow[]>(
       'SELECT * FROM users WHERE email = ? LIMIT 1',
@@ -39,7 +38,6 @@ export class UserModel {
       : null;
 
     if (rows.length > 0) {
-      // Si está borrado lógicamente, lo reactivamos y actualizamos datos
       const user = rows[0];
       await db.execute(
         `UPDATE users SET 
@@ -58,7 +56,6 @@ export class UserModel {
           user.id,
         ]
       );
-      // Devolver el usuario reactivado
       return {
         id: user.id as UUID,
         authId: passwordHash || `auth_${user.id}`,
@@ -77,7 +74,6 @@ export class UserModel {
       };
     }
 
-    // Si no existe, crear usuario nuevo
     const id = randomUUID();
     const query = `
       INSERT INTO users (
@@ -152,9 +148,7 @@ export class UserModel {
 
   async getByEmail(email: string): Promise<UserEntity> {
     const query = `SELECT * FROM users WHERE email = ? AND deleted_at IS NULL LIMIT 1`;
-    const [rows] = await this.getPool().execute<UserRow[]>(query, [
-      email.toLowerCase(),
-    ]);
+    const [rows] = await this.getPool().execute<UserRow[]>(query, [email]);
 
     if (rows.length === 0)
       throw new NotFoundError(`Usuario con email: ${email}`);

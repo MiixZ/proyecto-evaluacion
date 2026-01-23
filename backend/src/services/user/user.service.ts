@@ -169,15 +169,7 @@ export class UserService {
     email: string,
     firstName: string,
     lastName: string
-  ): Promise<UserDTO & { temporaryPassword?: string | null }> {
-    const existingUser = await userModel.findByEmail(email);
-    if (existingUser) {
-      return {
-        ...userMapper.toDTO(existingUser),
-        temporaryPassword: undefined,
-      };
-    }
-
+  ): Promise<UserDTO & { temporaryPassword?: string }> {
     const password = generateTemporaryPassword();
     const newUser = await userModel.create(
       {
