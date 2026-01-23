@@ -178,6 +178,7 @@ export class DashboardModel {
         COUNT(DISTINCT CASE WHEN dt.is_accepted = 1 THEN dt.exercise_id END) as exercises_completed,
         COALESCE(AVG(dt.max_score), 0) as avg_score,
         MAX(dt.last_attempt) as last_access,
+        SUM(dt.submission_count) as total_submissions,
         ug.status
       FROM users u
       JOIN user_groups ug ON u.id = ug.user_id
@@ -190,7 +191,8 @@ export class DashboardModel {
               s.exercise_id,
               MAX(s.score) as max_score,
               MAX(s.created_at) as last_attempt,
-              MAX(CASE WHEN s.verdict = 'accepted' THEN 1 ELSE 0 END) as is_accepted
+              MAX(CASE WHEN s.verdict = 'accepted' THEN 1 ELSE 0 END) as is_accepted,
+              COUNT(s.id) as submission_count
           FROM submissions s
           WHERE s.archived = FALSE
           GROUP BY s.student_id, s.course_id, s.exercise_id
@@ -368,7 +370,9 @@ export class DashboardModel {
     sortBy: string,
     sortOrder: 'ASC' | 'DESC',
     status?: string,
-    studentId?: string
+    studentId?: string,
+    syllabusId?: string,
+    search?: string
   ): Promise<any> {
     const offset = (page - 1) * limit;
 
@@ -383,6 +387,16 @@ export class DashboardModel {
     if (studentId) {
       whereClause += ' AND s.student_id = ?';
       params.push(studentId);
+    }
+
+    if (syllabusId && syllabusId !== 'all') {
+      whereClause += ' AND e.syllabus_id = ?';
+      params.push(syllabusId);
+    }
+
+    if (search) {
+      whereClause += ` AND (u.first_name LIKE ? OR u.last_name LIKE ?)`;
+      params.push(`%${search}%`, `%${search}%`);
     }
 
     const sortMap: Record<string, string> = {

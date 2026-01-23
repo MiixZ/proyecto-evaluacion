@@ -99,6 +99,8 @@ export class DashboardController {
       sortOrder = 'DESC',
       status,
       studentId,
+      syllabusId,
+      search,
     } = req.query;
 
     const result = await dashboardService.getGroupActivity(
@@ -108,7 +110,9 @@ export class DashboardController {
       sortBy as string,
       sortOrder as 'ASC' | 'DESC',
       status as string,
-      studentId as string
+      studentId as string,
+      syllabusId as string,
+      search as string
     );
 
     return ApiResponse.success(res, result);

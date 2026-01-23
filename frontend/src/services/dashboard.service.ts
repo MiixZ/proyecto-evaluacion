@@ -22,7 +22,7 @@ export const dashboardService = {
    * Obtiene estadísticas del dashboard de profesor
    */
   getProfessorStats: async (
-    groupId?: string
+    groupId?: string,
   ): Promise<ProfessorDashboardResponse> => {
     const url = groupId
       ? `/v1/dashboard/teacher/overview?groupId=${groupId}`
@@ -39,14 +39,14 @@ export const dashboardService = {
    */
   getAdminStats: async (
     academicYear?: string,
-    search?: string
+    search?: string,
   ): Promise<AdminDashboardResponse> => {
     const params = new URLSearchParams();
     if (academicYear) params.append("academicYear", academicYear);
     if (search) params.append("search", search);
 
     const { data } = await api.get<ApiResponse<AdminDashboardResponse>>(
-      `/v1/dashboard/admin?${params.toString()}`
+      `/v1/dashboard/admin?${params.toString()}`,
     );
 
     return data.data;
@@ -57,7 +57,7 @@ export const dashboardService = {
    */
   getAcademicYears: async (): Promise<string[]> => {
     const { data } = await api.get<ApiResponse<string[]>>(
-      "/v1/dashboard/academic-years"
+      "/v1/dashboard/academic-years",
     );
 
     return data.data;
@@ -67,7 +67,7 @@ export const dashboardService = {
    * Obtiene envíos recientes
    */
   getRecentSubmissions: async (
-    limit: number = 5
+    limit: number = 5,
   ): Promise<DashboardSubmission[]> => {
     const { data } = await api.get<
       ApiResponse<PaginatedResponse<DashboardSubmission>>
@@ -86,7 +86,9 @@ export const dashboardService = {
     column: string,
     direction: string,
     verdict?: string,
-    studentId?: string
+    studentId?: string,
+    syllabusId?: string,
+    search?: string,
   ) => {
     const params = new URLSearchParams({
       page: page.toString(),
@@ -95,6 +97,8 @@ export const dashboardService = {
       sortOrder: direction,
       ...(verdict && verdict !== "all" && { verdict }),
       ...(studentId && { studentId }),
+      ...(syllabusId && syllabusId !== "all" && { syllabusId }),
+      ...(search && { search }),
     });
 
     const { data } = await api.get<
@@ -114,7 +118,7 @@ export const dashboardService = {
     sortBy: string = "date",
     sortOrder: "ASC" | "DESC" = "DESC",
     type: string = "all",
-    reviewStatus: string = "all"
+    reviewStatus: string = "all",
   ): Promise<PaginatedResponse<PlagiarismAlertDTO>> => {
     const { data } = await api.get<
       ApiResponse<PaginatedResponse<PlagiarismAlertDTO>>
@@ -126,7 +130,7 @@ export const dashboardService = {
   },
   getStudentStreak: async (): Promise<number> => {
     const { data } = await api.get<ApiResponse<{ streak: number }>>(
-      "/v1/dashboard/student/streak"
+      "/v1/dashboard/student/streak",
     );
     return data.data.streak;
   },

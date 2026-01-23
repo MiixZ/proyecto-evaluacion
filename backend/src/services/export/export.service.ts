@@ -209,15 +209,15 @@ export class ExportService {
           },
           groupDetails: {
             groupName: groupDetails.group_name,
-            courseName: groupDetails.course_name,
+            courseName: groupDetails.subject_name,
             subjectName: groupDetails.subject_name,
             academicYear: groupDetails.academic_year,
-            totalStudents: groupDetails.total_students,
-            activeStudents: groupDetails.active_students,
-            totalExercises: groupDetails.total_exercises,
-            completedExercises: groupDetails.completed_exercises,
-            averageProgress: groupDetails.average_progress,
-            averageScore: groupDetails.average_score,
+            totalStudents: groupDetails.student_count,
+            activeStudents: groupDetails.student_count,
+            totalExercises: groupDetails.exercise_count,
+            completedExercises: groupDetails.completion_percentage,
+            averageProgress: groupDetails.completion_percentage,
+            averageScore: groupDetails.avg_score,
           },
           students: students.map((s) => ({
             studentId: s.student_id,
@@ -226,15 +226,15 @@ export class ExportService {
             email: s.email,
             status: s.status,
             completedExercises: s.exercises_completed ?? 0,
-            totalExercises: groupDetails.total_exercises ?? 0,
+            totalExercises: groupDetails.exercise_count ?? 0,
             progressPercentage:
-              groupDetails.total_exercises > 0
+              groupDetails.exercise_count > 0
                 ? Math.round(
-                    (s.exercises_completed / groupDetails.total_exercises) * 100
+                    (s.exercises_completed / groupDetails.exercise_count) * 100
                   )
                 : 0,
             averageScore: s.avg_score ?? 0,
-            totalSubmissions: '-',
+            totalSubmissions: s.total_submissions ?? 0,
             lastActivity: s.last_access || null,
           })),
           recentActivity: recentActivity.items.map((a) => ({
@@ -295,9 +295,9 @@ export class ExportService {
       const rows = students
         .map((s) => {
           const progressPercent =
-            groupDetails.total_exercises > 0
+            groupDetails.exercise_count > 0
               ? Math.round(
-                  (s.exercises_completed / groupDetails.total_exercises) * 100
+                  (s.exercises_completed / groupDetails.exercise_count) * 100
                 )
               : 0;
           const fields = [
@@ -307,13 +307,13 @@ export class ExportService {
             s.email,
             s.status,
             s.exercises_completed ?? 0,
-            groupDetails.total_exercises ?? 0,
+            groupDetails.exercise_count ?? 0,
             progressPercent,
             s.avg_score ?? 0,
-            '-',
-            s.last_access || '',
+            s.total_submissions ?? 0,
+            s.last_access ? new Date(s.last_access).toISOString() : '',
           ];
-          return fields.map(escapeCsvField).join(',');
+          return fields.map((f) => escapeCsvField(f)).join(',');
         })
         .join('\n');
 

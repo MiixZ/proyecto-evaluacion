@@ -8,7 +8,9 @@ export class DashboardService {
     sortBy: string,
     sortOrder: 'ASC' | 'DESC',
     status?: string,
-    studentId?: string
+    studentId?: string,
+    syllabusId?: string,
+    search?: string
   ) {
     if (!groupId) {
       throw new Error('Group ID is required');
@@ -29,7 +31,9 @@ export class DashboardService {
       sortBy,
       sortOrder,
       status,
-      studentId
+      studentId,
+      syllabusId,
+      search
     );
   }
 
