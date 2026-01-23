@@ -34,6 +34,17 @@ export class UserService {
     input: CreateUserInput,
     creatorId?: UUID
   ): Promise<CreateUserResponse> {
+    const existingUser = await userModel.findByEmail(input.email);
+    if (existingUser) {
+      // If user exists, ensure we are not overwriting password.
+      // We might want to ensure role/status changes if needed, but for now just return the user.
+      // Warning: This effectively ignores the input password if provided for existing user.
+      return {
+        ...userMapper.toDTO(existingUser),
+        temporaryPassword: undefined,
+      };
+    }
+
     const temporaryPassword = generateTemporaryPassword();
     const password = input.password || temporaryPassword;
 
@@ -170,6 +181,14 @@ export class UserService {
     firstName: string,
     lastName: string
   ): Promise<UserDTO & { temporaryPassword?: string }> {
+    const existingUser = await userModel.findByEmail(email);
+    if (existingUser) {
+      return {
+        ...userMapper.toDTO(existingUser),
+        temporaryPassword: undefined,
+      };
+    }
+
     const password = generateTemporaryPassword();
     const newUser = await userModel.create(
       {
@@ -394,6 +413,40 @@ export class UserService {
 
   async getStudents(): Promise<UserEntity[]> {
     return await userModel.getStudents();
+  }
+  async resetPasswordByAdmin(
+    userId: string,
+    adminId: UUID
+  ): Promise<{ temporaryPassword: string }> {
+    const user = await userModel.getById(userId as UUID);
+    if (!user) throw new NotFoundError('Usuario no encontrado');
+
+    const temporaryPassword = generateTemporaryPassword();
+    const { hashPassword } = await import('@utils/jwt.utils');
+    const newHash = await hashPassword(temporaryPassword);
+
+    await userModel.updatePassword(userId as UUID, newHash);
+    await userModel.update(userId as UUID, { mustChangePassword: true });
+
+    try {
+      await emailService.sendWelcomeEmail(
+        user.email,
+        user.firstName,
+        temporaryPassword
+      );
+    } catch (error) {
+      logger.warn('No se pudo enviar email de reseteo', { email: user.email });
+    }
+
+    await auditService.log(
+      'ADMIN_RESET_PASSWORD',
+      'user',
+      userId as UUID,
+      { adminId },
+      adminId
+    );
+
+    return { temporaryPassword };
   }
 }
 

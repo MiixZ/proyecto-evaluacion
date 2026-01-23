@@ -29,7 +29,7 @@ export const userService = {
     search = "",
     role?: UserRole | "all",
     status?: UserStatus | "all",
-    groupId?: string
+    groupId?: string,
   ): Promise<PaginatedResponse<User>> => {
     const params = new URLSearchParams({
       page: page.toString(),
@@ -41,7 +41,7 @@ export const userService = {
     });
 
     const { data } = await api.get<ApiResponse<PaginatedResponse<User>>>(
-      `/v1/users?${params}`
+      `/v1/users?${params}`,
     );
 
     return data.data;
@@ -53,7 +53,7 @@ export const userService = {
   assignGroup: async (
     userId: string,
     groupId: string,
-    role: string = "teacher"
+    role: string = "teacher",
   ): Promise<void> => {
     await api.post(`/v1/users/${userId}/groups`, { groupId, role });
   },
@@ -64,7 +64,7 @@ export const userService = {
   create: async (payload: CreateUserPayload): Promise<CreateUserResponse> => {
     const { data } = await api.post<ApiResponse<CreateUserResponse>>(
       "/v1/users",
-      payload
+      payload,
     );
 
     return data.data;
@@ -92,7 +92,7 @@ export const userService = {
       `/v1/users/${id}/role`,
       {
         role,
-      }
+      },
     );
 
     return data.data;
@@ -104,7 +104,7 @@ export const userService = {
   changeStatus: async (id: string, status: UserStatus): Promise<User> => {
     const { data } = await api.patch<ApiResponse<User>>(
       `/v1/users/${id}/status`,
-      { status }
+      { status },
     );
 
     return data.data;
@@ -123,7 +123,7 @@ export const userService = {
   changePassword: async (
     currentPassword: string,
     newPassword: string,
-    confirmPassword: string
+    confirmPassword: string,
   ): Promise<void> => {
     await api.patch("/v1/users/me/password", {
       currentPassword,
@@ -137,7 +137,7 @@ export const userService = {
    */
   firstPasswordChange: async (
     newPassword: string,
-    confirmPassword: string
+    confirmPassword: string,
   ): Promise<void> => {
     await api.post("/v1/users/me/first-password-change", {
       newPassword,
@@ -153,7 +153,20 @@ export const userService = {
       "/v1/users/me/profile-image",
       {
         profileImageUrl,
-      }
+      },
+    );
+
+    return data.data;
+  },
+
+  /**
+   * Resetea la contraseña de un usuario por un administrador
+   */
+  adminResetPassword: async (
+    userId: string,
+  ): Promise<{ temporaryPassword: string }> => {
+    const { data } = await api.post<ApiResponse<{ temporaryPassword: string }>>(
+      `/v1/users/${userId}/reset-password`,
     );
 
     return data.data;

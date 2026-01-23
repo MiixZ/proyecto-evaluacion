@@ -1247,6 +1247,7 @@
   },
   "security": {
     "actions": {
+      "ADMIN_RESET_PASSWORD": "Admin Reset Password",
       "ASSIGN_GROUP": "Assign Group",
       "CLONE_EXERCISE": "Clone Exercise",
       "CREATE": "Create",
@@ -1274,6 +1275,7 @@
       "EVALUATE_SUBMISSION": "Evaluate Submission",
       "EXPORT": "Export",
       "EXPORT_SUBMISSIONS": "Export Submissions",
+      "FIRST_PASSWORD_CHANGE": "First Password Change",
       "LOGIN": "Login",
       "LOGOUT": "Logout",
       "PLAGIARISM_DETECTED": "Plagiarism Detected",
