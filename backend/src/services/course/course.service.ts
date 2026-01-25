@@ -126,7 +126,6 @@ export class CourseService {
           });
         }
 
-        // Migrar syllabus_common_files por cada syllabus
         for (const syllabus of syllabi) {
           const newSyllabusId = syllabusIdMap[syllabus.id];
           const [syllabusFiles] = await connection.execute<any[]>(
@@ -182,6 +181,7 @@ export class CourseService {
                 exercise.order_index || null,
                 exercise.points || null,
                 exercise.efficiency_order || null,
+                null,
                 null,
                 exercise.late_submission_penalty_percent || null,
                 exercise.max_attempts || null,
