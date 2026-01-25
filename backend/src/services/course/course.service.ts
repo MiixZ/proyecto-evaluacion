@@ -60,14 +60,12 @@ export class CourseService {
     const sourceCourse = await courseModel.getById(sourceCourseId as UUID);
     const targetCourse = await courseModel.getById(targetCourseId as UUID);
 
-    // Validar que los cursos pertenecen a la misma asignatura
     if (sourceCourse.subjectId !== targetCourse.subjectId) {
       throw new BadRequestError(
         'Los cursos deben pertenecer a la misma asignatura'
       );
     }
 
-    // Validar que no se migre a sí mismo
     if (sourceCourseId === targetCourseId) {
       throw new BadRequestError('No se puede migrar un curso a sí mismo');
     }
@@ -101,10 +99,8 @@ export class CourseService {
           syllabiParams
         );
 
-        // Mapeo de IDs antiguos a nuevos
         const syllabusIdMap: { [oldId: string]: string } = {};
 
-        // Migrar syllabi
         for (const syllabus of syllabi) {
           const newSyllabusId = uuidv4();
           syllabusIdMap[syllabus.id] = newSyllabusId;
@@ -130,7 +126,31 @@ export class CourseService {
           });
         }
 
-        // Migrar ejercicios si está habilitado
+        // Migrar syllabus_common_files por cada syllabus
+        for (const syllabus of syllabi) {
+          const newSyllabusId = syllabusIdMap[syllabus.id];
+          const [syllabusFiles] = await connection.execute<any[]>(
+            'SELECT * FROM syllabus_common_files WHERE syllabus_id = ?',
+            [syllabus.id]
+          );
+
+          for (const file of syllabusFiles) {
+            const newFileId = uuidv4();
+            await connection.execute(
+              `INSERT INTO syllabus_common_files (id, syllabus_id, filename, content, file_type, description, created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+              [
+                newFileId,
+                newSyllabusId,
+                file.filename,
+                file.content,
+                file.file_type || 'source',
+                file.description || null,
+              ]
+            );
+          }
+        }
+
         if (options.includeExercises && Object.keys(syllabusIdMap).length > 0) {
           const syllabusIds = Object.keys(syllabusIdMap);
           const placeholders = syllabusIds.map(() => '?').join(',');
@@ -147,8 +167,8 @@ export class CourseService {
             await connection.execute(
               `INSERT INTO exercises (id, syllabus_id, title, description, difficulty, language, 
                template_code, is_published, created_by, order_index, points, efficiency_order, 
-               deadline, late_submission_penalty_percent, max_attempts, created_at, updated_at)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+               deadline, late_deadline, late_submission_penalty_percent, max_attempts, created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
               [
                 newExerciseId,
                 newSyllabusId,
@@ -157,18 +177,37 @@ export class CourseService {
                 exercise.difficulty,
                 exercise.language,
                 exercise.template_code || null,
-                false, // No publicado por defecto
+                false,
                 exercise.created_by,
                 exercise.order_index || null,
                 exercise.points || null,
                 exercise.efficiency_order || null,
-                null, // Sin deadline al migrar
+                null,
                 exercise.late_submission_penalty_percent || null,
                 exercise.max_attempts || null,
               ]
             );
 
-            // Migrar test cases
+            const [limits] = await connection.execute<any[]>(
+              'SELECT * FROM execution_limits WHERE exercise_id = ?',
+              [exercise.id]
+            );
+
+            for (const limit of limits) {
+              const newLimitId = uuidv4();
+              await connection.execute(
+                `INSERT INTO execution_limits (id, exercise_id, language, time_limit_seconds, memory_limit_mb, created_at, updated_at)
+                 VALUES (?, ?, ?, ?, ?, NOW(), NOW())`,
+                [
+                  newLimitId,
+                  newExerciseId,
+                  limit.language,
+                  limit.time_limit_seconds || 10,
+                  limit.memory_limit_mb || 256,
+                ]
+              );
+            }
+
             const [testCases] = await connection.execute<any[]>(
               'SELECT * FROM test_cases WHERE exercise_id = ?',
               [exercise.id]
@@ -178,21 +217,44 @@ export class CourseService {
               const newTestCaseId = uuidv4();
               await connection.execute(
                 `INSERT INTO test_cases (id, exercise_id, input, expected_output, 
-                 is_hidden, order_index, time_limit_seconds, memory_limit_mb, 
+                 runner_code, is_hidden, available_from, order_index, time_limit_seconds, memory_limit_mb, 
                  efficiency_order, hint_text, hint_penalty_percent, created_at, updated_at)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
                 [
                   newTestCaseId,
                   newExerciseId,
-                  testCase.input || null,
-                  testCase.expected_output || null,
+                  testCase.input ?? '',
+                  testCase.expected_output ?? '',
+                  testCase.runner_code || null,
                   testCase.is_hidden !== undefined ? testCase.is_hidden : false,
+                  testCase.available_from || null,
                   testCase.order_index || null,
                   testCase.time_limit_seconds || 5,
                   testCase.memory_limit_mb || 256,
                   testCase.efficiency_order || 'any',
                   testCase.hint_text || null,
                   testCase.hint_penalty_percent || 10,
+                ]
+              );
+            }
+
+            const [exerciseFiles] = await connection.execute<any[]>(
+              'SELECT * FROM exercise_common_files WHERE exercise_id = ?',
+              [exercise.id]
+            );
+
+            for (const file of exerciseFiles) {
+              const newFileId = uuidv4();
+              await connection.execute(
+                `INSERT INTO exercise_common_files (id, exercise_id, filename, content, file_type, description, created_at, updated_at)
+                 VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+                [
+                  newFileId,
+                  newExerciseId,
+                  file.filename,
+                  file.content,
+                  file.file_type || 'source',
+                  file.description || null,
                 ]
               );
             }
@@ -207,7 +269,6 @@ export class CourseService {
         }
       }
 
-      // Actualizar el campo migrated_from en el curso destino
       await connection.execute(
         'UPDATE courses SET migrated_from = ?, updated_at = NOW() WHERE id = ?',
         [sourceCourseId, targetCourseId]
